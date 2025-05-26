@@ -10,6 +10,8 @@ export default function Index() {
       }}
     >
       <Text>What the hell, con chuột của tôi đâu?</Text>
+      <text>Máy t có chuột này</text>
+      <text>Quân ấm dâu</text>
     </View>
   );
 }
