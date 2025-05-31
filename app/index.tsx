@@ -1,15 +1,7 @@
-import { Text, View } from "react-native";
+import HomeScreens from "./HomeScreens";
 
 export default function Index() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>What the hell, con chuột của tôi đâu?</Text>
-    </View>
+    <HomeScreens />
   );
 }
