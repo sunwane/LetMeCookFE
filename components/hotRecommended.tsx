@@ -15,7 +15,38 @@ const HotRecommended = () => {
             source={require('@/assets/images/food/BanhMi.png')}
           />
           <View style={styles.overlayTop}>
-            <Text>Bánh Mì Ram Ram</Text>
+            <View style={styles.overlayContent}>
+              <Text style={styles.hotTitle}>
+                Bánh Mì Ram Ram
+              </Text>
+              <View style={styles.hotContainer}>
+                <Text style={styles.hotText}>HOT</Text>
+                <Image 
+                  source={require('@/assets/images/icons/Fire.png')}
+                  style={styles.fireIcon} 
+                />
+              </View>
+            </View>
+          </View>
+          <View style={styles.overlayBottom}>
+            <View style={styles.groupAttributes}>
+              <Image 
+                source={require('@/assets/images/icons/stars.png')}
+                style={styles.smallIcon} />
+              <Text style={styles.smallText}>Dễ</Text>
+            </View>
+            <View style={styles.groupAttributes}>
+              <Image 
+                source={require('@/assets/images/icons/Frying Pan.png')}
+                style={styles.smallIcon} />
+              <Text style={styles.smallText}>1h 50m</Text>
+            </View>
+            <View style={styles.groupAttributes}>
+              <Image 
+                source={require('@/assets/images/icons/Thumbs Up.png')}
+                style={styles.smallIcon} />
+              <Text style={styles.smallText}>100</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -43,20 +74,73 @@ const styles = StyleSheet.create({
       top: 0,
       left: 0,
       right: 0,
-      height: 30,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', // Màu nền mờ
+      height: 40,
+      backgroundColor: 'rgba(0, 0, 0, 0.4)', // Màu nền mờ
       justifyContent: 'center',
+      alignItems: 'stretch',
       paddingHorizontal: 10,
+      borderRadius: 10,
     },
-    overlayBottom:{
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 50,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', // Màu nền mờ
-      justifyContent: 'center',
+    overlayContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
       alignItems: 'center',
+      height: '100%',
+    },
+    hotContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#EB3223',
+      paddingHorizontal: 11,
+      paddingBottom: 5,
+      borderRadius: 10,
+      paddingTop: 2,
+    },
+    hotText: {
+      color: 'white',
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    fireIcon: {
+      width: 15, 
+      height: 15, 
+      marginRight: -4,
+    },
+    hotTitle: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+    overlayBottom: {
+      position: 'absolute',
+      bottom: 10,
+      left: 10, // Thay đổi từ 0 thành giá trị cụ thể
+      // Bỏ right: 0 để không stretch full width
+      height: 30,
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      borderRadius: 10,
+      paddingHorizontal: 5,
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start', // Thêm thuộc tính này để container chỉ rộng bằng nội dung
+      paddingLeft: 10,
+    },
+    smallIcon: {
+      width: 15,
+      height: 15,
+      marginRight: 2,
+      tintColor: 'rgba(255, 255, 255, 0.75)',
+    },
+    groupAttributes: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 10, // Tăng khoảng cách giữa các nhóm
+    },
+    smallText: {
+      color: 'rgba(255, 255, 255, 0.75)',
+      fontSize: 13,
+      fontWeight: '500',
     }
 })
 
