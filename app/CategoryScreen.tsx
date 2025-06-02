@@ -1,14 +1,14 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
-const Nx2FoodGroup = () => {
+const CategoryScreen = () => {
   return (
     <View>
-      <Text>nx2FoodGroup</Text>
+      <Text>CategoryScreen</Text>
     </View>
   )
 }
 
-export default Nx2FoodGroup
+export default CategoryScreen
 
 const styles = StyleSheet.create({})

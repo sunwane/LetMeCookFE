@@ -1,14 +1,14 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
-const Nx2FoodGroup = () => {
+const CommunityScreen = () => {
   return (
     <View>
-      <Text>nx2FoodGroup</Text>
+      <Text>CommunityScreen</Text>
     </View>
   )
 }
 
-export default Nx2FoodGroup
+export default CommunityScreen
 
 const styles = StyleSheet.create({})

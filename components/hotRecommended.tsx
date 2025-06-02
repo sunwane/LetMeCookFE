@@ -1,54 +1,77 @@
-import React from 'react'
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { FoodItem } from '@/services/types/FoodItem';
+import React from 'react';
+import { Dimensions, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-const HotRecommended = () => {
+const { width: screenWidth } = Dimensions.get('window');
+const SPACING = 10;
+const CARD_WIDTH = screenWidth * 0.80; // 80% chiều rộng màn hình
+
+interface HotRecommendedProps {
+  foods: FoodItem[];
+}
+
+const HotRecommended: React.FC<HotRecommendedProps> = ({ 
+  foods,
+}) => {
   return (
     <View>
       <ScrollView
         horizontal={true}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollViewContent}
+        snapToInterval={CARD_WIDTH + SPACING}
+        snapToAlignment="start"
+        decelerationRate={0.99}
+        pagingEnabled
+        contentContainerStyle={[
+          styles.scrollViewContent
+        ]}
       >
-        <View style={styles.imageContainer}>
-          <Image 
-            style={styles.image}
-            source={require('@/assets/images/food/BanhMi.png')}
-          />
-          <View style={styles.overlayTop}>
-            <View style={styles.overlayContent}>
-              <Text style={styles.hotTitle}>
-                Bánh Mì Ram Ram
-              </Text>
-              <View style={styles.hotContainer}>
-                <Text style={styles.hotText}>HOT</Text>
+        {foods.map((food) => (
+          <View 
+            key={food.id} 
+            style={[
+              styles.imageContainer,
+              { marginHorizontal: SPACING / 2 }
+            ]}
+          >
+            <Image 
+              style={styles.image}
+              source={{uri: food.imageUrl}}
+            />
+            <View style={styles.overlayTop}>
+              <View style={styles.overlayContent}>
+                <Text style={styles.hotTitle}>{food.foodName}</Text>
+                <View style={styles.hotContainer}>
+                  <Text style={styles.hotText}>HOT</Text>
+                  <Image 
+                    source={require('@/assets/images/icons/Fire.png')}
+                    style={styles.fireIcon} 
+                  />
+                </View>
+              </View>
+            </View>
+            <View style={styles.overlayBottom}>
+              <View style={styles.groupAttributes}>
                 <Image 
-                  source={require('@/assets/images/icons/Fire.png')}
-                  style={styles.fireIcon} 
-                />
+                  source={require('@/assets/images/icons/stars.png')}
+                  style={styles.smallIcon} />
+                <Text style={styles.smallText}>{food.difficulty}</Text>
+              </View>
+              <View style={styles.groupAttributes}>
+                <Image 
+                  source={require('@/assets/images/icons/Clock.png')}
+                  style={styles.smallIcon} />
+                <Text style={styles.smallText}>{food.cookingTime}</Text>
+              </View>
+              <View style={styles.groupAttributes}>
+                <Image 
+                  source={require('@/assets/images/icons/Like_White.png')}
+                  style={styles.smallIcon} />
+                <Text style={styles.smallText}>{food.likes}</Text>
               </View>
             </View>
           </View>
-          <View style={styles.overlayBottom}>
-            <View style={styles.groupAttributes}>
-              <Image 
-                source={require('@/assets/images/icons/stars.png')}
-                style={styles.smallIcon} />
-              <Text style={styles.smallText}>Dễ</Text>
-            </View>
-            <View style={styles.groupAttributes}>
-              <Image 
-                source={require('@/assets/images/icons/Frying Pan.png')}
-                style={styles.smallIcon} />
-              <Text style={styles.smallText}>1h 50m</Text>
-            </View>
-            <View style={styles.groupAttributes}>
-              <Image 
-                source={require('@/assets/images/icons/Thumbs Up.png')}
-                style={styles.smallIcon} />
-              <Text style={styles.smallText}>100</Text>
-            </View>
-          </View>
-        </View>
+        ))}
       </ScrollView>
     </View>
   )
@@ -59,9 +82,10 @@ const styles = StyleSheet.create({
       flexGrow: 1,
     },
     imageContainer: {
-      width: '100%', // Chiếm toàn bộ chiều rộng của parent
-      height: 180, 
-      position: 'relative', // Để có thể đặt overlay
+      height: 180,
+      position: 'relative',
+      width: CARD_WIDTH,
+      // width được set động qua style inline
     },
     image: {
       width: '100%',
@@ -75,7 +99,7 @@ const styles = StyleSheet.create({
       left: 0,
       right: 0,
       height: 40,
-      backgroundColor: 'rgba(0, 0, 0, 0.4)', // Màu nền mờ
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', // Màu nền mờ
       justifyContent: 'center',
       alignItems: 'stretch',
       paddingHorizontal: 10,
@@ -118,7 +142,7 @@ const styles = StyleSheet.create({
       left: 10, // Thay đổi từ 0 thành giá trị cụ thể
       // Bỏ right: 0 để không stretch full width
       height: 30,
-      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
       borderRadius: 10,
       paddingHorizontal: 5,
       flexDirection: 'row',
@@ -127,10 +151,11 @@ const styles = StyleSheet.create({
       paddingLeft: 10,
     },
     smallIcon: {
-      width: 15,
-      height: 15,
+      width: 12,
+      height: 12,
       marginRight: 2,
       tintColor: 'rgba(255, 255, 255, 0.75)',
+      marginTop: 1, // Căn chỉnh với text
     },
     groupAttributes: {
       flexDirection: 'row',
