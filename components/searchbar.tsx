@@ -3,7 +3,8 @@ import { Image, StyleSheet, TextInput, View } from 'react-native';
 
 const SearchBar = () => {
   return (
-    <View style={styles.headerContainer}>
+    <View style={styles.header}>
+      <View style={styles.headerContainer}>
         <TextInput
           style={styles.searchInput}
           placeholder="Bạn muốn nấu gì?"
@@ -13,12 +14,18 @@ const SearchBar = () => {
           source={require('@/assets/images/icons/icon_search.png')} // Điều chỉnh đường dẫn tới icon của bạn
           style={styles.searchIcon}
         />
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  header: {
+    backgroundColor: '#ffffff',
+    paddingBottom: 20,
+  },
   headerContainer: {
+    marginHorizontal: 10,
     marginTop: 60,
     //chèn 2 element cùng row để hiển thị icon và input cùng hàng
     flexDirection: 'row',

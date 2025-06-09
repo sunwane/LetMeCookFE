@@ -1,6 +1,6 @@
 import { SubCategoryItem } from '@/services/types/SubCategoryItem';
-import { StyleSheet, View } from 'react-native';
-import RcmCategory from './rcmCategory';
+import { FlatList, StyleSheet, View } from 'react-native';
+import OneSubCategory from './oneSubCategory';
 
 //file riêng
 const SubCategoriesData: SubCategoryItem[] = [
@@ -18,7 +18,7 @@ const SubCategoriesData: SubCategoryItem[] = [
   },
   {
     id: '3',
-    name: 'Thức uống Matcha',
+    name: 'Matcha',
     imageUrl: 'https://images.prismic.io/nutriinfo/aBHRb_IqRLdaBvL5_hinh-anh-matcha-latte.jpg?auto=format,compress',
     description: '111'
   },
@@ -57,12 +57,16 @@ const SubCategoriesData: SubCategoryItem[] = [
 
 const RcmCategoryGroup = () => {
   return (
-    <View
-      style={styles.container}
-    >
-      <RcmCategory
-        SubCategories={SubCategoriesData}
-        />
+    <View style={styles.container}>
+      <FlatList
+        data={SubCategoriesData}
+        keyExtractor={(item) => item.id}
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <OneSubCategory item={item} />
+        )}
+      />
     </View>
   )
 }

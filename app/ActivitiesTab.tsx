@@ -2,51 +2,30 @@ import OneCmtPost from '@/components/OneCmtPost'
 import { AccountItem } from '@/services/types/AccountItem'
 import { CommentItem } from '@/services/types/CommentItem'
 import { FoodItem } from '@/services/types/FoodItem'
-import { Dimensions, FlatList, StyleSheet, Text, View } from 'react-native'
+import React from 'react'
+import { FlatList, StyleSheet, View } from 'react-native'
 
-const {width: ScreenWidth} = Dimensions.get('screen')
+interface ActivitiesTabProps {
+  comments: CommentItem[];
+}
 
-const CommunityScreen = () => {
+const ActivitiesTab = ({ comments }: ActivitiesTabProps) => {
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContain}>
-        <Text style={styles.headerTitle}>Cùng xem chia sẻ của những "đồng bếp" khác</Text>
-      </View>
-      <View style={styles.postContainer}>
-        <FlatList
-            data={sampleComments}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => <OneCmtPost item={item} />}
-            showsVerticalScrollIndicator={false} // Ẩn thanh scroll
-            contentContainerStyle={styles.listContent}
-          />
-      </View>
+    <View style={styles.postContainer}>
+      <FlatList
+        data={comments}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => <OneCmtPost item={item} />}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+      />
     </View>
   )
 }
 
-export default CommunityScreen
+export default ActivitiesTab
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFAF5',
-  },
-  headerContain: {
-    backgroundColor: '#fff',
-    paddingTop: 70,
-    paddingBottom: 20,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#cecece',
-    paddingHorizontal: ScreenWidth / 6,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 700,
-    color: '#FF5D00',
-    textAlign: 'center'
-  },
   postContainer: {
     flex: 1, // Thêm flex: 1 để container có thể mở rộng
     marginTop: 10,

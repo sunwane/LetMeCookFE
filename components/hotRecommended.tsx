@@ -65,7 +65,7 @@ const HotRecommended: React.FC<HotRecommendedProps> = ({
               </View>
               <View style={styles.groupAttributes}>
                 <Image 
-                  source={require('@/assets/images/icons/Like_White.png')}
+                  source={require('@/assets/images/icons/Like_Active.png')}
                   style={styles.smallIcon} />
                 <Text style={styles.smallText}>{food.likes}</Text>
               </View>

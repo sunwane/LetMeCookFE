@@ -1,14 +1,173 @@
-import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import OneSubCategory from '@/components/oneSubCategory'
+import { SubCategoryItem } from '@/services/types/SubCategoryItem'
+import { useState } from 'react'
+import { Dimensions, FlatList, StyleSheet, Text, View } from 'react-native'
+import CategoryNav from '../navigation/CategoryNav'
+import { Category } from '../services/types/Category'
+
+const {width : ScreenWidth, height: ScreenHeight} = Dimensions.get('window')
 
 const CategoryScreen = () => {
+  const [selectedCategory, setSelectedCategory] = useState<number>(1);
+
+  const handleCategorySelect = (categoryId: number) => {
+    setSelectedCategory(categoryId);
+  };
+
+  // Lọc subcategories theo category được chọn
+  const filteredSubCategories = sampleSubCategories.filter(
+    item => item.category?.id === selectedCategory
+  );
+
   return (
-    <View>
-      <Text>CategoryScreen</Text>
+    <View style={styles.container}>
+      <View style={styles.headerContain}>
+        <Text style={styles.headerTitle}>DANH MỤC CÁC MÓN</Text>
+      </View>
+      <View style={styles.mainContent}>
+        <View style={styles.leftNav}>
+          <CategoryNav
+            categories={sampleCategories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={handleCategorySelect}
+          />
+        </View>
+        <View style={styles.right}>
+          <FlatList
+            data={filteredSubCategories} // Thay đổi từ sampleSubCategories sang filteredSubCategories
+            numColumns={3}
+            keyExtractor={(item) => item.id}
+            columnWrapperStyle={styles.columnWrapper}
+            contentContainerStyle={styles.contentContainer}
+            renderItem={({ item }) => (
+              <View style={[
+                styles.itemContainer,
+              ]}>
+                <OneSubCategory item={item} />
+              </View>
+            )}
+          />
+        </View>
+      </View>
     </View>
-  )
-}
+  );
+};
 
 export default CategoryScreen
 
-const styles = StyleSheet.create({})
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  headerContain: {
+    backgroundColor: '#fff',
+    paddingTop: 70,
+    paddingBottom: 20,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#cecece'
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 700,
+    color: '#7A2917',
+  },
+  mainContent: {
+    flexDirection: 'row',
+    flex: 1,
+  },
+  leftNav: {
+    width: ScreenWidth / 4.3,
+  },
+  right: {
+    flex: 1,
+    backgroundColor: "#fffaf5",
+    padding: 10,
+  },
+  columnWrapper: {
+    justifyContent: 'flex-start',
+    marginBottom: 10,
+  },
+  contentContainer: {
+    flexGrow: 1,
+  },
+  itemContainer: {
+    flex: 1,
+    maxWidth: '32%', // Thêm maxWidth thay vì width cố định
+    maxHeight: 115,
+    minHeight: 110,
+  },
+})
+
+// Dữ liệu mẫu - sau này có thể thay bằng dữ liệu từ API
+const sampleCategories: Category[] = [
+  { id: 1, name: 'Bún, Mì, Phở', icon: 'abc'},
+  { id: 2, name: 'Thịt', icon: 'abc' },
+  { id: 3, name: 'Món chay', icon: 'abc' },
+  { id: 4, name: 'Cơm', icon: 'abc' },
+  { id: 5, name: 'Thức uống', icon: 'abc' },
+]
+
+const sampleSubCategories: SubCategoryItem[] = [
+  {
+    id: '1',
+    name: 'Bánh Mì',
+    imageUrl: 'https://cdn.xanhsm.com/2025/01/125f9835-banh-mi-sai-gon-thumb.jpg',
+    description: '111'
+  },
+  {
+    id: '2',
+    name: 'Phở',
+    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxsNsnAt3VYWE4z5Eyej4-mc6Gn2JuFwIOQQ&s',
+    description: '111',
+    category: sampleCategories[0],
+  },
+  {
+    id: '3',
+    name: 'Matcha',
+    imageUrl: 'https://images.prismic.io/nutriinfo/aBHRb_IqRLdaBvL5_hinh-anh-matcha-latte.jpg?auto=format,compress',
+    description: '111',
+    category: sampleCategories[4],
+  },
+  {
+    id: '4',
+    name: 'Cơm',
+    imageUrl: 'https://baolamdong.vn/file/e7837c02845ffd04018473e6df282e92/052023/1.com-tam-viet-nam-hap-dan-du-khach-khi-den-da-lat-2_20230529114050.jpg',
+    description: '111',
+    category: sampleCategories[3],
+  },
+  {
+    id: '5',
+    name: 'Bánh Ngọt',
+    imageUrl: 'https://friendshipcakes.com/wp-content/uploads/2022/03/2-4-1.jpg',
+    description: '111'
+  },
+  {
+    id: '6',
+    name: 'Các món thịt Bò',
+    imageUrl: 'https://nguyenhafood.vn/uploads/files/bo-bit-tet-va-khoai-tay-chien%20%282%29-1.png',
+    description: '111',
+    category: sampleCategories[1],
+  },
+  {
+    id: '7',
+    name: 'Các món Gà Rán',
+    imageUrl: 'https://cokhiviendong.com/wp-content/uploads/2019/01/kinnh-nghi%E1%BB%87m-m%E1%BB%9F-qu%C3%A1n-g%C3%A0-r%C3%A1n-7.jpg',
+    description: '111',
+    category: sampleCategories[1],
+  },
+  {
+    id: '8',
+    name: 'Tokkbokki',
+    imageUrl: 'https://daesang.vn/upload/photos/shares/a1.jpg',
+    description: '111'
+  },
+  {
+    id: '9',
+    name: 'Mì Ý',
+    imageUrl: 'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/2023_10_2_638318510704271571_ca-ch-la-m-mi-y-00.jpg',
+    description: '111',
+    category: sampleCategories[0],
+  },
+  // Thêm các món khác...
+];
