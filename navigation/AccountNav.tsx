@@ -1,12 +1,17 @@
 import ActivitiesTab from '@/app/ActivitiesTab'
 import FavoritesTab from '@/app/FavoritesTab'
 import ProfileTab from '@/app/ProfileTab'
+import { AccountItem } from '@/services/types/AccountItem'
 import { CommentItem } from '@/services/types/CommentItem'
+import { FavoritesRecipe } from '@/services/types/FavoritesRecipe'
 import React, { useState } from 'react'
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+
 
 interface AccountNavProps {
   comments: CommentItem[];
+  favorites: FavoritesRecipe[];
+  account: AccountItem[];
 }
 
 const TABS = [
@@ -15,7 +20,7 @@ const TABS = [
   { id: 'profile', label: 'Thông tin cá nhân' },
 ]
 
-const AccountNav = ({ comments }: AccountNavProps) => {
+const AccountNav = ({ comments, favorites, account }: AccountNavProps) => {
   const [activeTab, setActiveTab] = useState('activities')
 
   const renderContent = () => {
@@ -23,9 +28,9 @@ const AccountNav = ({ comments }: AccountNavProps) => {
       case 'activities':
         return <ActivitiesTab comments={comments} />
       case 'favorites':
-        return <FavoritesTab />
+        return <FavoritesTab favorites={favorites} />
       case 'profile':
-        return <ProfileTab />
+        return <ProfileTab account={account[0]}/>
       default:
         return <ActivitiesTab comments={comments} />
     }
@@ -55,9 +60,9 @@ const AccountNav = ({ comments }: AccountNavProps) => {
       </View>
 
       {/* Content Area */}
-      <ScrollView style={styles.container}>
+      <View style={styles.contentContainer}>
         {renderContent()}
-      </ScrollView>
+      </View>
     </View>
   )
 }
@@ -65,6 +70,9 @@ const AccountNav = ({ comments }: AccountNavProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  contentContainer: {
+    flex: 1, // Make content container take remaining space
   },
   tabContainer: {
     flexDirection: 'row',
@@ -78,6 +86,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     backgroundColor: 'white',
+    zIndex: 1,
   },
   tab: {
     flex: 1,

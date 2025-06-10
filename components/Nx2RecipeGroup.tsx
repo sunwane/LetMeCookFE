@@ -1,19 +1,19 @@
-import { FoodItem } from '@/services/types/FoodItem';
+import { RecipeItem } from '@/services/types/RecipeItem';
 import React from 'react';
 import { Dimensions, FlatList, StyleSheet, Text, View } from 'react-native';
-import SquareFood from './squareFood';
+import SquareRecipe from './OneSquareRecipe';
 
-interface Nx2FoodGroupProps {
+interface N2xRecipeGroupProps {
   title: string;
-  foods: FoodItem[];
+  foods: RecipeItem[];
 }
 
 const { width: screenWidth } = Dimensions.get('window');
 const SPACING = 10;
 
-const Nx2FoodGroup: React.FC<Nx2FoodGroupProps> = ({ title, foods }) => {
-  const renderItem = ({ item }: { item: FoodItem }) => (
-    <SquareFood food={item} />
+const N2xRecipeGroup: React.FC<N2xRecipeGroupProps> = ({ title, foods }) => {
+  const renderItem = ({ item }: { item: RecipeItem }) => (
+    <SquareRecipe food={item} />
   );
 
   return (
@@ -52,4 +52,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Nx2FoodGroup;
+export default N2xRecipeGroup;

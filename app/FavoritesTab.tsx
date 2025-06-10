@@ -1,14 +1,31 @@
-import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import OneRecipe from '@/components/OneRecipe';
+import { FavoritesRecipe } from '@/services/types/FavoritesRecipe';
+import React from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 
-const FavoritesTab = () => {
+interface FavoritesTabProps {
+  favorites: FavoritesRecipe[];
+}
+
+const FavoritesTab = ({ favorites }: FavoritesTabProps) => {
   return (
-    <View>
-      <Text>FavoritesTab</Text>
+    <View style={styles.container}>
+      <FlatList
+        data={favorites}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => <OneRecipe favorite={item} />}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   )
 }
 
-export default FavoritesTab
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+  },
+})
 
-const styles = StyleSheet.create({})
+export default FavoritesTab

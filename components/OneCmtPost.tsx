@@ -30,7 +30,7 @@ const OneCmtPost: React.FC<CommentPost> = ({ item }) => {
                         đã nấu món
                     </Text>
                     <TouchableOpacity>
-                        <Text style={styles.foodTitle}>{item.food.foodName}</Text>
+                        <Text style={styles.foodTitle}>{item.recipe.foodName}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -42,7 +42,7 @@ const OneCmtPost: React.FC<CommentPost> = ({ item }) => {
         </View>
         <View style={styles.mid}>
             <Image
-                source={{uri: item.food.imageUrl}}
+                source={{uri: item.recipe.imageUrl}}
                 style={styles.foodImage}
                 />
         </View>

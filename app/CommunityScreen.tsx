@@ -1,31 +1,27 @@
 import OneCmtPost from '@/components/OneCmtPost'
-import { AccountItem } from '@/services/types/AccountItem'
-import { CommentItem } from '@/services/types/CommentItem'
-import { FoodItem } from '@/services/types/FoodItem'
-import { Dimensions, FlatList, StyleSheet, Text, View } from 'react-native'
+import { sampleComments } from '@/services/types/CommentItem'
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native'
 
 const {width: ScreenWidth} = Dimensions.get('screen')
 
 const CommunityScreen = () => {
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.headerContain}>
         <Text style={styles.headerTitle}>Cùng xem chia sẻ của những "đồng bếp" khác</Text>
       </View>
+      
       <View style={styles.postContainer}>
-        <FlatList
-            data={sampleComments}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => <OneCmtPost item={item} />}
-            showsVerticalScrollIndicator={false} // Ẩn thanh scroll
-            contentContainerStyle={styles.listContent}
-          />
+        {sampleComments.map((item) => (
+          <OneCmtPost key={item.id.toString()} item={item} />
+        ))}
       </View>
-    </View>
+    </ScrollView>
   )
 }
-
-export default CommunityScreen
 
 const styles = StyleSheet.create({
   container: {
@@ -43,76 +39,66 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: 700,
+    fontWeight: '700',
     color: '#FF5D00',
     textAlign: 'center'
   },
   postContainer: {
-    flex: 1, // Thêm flex: 1 để container có thể mở rộng
     marginTop: 10,
-  },
-  listContent: {
   }
 })
 
-//file riêng
-export const sampleAccounts: AccountItem[] = [
-  {
-    id: 1,
-    userName: "BếpTrưởngTậpSự",
-    avatar: "https://randomuser.me/api/portraits/women/17.jpg",
-    sex: "Nữ",
-    age: 25,
-    height: 165,
-    weight: 55,
-    diet: "Eat clean",
-    healthStatus: "Healthy"
-  },
-  {
-    id: 2,
-    userName: "ĐầuBếpNhíNhố",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-    sex: "Nam",
-    age: 30,
-    height: 175,
-    weight: 70,
-    diet: "Balanced",
-    healthStatus: "Good"
-  }
-];
+export default CommunityScreen
 
-const sampleFoods: FoodItem[] = [
-  {
-    id: '1',
-    foodName: 'Bánh Mì Ram Ram',
-    imageUrl: 'https://cdn.xanhsm.com/2025/01/125f9835-banh-mi-sai-gon-thumb.jpg',
-    difficulty: 'Dễ',
-    cookingTime: '1h50m',
-    likes: 100
-  },
-  {
-    id: '2',
-    foodName: 'Phở Bò',
-    imageUrl: 'https://bizweb.dktcdn.net/100/479/802/files/ham-luong-calo-trong-pho-bo-1024x712-jpeg.jpg?v=1722918596207',
-    difficulty: 'Trung bình',
-    cookingTime: '2h30m',
-    likes: 150
-  },
-];
 
-export const sampleComments: CommentItem[] = [
-  {
-    id: 1,
-    content: "Mình đã thử làm món này, rất ngon và dễ làm! Các bạn nên thử nhé 😊",
-    like: "15",
-    account: sampleAccounts[0],
-    food: sampleFoods[0]
-  },
-  {
-    id: 2,
-    content: "Công thức rất chi tiết, làm theo không khó. Cảm ơn đã chia sẻ 👍",
-    like: "8",
-    account: sampleAccounts[1],
-    food: sampleFoods[1]
-  }
-];
+// nếu các bạn muốn header đứng lại và kéo phần post
+// const CommunityScreen = () => {
+//   return (
+//     <ScrollView 
+//       contentContainerStyle={styles.container}
+//       showsVerticalScrollIndicator={false} // Ẩn thanh scroll
+//     >
+//       <View style={styles.headerContain}>
+//         <Text style={styles.headerTitle}>Cùng xem chia sẻ của những "đồng bếp" khác</Text>
+//       </View>
+//       <View style={styles.postContainer}>
+//         <FlatList
+//             data={sampleComments}
+//             keyExtractor={(item) => item.id.toString()}
+//             renderItem={({ item }) => <OneCmtPost item={item} />}
+//             contentContainerStyle={styles.listContent}
+//           />
+//       </View>
+//     </ScrollView>
+//   )
+// }
+
+// export default CommunityScreen
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#FFFAF5',
+//   },
+//   headerContain: {
+//     backgroundColor: '#fff',
+//     paddingTop: 70,
+//     paddingBottom: 20,
+//     alignItems: 'center',
+//     borderBottomWidth: 1,
+//     borderBottomColor: '#cecece',
+//     paddingHorizontal: ScreenWidth / 6,
+//   },
+//   headerTitle: {
+//     fontSize: 22,
+//     fontWeight: 700,
+//     color: '#FF5D00',
+//     textAlign: 'center'
+//   },
+//   postContainer: {
+//     flex: 1, // Thêm flex: 1 để container có thể mở rộng
+//   },
+//   listContent: {
+//     marginTop: 10,
+//   }
+// });

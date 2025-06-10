@@ -1,4 +1,4 @@
-import { FoodItem } from '@/services/types/FoodItem';
+import { RecipeItem } from '@/services/types/RecipeItem';
 import React from 'react';
 import { Dimensions, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -7,7 +7,7 @@ const SPACING = 10;
 const CARD_WIDTH = screenWidth * 0.80; // 80% chiều rộng màn hình
 
 interface HotRecommendedProps {
-  foods: FoodItem[];
+  foods: RecipeItem[];
 }
 
 const HotRecommended: React.FC<HotRecommendedProps> = ({ 
@@ -40,7 +40,13 @@ const HotRecommended: React.FC<HotRecommendedProps> = ({
             />
             <View style={styles.overlayTop}>
               <View style={styles.overlayContent}>
-                <Text style={styles.hotTitle}>{food.foodName}</Text>
+                <Text 
+                  style={styles.hotTitle}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {food.foodName}
+                </Text>
                 <View style={styles.hotContainer}>
                   <Text style={styles.hotText}>HOT</Text>
                   <Image 

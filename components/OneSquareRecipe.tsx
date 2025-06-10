@@ -1,14 +1,14 @@
-import { FoodItem } from '@/services/types/FoodItem';
+import { RecipeItem } from '@/services/types/RecipeItem';
 import React, { useState } from 'react';
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const {width: ScreenWidth} = Dimensions.get('window');
 
-interface SquareFoodProps {
-  food: FoodItem;
+interface SquareRecipeProps {
+  food: RecipeItem;
 }
 
-const SquareFood: React.FC<SquareFoodProps> = ({ food }) => {
+const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   const toggleBookmark = () => {
@@ -67,7 +67,7 @@ const SquareFood: React.FC<SquareFoodProps> = ({ food }) => {
   );
 }
 
-export default SquareFood
+export default SquareRecipe
 
 const styles = StyleSheet.create({
     main: {
