@@ -24,7 +24,7 @@ export default OneSubCategory
 
 const styles = StyleSheet.create({
   imagestyle: {
-    borderRadius: '50%',
+    borderRadius: 40,
     width: 75,
     height: 75,
   },

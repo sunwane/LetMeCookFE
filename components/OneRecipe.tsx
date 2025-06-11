@@ -1,6 +1,8 @@
 import { FavoritesRecipe } from '@/services/types/FavoritesRecipe';
+import { sampleRecipeIngredients } from '@/services/types/RecipeIngredients';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 
 interface OneRecipeProps {
   favorite: FavoritesRecipe;
@@ -12,7 +14,15 @@ const OneRecipe = ({ favorite }: OneRecipeProps) => {
   const toggleBookmark = () => {
     setIsBookmarked(!isBookmarked);
   };
-    
+
+  // Lấy danh sách tên nguyên liệu từ sampleRecipeIngredients
+  const getIngredientsList = () => {
+    const ingredients = sampleRecipeIngredients
+      .filter((item) => item.recipe.id === favorite.food.id)
+      .map((item) => item.ingredient.name);
+    return ingredients.length > 0 ? ingredients.join(', ') : 'Không có nguyên liệu';
+  };
+
   return (
     <View style={styles.container}>
       <Image
@@ -47,7 +57,7 @@ const OneRecipe = ({ favorite }: OneRecipeProps) => {
               ellipsizeMode="tail"
             >
               <Text style={styles.bold}>Nguyên liệu: </Text>
-              {favorite.food.description || 'Không nêu rõ'}
+              {getIngredientsList()}
             </Text>
           </View>
         </View>

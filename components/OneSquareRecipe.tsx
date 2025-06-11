@@ -19,9 +19,9 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
     <View style={styles.main}>
       <Image 
         source={{ uri: food.imageUrl }} 
-        style={styles.foodImage} 
+        style={styles.foodImage} resizeMode='cover'
       />
-      <View style={styles.horizontalContainer}>
+      <View style={[styles.horizontalContainer, styles.titlePlace]}>
         <Text 
           style={styles.foodTitle}
           numberOfLines={1}
@@ -79,6 +79,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#74341C',
         marginBottom: 5,
+        maxWidth: ScreenWidth / 2 - 45,
+    },
+    titlePlace: {
+      maxWidth: '100%',
     },
     mark: {
         height: 22,
@@ -90,7 +94,6 @@ const styles = StyleSheet.create({
         height: ScreenWidth / 3.5,
         borderRadius: 10,
         marginBottom: 3,
-        resizeMode: 'cover',
     },
     icon: {
         width: 12,

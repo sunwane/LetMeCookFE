@@ -76,6 +76,9 @@ const FormInput = ({ label, defaultValue, type = 'text', options = [] }: FormInp
                 onChange={onDateChange}
                 maximumDate={new Date()}
                 minimumDate={new Date(1900, 0, 1)}
+                // Custom theme cho iOS
+                themeVariant="light"
+                accentColor="#FF5D00"
               />
             )}
           </View>
@@ -117,7 +120,7 @@ const FormInput = ({ label, defaultValue, type = 'text', options = [] }: FormInp
             <Picker
               selectedValue={value}
               onValueChange={setValue}
-              style={{ margin: -8 }}
+              style={{ margin: -12 }}
             >
               {options.map((option) => (
                 <Picker.Item key={option} label={option} value={option} />

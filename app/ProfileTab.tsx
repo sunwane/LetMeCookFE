@@ -27,7 +27,10 @@ const ProfileTab = ({ account }: ProfileTabProps) => {
       </View>
       <TouchableOpacity 
         style={styles.edit}
-        onPress={() => router.push('/EditInforScreen')}
+        onPress={() => router.push({
+          pathname: '/EditInforScreen',
+          params: { account: JSON.stringify(account) }
+        })}
       >
         <Text style={styles.buttonName}>Chỉnh sửa thông tin cá nhân</Text>
       </TouchableOpacity>

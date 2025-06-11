@@ -23,12 +23,12 @@ const OneCmtPost: React.FC<CommentPost> = ({ item }) => {
                     style={styles.avatar}
                 />
                 <View>
-                    <Text>
+                    <View style={styles.row}>
                         <TouchableOpacity>
                             <Text style={styles.nameDisplay}>{item.account.userName} </Text> 
                         </TouchableOpacity>
-                        đã nấu món
-                    </Text>
+                        <Text>đã nấu món</Text>
+                    </View>
                     <TouchableOpacity>
                         <Text style={styles.foodTitle}>{item.recipe.foodName}</Text>
                     </TouchableOpacity>
@@ -85,6 +85,11 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         marginBottom: 10,
     },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignContent: 'center',
+    },
     top: {
         paddingHorizontal: 10,
         marginBottom: 10,
@@ -97,7 +102,7 @@ const styles = StyleSheet.create({
     avatar: {
         height: 55,
         width: 55,
-        borderRadius: '50%',
+        borderRadius: 50,
     },
     nameDisplay: {
         color: '#FF5D00',

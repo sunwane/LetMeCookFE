@@ -9,13 +9,19 @@ export default function RootLayout() {
         options={{
           headerShown: true,
           title: 'Chỉnh sửa thông tin',
-          headerStyle: {
-            backgroundColor: '#fff',
-          },
+          headerStyle: { backgroundColor: '#fff' },
           headerTintColor: '#FF5D00',
           headerTitleAlign: 'center',
         }} 
       />
+      <Stack.Screen 
+        name="SearchResults" 
+        options={{
+          headerShown: true,
+          // Header sẽ được xử lý trong SearchResults
+          headerStyle: { backgroundColor: '#fff' },
+        }}
+      />
     </Stack>
   );
-}
+};

@@ -35,7 +35,7 @@ const HotRecommended: React.FC<HotRecommendedProps> = ({
             ]}
           >
             <Image 
-              style={styles.image}
+              style={styles.image} resizeMode='cover'
               source={{uri: food.imageUrl}}
             />
             <View style={styles.overlayTop}>
@@ -97,7 +97,6 @@ const styles = StyleSheet.create({
       width: '100%',
       height: '100%',
       borderRadius: 10,
-      resizeMode: 'cover',
     },
     overlayTop:{
       position: 'absolute',

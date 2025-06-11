@@ -1,6 +1,6 @@
-import { AccountItem } from "@/services/types/AccountItem"
-import { CommentItem } from "@/services/types/CommentItem"
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native"
+import { AccountItem } from "@/services/types/AccountItem";
+import { CommentItem } from "@/services/types/CommentItem";
+import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
 
 const { width: ScreenWidth } = Dimensions.get("screen")
 
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 90,
     height: 90,
-    borderRadius: '50%',
+    borderRadius: 45,
     marginBottom: 5,
   },
   userName: {
