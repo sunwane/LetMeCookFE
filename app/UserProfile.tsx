@@ -1,13 +1,13 @@
-import AccountBanner from '@/components/AccountBanner'
+import AccountBanner from '@/components/AccountBanner';
+import AccountNav from '@/components/ui/navigation/AccountNav';
 import '@/config/globalTextConfig'; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
-import AccountNav from '@/navigation/AccountNav'
-import { sampleAccounts } from '@/services/types/AccountItem'
-import { sampleComments } from '@/services/types/CommentItem'
-import { sampleFavorites } from '@/services/types/FavoritesRecipe'
-import { useLocalSearchParams } from 'expo-router'
-import React from 'react'
+import { sampleAccounts } from '@/services/types/AccountItem';
+import { sampleComments } from '@/services/types/CommentItem';
+import { sampleFavorites } from '@/services/types/FavoritesRecipe';
+import { useLocalSearchParams } from 'expo-router';
+import React from 'react';
 
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native';
 
 const UserProfile = () => {
   const params = useLocalSearchParams();

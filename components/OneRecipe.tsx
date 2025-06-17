@@ -2,7 +2,7 @@ import { FavoritesRecipe } from '@/services/types/FavoritesRecipe';
 import { sampleRecipeIngredients } from '@/services/types/RecipeIngredients';
 import { RecipeItem } from '@/services/types/RecipeItem';
 import React, { useState } from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 
 const {width: screenWidth } = Dimensions.get('window');
 
@@ -54,7 +54,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
             >
               {recipe.foodName}
             </Text>
-            <TouchableOpacity onPress={toggleBookmark}>
+            {/* <TouchableOpacity onPress={toggleBookmark}>
               <Image
                 source={
                   isBookmarked 
@@ -63,7 +63,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
                 }
                 style={styles.mark}
               />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           <View style={styles.desView}>
             <Text 
@@ -132,30 +132,30 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     nextTo: {
-        marginRight: 7,
+        marginRight: 5,
     },
     recipeImage: {
         width: 140,
-        height: 100,
+        height: 90,
         borderRadius: 10,
     },
     mark: {
-        width: 18,
-        height: 24,
+        width: 14,
+        height: 20,
         tintColor: '#7A2917'
     },
     bigTitle: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: 'bold',
         color: '#7A2917',
-        maxWidth: screenWidth - 198, // Adjusted to fit the image and bookmark icon
+        maxWidth: screenWidth - 150, // Adjusted to fit the image and bookmark icon
         marginRight: 5,
     },
     desView: {
-        marginTop: 5,
+        marginTop: 3,
     },
     des: {
-        fontSize: 12,
+        fontSize: 11.5,
         color: 'rgba(0,0,0,0.7)',
         textAlign: 'justify',
     },
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     smallText: {
-        fontSize: 13,
+        fontSize: 12,
         color: 'rgba(0,0,0,0.7)',
         fontWeight: '500',
         marginLeft: 1,

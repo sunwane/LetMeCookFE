@@ -1,13 +1,13 @@
-import AccountBanner from '@/components/AccountBanner'
-import LogoutModal from '@/components/LogoutModal'
+import AccountBanner from '@/components/AccountBanner';
+import LogoutModal from '@/components/LogoutModal';
+import AccountNav from '@/components/ui/navigation/AccountNav';
 import '@/config/globalTextConfig'; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
-import AccountNav from '@/navigation/AccountNav'
-import { sampleAccounts } from '@/services/types/AccountItem'
-import { sampleComments } from '@/services/types/CommentItem'
-import { sampleFavorites } from '@/services/types/FavoritesRecipe'
-import { Ionicons } from '@expo/vector-icons'
-import React, { useState } from 'react'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { sampleAccounts } from '@/services/types/AccountItem';
+import { sampleComments } from '@/services/types/CommentItem';
+import { sampleFavorites } from '@/services/types/FavoritesRecipe';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const ProfileScreen = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);

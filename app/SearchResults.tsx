@@ -50,10 +50,10 @@ const SearchResults = () => {
             style={[styles.circle, styles.orange]}
             onPress={() => setShowFilter(true)}
           >
-            <Ionicons name='add' size={20} color={'#FFFFFF'}/>
+            <Ionicons name='add' size={15} color={'#FFFFFF'}/>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.circle, styles.red]}>
-            <Ionicons name='close' size={20} color={'#FFFFFF'}/>
+            <Ionicons name='close' size={15} color={'#FFFFFF'}/>
           </TouchableOpacity>
         </View>
       </View>
@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
   circle: {
     borderRadius: 15,
     padding: 4,
-    width: 30, // Đặt kích thước cố định
-    height: 30,
+    width: 24, // Đặt kích thước cố định
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: 5,
     paddingTop: 0,
-    marginTop: -55,
+    marginTop: -15,
     marginVertical: 0,
   },
 });

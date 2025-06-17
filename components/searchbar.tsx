@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     marginHorizontal: 10,
-    marginTop: 60,
+    marginTop: 20,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9f9f9',
@@ -76,16 +76,16 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   searchIcon: {
-    width: 30,
-    height: 30,
+    width: 24,
+    height: 24,
     marginLeft: 15
   },
   searchInput: {
     flex: 1,
-    height: 50,
+    height: 40,
     paddingLeft: 10,
     color: '#914023',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '400',
     outlineWidth: 0, 
   }

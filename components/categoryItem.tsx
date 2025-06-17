@@ -43,7 +43,7 @@ const CategoryItem = ({ category, isSelected, onSelect }: CategoryItemProps) => 
 const styles = StyleSheet.create({
   categoryItem: {
     paddingVertical: 15,
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
   },
   contentContainer: {
     alignItems: 'center',
@@ -51,6 +51,8 @@ const styles = StyleSheet.create({
   icon: {
     tintColor: '#333',
     marginBottom: 3,
+    width: 20,
+    height: 20,
   },
   selectedIcon: {
     tintColor: '#fff',
@@ -59,7 +61,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF5D00',
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#333',
     textAlign: 'center',
   },

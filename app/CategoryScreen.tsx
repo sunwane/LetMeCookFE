@@ -2,7 +2,7 @@ import OneSubCategory from '@/components/oneSubCategory'
 import { sampleSubCategories } from '@/services/types/SubCategoryItem'
 import { useState } from 'react'
 import { Dimensions, FlatList, StyleSheet, Text, View } from 'react-native'
-import CategoryNav from '../navigation/CategoryNav'
+import CategoryNav from '../components/ui/navigation/CategoryNav'
 import { sampleCategories } from '../services/types/Category'
 
 const {width : ScreenWidth, height: ScreenHeight} = Dimensions.get('window')
@@ -61,8 +61,8 @@ const styles = StyleSheet.create({
   },
   headerContain: {
     backgroundColor: '#fff',
-    paddingTop: 70,
-    paddingBottom: 20,
+    paddingTop: 40,
+    paddingBottom: 15,
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#cecece'

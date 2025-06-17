@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
-import CategoryItem from '../components/categoryItem';
-import { Category } from '../services/types/Category';
+import { Category } from '../../../services/types/Category';
+import CategoryItem from '../../categoryItem';
 
 interface CategoryNavProps {
   categories: Category[];

@@ -79,6 +79,7 @@ export default function RegisterScreen({}: RegisterScreenProps) {
       email,
       verificationCode,
     });
+    router.push("/WelcomeNameScreen");
   };
 
   const navigateToLogin = (): void => {

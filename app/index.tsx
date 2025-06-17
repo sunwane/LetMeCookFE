@@ -1,15 +1,48 @@
-import '@/config/globalTextConfig'; // Import để apply cấu hình toàn cục
-import TabNavigator from '@/navigation/TabNavigator';
-import React from 'react';
-import { SafeAreaView } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import TabNavigator from '@/components/ui/navigation/TabNavigator';
+import '@/config/globalTextConfig';
+import * as NavigationBar from 'expo-navigation-bar';
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  Dimensions,
+  Keyboard,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-export default function LoginScreen() {
+// Import components
+import LoginForm from "../components/auth/LoginForm";
+import LoginHeader from "../components/auth/LoginHeader";
+import SocialLogin from "../components/auth/SocialLogin";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+
+const { height } = Dimensions.get("window");
+
+export default function Index() {
+  const params = useLocalSearchParams();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
+    // Kiểm tra nếu có parameter logged=true
+    if (params.logged === 'true') {
+      setIsLoggedIn(true);
+    }
+
+    // Ẩn navigation bar khi mở app (chỉ cho Android)
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync('hidden');
+      // Hoặc dùng immersive mode
+      // NavigationBar.setBehaviorAsync('inset-swipe');
+    }
+
     const keyboardDidShowListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (event) => {
@@ -28,7 +61,7 @@ export default function LoginScreen() {
       keyboardDidHideListener?.remove();
       keyboardDidShowListener?.remove();
     };
-  }, []);
+  }, [params]);
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -39,8 +72,8 @@ export default function LoginScreen() {
     console.log("Đăng nhập với:", { email, password });
     dismissKeyboard();
 
-    // Điều hướng đến màn hình chọn giới tính sau khi đăng nhập thành công
-    router.push("/WelcomeNameScreen");
+    // Đặt trạng thái đã đăng nhập
+    setIsLoggedIn(true);
   };
 
   const navigateToRegister = () => {
@@ -51,14 +84,63 @@ export default function LoginScreen() {
     router.push("/ForgotPasswordScreen");
   };
 
+  // Nếu đã đăng nhập, hiển thị TabNavigator
+  if (isLoggedIn) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={{ flex: 1 }}>
+          <TabNavigator />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  // Nếu chưa đăng nhập, hiển thị màn hình Login
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1 }}>
-        <TabNavigator />
-      </SafeAreaView>
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        <View style={styles.container}>
+          <StatusBar
+            barStyle="dark-content"
+            backgroundColor="#FFF8F0"
+            translucent={false}
+          />
+
+          <BackgroundDecorations />
+
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContainer,
+              keyboardHeight > 0 && { paddingBottom: keyboardHeight + 20 },
+            ]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            <LoginHeader />
+
+            <LoginForm
+              email={email}
+              password={password}
+              setEmail={setEmail}
+              setPassword={setPassword}
+              handleLogin={handleLogin}
+              navigateToRegister={navigateToRegister}
+              navigateToForgotPassword={navigateToForgotPassword}
+            />
+
+            <SocialLogin />
+          </ScrollView>
+        </View>
+      </TouchableWithoutFeedback>
     </SafeAreaProvider>
   );
 }
+
+// Thêm cấu hình để ẩn header
+export const options = {
+  headerShown: false,
+};
 
 const styles = StyleSheet.create({
   container: {

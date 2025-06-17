@@ -1,6 +1,6 @@
 import { RecipeItem } from '@/services/types/RecipeItem';
 import React, { useState } from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 
 const {width: ScreenWidth} = Dimensions.get('window');
 
@@ -29,7 +29,7 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
         >
           {food.foodName}
         </Text>
-        <TouchableOpacity onPress={toggleBookmark}>
+        {/* <TouchableOpacity onPress={toggleBookmark}>
             <Image 
               source={
                 isBookmarked 
@@ -39,7 +39,7 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
               style={[
                 styles.mark]} 
             />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
       <View style={styles.horizontalContainer}>
         <View style={styles.horizontalContainer}>
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#74341C',
         marginBottom: 5,
-        maxWidth: ScreenWidth / 2 - 45,
+        maxWidth: ScreenWidth / 2 - 0, // Adjusted to fit the image and bookmark icon -44
     },
     titlePlace: {
       maxWidth: '100%',
@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
         marginBottom: 3,
     },
     icon: {
-        width: 12,
-        height: 12,
+        width: 10,
+        height: 10,
         tintColor: 'rgba(0,0,0,0.7)',
     },
     horizontalContainer: {
@@ -109,10 +109,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     nextTo: {
-        marginRight: 5,
+        marginRight: 3,
     },
     smallText: {
-        fontSize: 13,
+        fontSize: 11,
         color: 'rgba(0,0,0,0.7)',
         fontWeight: '500',
         marginLeft: 1,
