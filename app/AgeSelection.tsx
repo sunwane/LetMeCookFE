@@ -1,0 +1,124 @@
+// AgeSelection.tsx - Refactored version
+import React, { useState } from "react";
+import { StyleSheet, Text, View, Image } from "react-native";
+import { router } from "expo-router";
+
+// Import các components đã tách
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+import ProgressBar from "../components/ui/ProgressBar";
+import AppHeader from "../components/ui/AppHeader";
+import AgePicker from "../components/ui/AgePicker";
+import ContinueButton from "../components/ui/ContinueButton";
+
+interface AgeSelectionProps {
+  onAgeSelect?: (age: number) => void;
+  onContinue?: () => void;
+}
+
+export default function AgeSelection({
+  onAgeSelect,
+  onContinue,
+}: AgeSelectionProps) {
+  const [selectedAge, setSelectedAge] = useState<number>(25);
+
+  const handleAgeChange = (age: number) => {
+    setSelectedAge(age);
+    if (onAgeSelect) {
+      onAgeSelect(age);
+    }
+  };
+
+  const handleContinue = () => {
+    if (selectedAge > 0) {
+      if (onContinue) {
+        onContinue();
+      }
+      router.push("/WeightSelection");
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Background Decorations */}
+      <BackgroundDecorations />
+
+      {/* Progress Bar */}
+      <ProgressBar progress={50} />
+
+      <View style={styles.content}>
+        {/* Header Section */}
+        <AppHeader />
+
+        {/* Age Icon */}
+        <View style={styles.ageIconContainer}>
+          <Image
+            source={require("../assets/images/age-icon.png")}
+            style={styles.ageIcon}
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Question */}
+        <Text style={styles.question}>Bạn bao nhiêu tuổi?</Text>
+
+        {/* Age Picker */}
+        <AgePicker selectedAge={selectedAge} onAgeChange={handleAgeChange} />
+
+        {/* Description Text */}
+        <Text style={styles.description}>
+          Thông tin độ tuổi giúp chúng tôi tính toán chính xác nhu cầu dinh
+          dưỡng theo từng giai đoạn phát triển, đảm bảo đề xuất các món ăn phù
+          hợp với cơ thể bạn.
+        </Text>
+
+        {/* Continue Button */}
+        <ContinueButton onPress={handleContinue} />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFF8F0",
+  },
+
+  content: {
+    flex: 1,
+    paddingHorizontal: 30,
+    alignItems: "center",
+    paddingTop: 30,
+  },
+
+  ageIconContainer: {
+    marginBottom: 15,
+  },
+
+  ageIcon: {
+    width: 40,
+    height: 40,
+    tintColor: "#666",
+    opacity: 0.7,
+  },
+
+  question: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: "#2C2C2C",
+    textAlign: "center",
+    marginBottom: 20,
+    letterSpacing: 0.3,
+  },
+
+  description: {
+    fontSize: 13,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 25,
+    paddingHorizontal: 15,
+    opacity: 0.8,
+    maxWidth: "95%",
+  },
+});
