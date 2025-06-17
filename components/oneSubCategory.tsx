@@ -25,14 +25,14 @@ export default OneSubCategory
 const styles = StyleSheet.create({
   imagestyle: {
     borderRadius: 40,
-    width: 75,
-    height: 75,
+    width: 60,
+    height: 60,
   },
   textstyle: {
     fontSize: 14,
     fontWeight: '600',
-    marginTop: 3,
-    width: 75,
+    marginTop: 5,
+    width: 65,
     textAlign: 'center',
     color: '#74341C',
   },

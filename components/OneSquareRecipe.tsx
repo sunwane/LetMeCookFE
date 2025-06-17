@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     foodTitle: {
-        fontSize: 17.5,
+        fontSize: 15,
         fontWeight: 'bold',
         color: '#74341C',
         marginBottom: 5,
@@ -83,10 +83,13 @@ const styles = StyleSheet.create({
     },
     titlePlace: {
       maxWidth: '100%',
+      alignItems: 'center',
     },
     mark: {
         height: 22,
         width: 15,
+        marginTop: -2,
+
         tintColor: 'rgb(116,52,28)',
     },
     foodImage:{

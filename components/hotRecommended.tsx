@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
       flexGrow: 1,
     },
     imageContainer: {
-      height: 180,
+      height: 170,
       position: 'relative',
       width: CARD_WIDTH,
       // width được set động qua style inline

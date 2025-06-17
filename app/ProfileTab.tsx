@@ -3,7 +3,7 @@ import SectionTitle from '@/components/SectionTitle'
 import { AccountItem } from '@/services/types/AccountItem'
 import { router } from 'expo-router'
 import React from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 interface ProfileTabProps {
   account: AccountItem;
@@ -11,7 +11,7 @@ interface ProfileTabProps {
 
 const ProfileTab = ({ account }: ProfileTabProps) => {
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <SectionTitle title='Thông tin cơ bản'/>
       <View style={styles.list}>
         <InfoItem label='Giới tính' value={account.sex} />
@@ -34,7 +34,7 @@ const ProfileTab = ({ account }: ProfileTabProps) => {
       >
         <Text style={styles.buttonName}>Chỉnh sửa thông tin cá nhân</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   )
 }
 
@@ -42,7 +42,7 @@ export default ProfileTab
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 15,
+    paddingBottom: 15,
     paddingHorizontal: 20,
     backgroundColor: '#fff',
     flex: 1,
@@ -56,6 +56,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     marginTop: 15,
+    marginBottom: 20, // Thêm margin bottom để tạo khoảng cách cuối
   },
   buttonName: {
     color: '#fff',

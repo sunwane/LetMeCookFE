@@ -1,6 +1,6 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface FormInputProps {
@@ -116,16 +116,27 @@ const FormInput = ({ label, defaultValue, type = 'text', options = [] }: FormInp
 
       case 'select':
         return (
-          <View style={styles.input}>
+          <View style={styles.selectContainer}>
             <Picker
               selectedValue={value}
               onValueChange={setValue}
-              style={{ margin: -12 }}
+              style={Platform.OS === 'web' ? styles.webPicker : styles.mobilePicker}
+              itemStyle={styles.pickerItem} // Thêm itemStyle cho iOS
             >
               {options.map((option) => (
-                <Picker.Item key={option} label={option} value={option} />
+                <Picker.Item 
+                  key={option} 
+                  label={option} 
+                  value={option}
+                  style={styles.pickerItemText} // Style cho từng item
+                />
               ))}
             </Picker>
+            {Platform.OS === 'web' && (
+              <View style={styles.dropdownIconContainer}>
+                <Text style={styles.dropdownIcon}>▼</Text>
+              </View>
+            )}
           </View>
         );
 
@@ -202,7 +213,7 @@ const styles = StyleSheet.create({
   },
   numberInput: {
     flex: 1,
-    paddingRight: 40, // Space for unit
+    paddingRight: 40,
   },
   unit: {
     position: 'absolute',
@@ -225,6 +236,64 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '500',
     color: '#333',
+  },
+  selectContainer: {
+    borderColor: '#cecece',
+    borderWidth: 2,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    position: 'relative',
+    marginHorizontal: -2,
+  },
+  webPicker: {
+    borderWidth: 0,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingRight: 50, // Thêm padding để chừa chỗ cho icon
+    fontSize: 17,
+    fontWeight: '500',
+    backgroundColor: 'transparent',
+    color: '#333',
+    outline: 'none',
+    cursor: 'pointer',
+    // kệ lỗi này, không ảnh hưởng đến UX
+    // Xóa style mặc định của trình duyệt
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    MozAppearance: 'none',
+    // Cho Firefox
+    backgroundImage: 'none',
+    // Cho IE/Edge
+    '::-ms-expand': {
+      display: 'none',
+    },
+  },
+  mobilePicker: {
+    margin: -2,
+    color: '#333',
+  },
+  pickerItem: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  pickerItemText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333',
+  },
+  dropdownIconContainer: {
+    position: 'absolute',
+    right: 18,
+    top: '50%',
+    transform: [{ translateY: -6 }], // Điều chỉnh để căn giữa
+    pointerEvents: 'none',
+  },
+  dropdownIcon: {
+    fontSize: 12,
+    color: '#666',
   },
 })
 

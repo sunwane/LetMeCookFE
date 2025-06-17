@@ -1,6 +1,8 @@
 import OneCmtPost from '@/components/OneCmtPost';
+import '@/config/globalTextConfig'; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
 import { CommentItem } from '@/services/types/CommentItem';
 import React from 'react';
+
 import { FlatList, StyleSheet, View } from 'react-native';
 
 interface ActivitiesTabProps {

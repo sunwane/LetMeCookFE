@@ -1,43 +1,58 @@
 import { FavoritesRecipe } from '@/services/types/FavoritesRecipe';
 import { sampleRecipeIngredients } from '@/services/types/RecipeIngredients';
+import { RecipeItem } from '@/services/types/RecipeItem';
 import React, { useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+const {width: screenWidth } = Dimensions.get('window');
 
 interface OneRecipeProps {
-  favorite: FavoritesRecipe;
+  item: RecipeItem | FavoritesRecipe;
+  isFavorite?: boolean;
 }
 
-const OneRecipe = ({ favorite }: OneRecipeProps) => {
-  const [isBookmarked, setIsBookmarked] = useState(true); // Set default to true since it's a favorite
+const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
+  const [isBookmarked, setIsBookmarked] = useState(isFavorite);
   
   const toggleBookmark = () => {
     setIsBookmarked(!isBookmarked);
   };
 
+  // Helper function để lấy RecipeItem từ input
+  const getRecipeData = (): RecipeItem => {
+    if ('food' in item) {
+      // Nếu là FavoritesRecipe
+      return item.food;
+    }
+    // Nếu là RecipeItem
+    return item;
+  };
+
+  const recipe = getRecipeData();
+
   // Lấy danh sách tên nguyên liệu từ sampleRecipeIngredients
   const getIngredientsList = () => {
     const ingredients = sampleRecipeIngredients
-      .filter((item) => item.recipe.id === favorite.food.id)
-      .map((item) => item.ingredient.name);
+      .filter((ing) => ing.recipe.id === recipe.id)
+      .map((ing) => ing.ingredient.name);
     return ingredients.length > 0 ? ingredients.join(', ') : 'Không có nguyên liệu';
   };
 
   return (
     <View style={styles.container}>
       <Image
-        source={{ uri: favorite.food.imageUrl }}
+        source={{ uri: recipe.imageUrl }}
         style={styles.recipeImage}
       />
       <View style={styles.infor}>
         <View>
-          <View style={styles.row}>
+          <View style={[styles.row, styles.titlePlace]}>
             <Text 
               style={styles.bigTitle}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {favorite.food.foodName}
+              {recipe.foodName}
             </Text>
             <TouchableOpacity onPress={toggleBookmark}>
               <Image
@@ -68,14 +83,14 @@ const OneRecipe = ({ favorite }: OneRecipeProps) => {
                 source={require('@/assets/images/icons/stars.png')} 
                 style={styles.icon}
               />
-              <Text style={styles.smallText}>{favorite.food.difficulty}</Text>
+              <Text style={styles.smallText}>{recipe.difficulty}</Text>
             </View>
             <View style={styles.row}>
               <Image 
                 source={require('@/assets/images/icons/Clock.png')} 
                 style={styles.icon}
               />
-              <Text style={styles.smallText}>{favorite.food.cookingTime}</Text>
+              <Text style={styles.smallText}>{recipe.cookingTime}</Text>
             </View>
           </View>
           <View style={styles.row}>
@@ -83,28 +98,33 @@ const OneRecipe = ({ favorite }: OneRecipeProps) => {
               source={require('@/assets/images/icons/Like_Active.png')} 
               style={styles.icon}
             />
-            <Text style={styles.smallText}>{favorite.food.likes}</Text>
+            <Text style={styles.smallText}>{recipe.likes}</Text>
           </View>
         </View>
       </View>
     </View>
-  )
-}
+  );
+};
 
-export default OneRecipe
+export default OneRecipe;
 
 const styles = StyleSheet.create({
     container: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
+        paddingBottom: 20,
+        paddingHorizontal: 5,
         flexDirection: 'row',
         gap: 8,
         flexGrow: 1,
+        width: screenWidth - 15,
     },
     infor:{
         flex: 1,
         flexGrow: 1,
         justifyContent: 'space-between',
+    },
+    titlePlace: {
+        maxWidth: '100%',
+        alignItems: 'center',
     },
     row: {
         flexDirection: 'row',
@@ -125,9 +145,11 @@ const styles = StyleSheet.create({
         tintColor: '#7A2917'
     },
     bigTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        color: '#7A2917'
+        color: '#7A2917',
+        maxWidth: screenWidth - 198, // Adjusted to fit the image and bookmark icon
+        marginRight: 5,
     },
     desView: {
         marginTop: 5,

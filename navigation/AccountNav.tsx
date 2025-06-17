@@ -1,11 +1,12 @@
-import ActivitiesTab from '@/app/ActivitiesTab'
-import FavoritesTab from '@/app/FavoritesTab'
-import ProfileTab from '@/app/ProfileTab'
-import { AccountItem } from '@/services/types/AccountItem'
-import { CommentItem } from '@/services/types/CommentItem'
-import { FavoritesRecipe } from '@/services/types/FavoritesRecipe'
-import React, { useState } from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import ActivitiesTab from '@/app/ActivitiesTab';
+import FavoritesTab from '@/app/FavoritesTab';
+import ProfileTab from '@/app/ProfileTab';
+import '@/config/globalTextConfig'; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
+import { AccountItem } from '@/services/types/AccountItem';
+import { CommentItem } from '@/services/types/CommentItem';
+import { FavoritesRecipe } from '@/services/types/FavoritesRecipe';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
 interface AccountNavProps {
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#7A2917',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666666',
   },
   activeTabText: {

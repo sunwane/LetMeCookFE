@@ -13,8 +13,9 @@ const FavoritesTab = ({ favorites }: FavoritesTabProps) => {
       <FlatList
         data={favorites}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => <OneRecipe favorite={item} />}
+        renderItem={({ item }) => <OneRecipe item={item} isFavorite={true} />}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
       />
     </View>
   )
@@ -26,6 +27,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingVertical: 10,
   },
+  listContent: {
+    padding: 10,
+  }
 })
 
 export default FavoritesTab
