@@ -4,11 +4,11 @@ import { StyleSheet, Text, View, Image } from "react-native";
 import { router } from "expo-router";
 
 // Import components
-import BackgroundDecorations from "./components/ui/BackgroundDecorations";
-import ProgressBar from "./components/ui/ProgressBar";
-import AppHeader from "./components/ui/AppHeader";
-import WeightPicker from "./components/ui/WeightPicker";
-import ContinueButton from "./components/ui/ContinueButton";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+import ProgressBar from "../components/ui/ProgressBar";
+import AppHeader from "../components/ui/AppHeader";
+import WeightPicker from "../components/ui/WeightPicker";
+import ContinueButton from "../components/ui/ContinueButton";
 
 interface WeightSelectionProps {
   onWeightSelect?: (weight: number) => void;

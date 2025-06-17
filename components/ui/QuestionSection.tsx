@@ -8,7 +8,7 @@ interface QuestionSectionProps {
 }
 
 const QuestionSection = ({
-  iconSource = require("../../../assets/images/height.png"),
+  iconSource = require("../../assets/images/height.png"),
   question,
   description,
 }: QuestionSectionProps) => {

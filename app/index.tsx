@@ -12,10 +12,10 @@ import {
 } from "react-native";
 
 // Import components
-import LoginForm from "./components/auth/LoginForm";
-import LoginHeader from "./components/auth/LoginHeader";
-import SocialLogin from "./components/auth/SocialLogin";
-import BackgroundDecorations from "./components/ui/BackgroundDecorations";
+import LoginForm from "../components/auth/LoginForm";
+import LoginHeader from "../components/auth/LoginHeader";
+import SocialLogin from "../components/auth/SocialLogin";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
 
 const { height } = Dimensions.get("window");
 

@@ -18,11 +18,11 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 
 // Import components
-import BackgroundDecorations from "./components/ui/BackgroundDecorations";
-import CustomButton from "./components/ui/CustomButton";
-import CustomInput from "./components/ui/CustomInput";
-import RegisterHeader from "./components/ui/RegisterHeader";
-import ProgressBar from "./components/ui/ProgressBar";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+import CustomButton from "../components/ui/CustomButton";
+import CustomInput from "../components/ui/CustomInput";
+import RegisterHeader from "../components/ui/RegisterHeader";
+import ProgressBar from "../components/ui/ProgressBar";
 
 const { height } = Dimensions.get("window");
 

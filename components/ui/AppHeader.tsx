@@ -7,7 +7,7 @@ export default function AppHeader() {
       <Text style={styles.appName}>LetMeCook</Text>
       <View style={styles.logoContainer}>
         <Image
-          source={require("../../../assets/images/LogoNoName.png")}
+          source={require("../../assets/images/LogoNoName.png")}
           style={styles.logoImage}
           resizeMode="contain"
         />

@@ -19,7 +19,7 @@ export default function ContinueButton({
       disabled={disabled}
     >
       <Image
-        source={require("../../../assets/images/kindpng_7677531.png")}
+        source={require("../../assets/images/kindpng_7677531.png")}
         style={[styles.continueIcon, disabled && styles.disabledIcon]}
         resizeMode="contain"
       />

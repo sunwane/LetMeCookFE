@@ -16,9 +16,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 
 // Import components
-import ProgressBar from "./components/ui/ProgressBar";
-import ContinueButton from "./components/ui/ContinueButton";
-import DietPicker from "./components/ui/DietPicker";
+import ProgressBar from "../components/ui/ProgressBar";
+import ContinueButton from "../components/ui/ContinueButton";
+import DietPicker from "../components/ui/DietPicker";
 
 const { width } = Dimensions.get("window");
 

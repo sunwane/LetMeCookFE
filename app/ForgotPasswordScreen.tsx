@@ -15,11 +15,11 @@ import {
 } from "react-native";
 
 // Import components
-import BackgroundDecorations from "./components/ui/BackgroundDecorations";
-import CustomButton from "./components/ui/CustomButton";
-import CustomInput from "./components/ui/CustomInput";
-import RegisterHeader from "./components/ui/RegisterHeader";
-import VerificationInput from "./components/ui/VerificationInput";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+import CustomButton from "../components/ui/CustomButton";
+import CustomInput from "../components/ui/CustomInput";
+import RegisterHeader from "../components/ui/RegisterHeader";
+import VerificationInput from "../components/ui/VerificationInput";
 
 const { height } = Dimensions.get("window");
 

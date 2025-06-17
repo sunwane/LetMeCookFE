@@ -4,11 +4,11 @@ import { StyleSheet, Text, View, Image } from "react-native";
 import { router } from "expo-router";
 
 // Import các components đã tách
-import BackgroundDecorations from "./components/ui/BackgroundDecorations";
-import ProgressBar from "./components/ui/ProgressBar";
-import AppHeader from "./components/ui/AppHeader";
-import AgePicker from "./components/ui/AgePicker";
-import ContinueButton from "./components/ui/ContinueButton";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+import ProgressBar from "../components/ui/ProgressBar";
+import AppHeader from "../components/ui/AppHeader";
+import AgePicker from "../components/ui/AgePicker";
+import ContinueButton from "../components/ui/ContinueButton";
 
 interface AgeSelectionProps {
   onAgeSelect?: (age: number) => void;

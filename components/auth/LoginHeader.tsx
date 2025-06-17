@@ -6,7 +6,7 @@ export default function LoginHeader() {
     <View style={styles.header}>
       <View style={styles.logoContainer}>
         <Image
-          source={require("../../../assets/images/LogoNoName.png")}
+          source={require("../../assets/images/LogoNoName.png")}
           style={styles.logo}
         />
       </View>

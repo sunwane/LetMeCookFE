@@ -2,11 +2,11 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
-import AppHeader from "./components/ui/AppHeader";
-import BackgroundDecorations from "./components/ui/BackgroundDecorations";
-import ContinueButton from "./components/ui/ContinueButton";
-import GenderOption from "./components/ui/GenderOption";
-import ProgressBar from "./components/ui/ProgressBar";
+import AppHeader from "../components/ui/AppHeader";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+import ContinueButton from "../components/ui/ContinueButton";
+import GenderOption from "../components/ui/GenderOption";
+import ProgressBar from "../components/ui/ProgressBar";
 
 interface GenderSelectionProps {
   onGenderSelect?: (gender: string) => void;

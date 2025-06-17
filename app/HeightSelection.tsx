@@ -1,12 +1,12 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, View, Text } from "react-native";
-import AppHeader from "./components/ui/AppHeader";
-import BackgroundDecorations from "./components/ui/BackgroundDecorations";
-import ContinueButton from "./components/ui/ContinueButton";
-import HeightPicker from "./components/ui/HeightPicker";
-import ProgressBar from "./components/ui/ProgressBar";
-import QuestionSection from "./components/ui/QuestionSection";
+import AppHeader from "../components/ui/AppHeader";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+import ContinueButton from "../components/ui/ContinueButton";
+import HeightPicker from "../components/ui/HeightPicker";
+import ProgressBar from "../components/ui/ProgressBar";
+import QuestionSection from "../components/ui/QuestionSection";
 
 interface HeightSelectionProps {
   onHeightSelect?: (height: number) => void;
