@@ -1,14 +1,24 @@
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react'; // Thêm useEffect
+import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, TextInput, View } from 'react-native';
 
 interface SearchBarProps {
   defaultValue?: string;
   containerStyle?: any;
   onSearch?: (query: string) => void;
+  searchMode?: 'FindRecipe' | 'FindCategory'; // Thêm prop để xác định chế độ
+  onFilterChange?: (query: string) => void; // Callback cho filter trong FilterDialog
+  placeholder?: string; // Custom placeholder
 }
 
-const SearchBar = ({ defaultValue = '', containerStyle, onSearch }: SearchBarProps) => {
+const SearchBar = ({ 
+  defaultValue = '', 
+  containerStyle, 
+  onSearch, 
+  searchMode = 'FindRecipe',
+  onFilterChange,
+  placeholder
+}: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState(defaultValue);
 
   // Đồng bộ searchQuery với defaultValue khi defaultValue thay đổi
@@ -16,11 +26,21 @@ const SearchBar = ({ defaultValue = '', containerStyle, onSearch }: SearchBarPro
     setSearchQuery(defaultValue);
   }, [defaultValue]);
 
+  const handleTextChange = (text: string) => {
+    setSearchQuery(text);
+    
+    // Nếu là chế độ FindCategory và có callback, gọi ngay khi text thay đổi
+    if (searchMode === 'FindCategory' && onFilterChange) {
+      onFilterChange(text);
+    }
+  };
+
   const handleSearch = () => {
     if (searchQuery.trim()) {
       if (onSearch) {
         onSearch(searchQuery);
-      } else {
+      } else if (searchMode === 'FindRecipe') {
+        // Chế độ tìm kiếm món ăn - chuyển sang SearchResults
         router.push({
           pathname: '/SearchResults',
           params: { query: searchQuery }
@@ -29,18 +49,23 @@ const SearchBar = ({ defaultValue = '', containerStyle, onSearch }: SearchBarPro
     }
   };
 
+  const getPlaceholder = () => {
+    if (placeholder) return placeholder;
+    return searchMode === 'FindRecipe' ? 'Bạn muốn nấu gì?' : 'Tìm kiếm thể loại...';
+  };
+
   return (
     <View style={[styles.header, containerStyle]}>
       <View style={styles.headerContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Bạn muốn nấu gì?"
+          placeholder={getPlaceholder()}
           placeholderTextColor="rgba(145, 64, 35, 0.5)"
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={handleTextChange}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
-          autoFocus={true}
+          autoFocus={searchMode === 'FindCategory'} // Auto focus cho search trong filter
         />
         <Image 
           source={require('@/assets/images/icons/icon_search.png')}

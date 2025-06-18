@@ -1,6 +1,7 @@
 import { RecipeItem } from '@/services/types/RecipeItem';
+import { router } from 'expo-router';
 import React from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 const SPACING = 10;
@@ -13,6 +14,16 @@ interface HotRecommendedProps {
 const HotRecommended: React.FC<HotRecommendedProps> = ({ 
   foods,
 }) => {
+  // Hàm navigate đến RecipeScreen
+  const handleRecipePress = (food: RecipeItem) => {
+    router.push({
+      pathname: '/RecipeScreen',
+      params: {
+        recipeData: JSON.stringify(food)
+      }
+    });
+  };
+
   return (
     <View>
       <ScrollView
@@ -27,12 +38,14 @@ const HotRecommended: React.FC<HotRecommendedProps> = ({
         ]}
       >
         {foods.map((food) => (
-          <View 
-            key={food.id} 
+          <TouchableOpacity
+            key={food.id}
             style={[
               styles.imageContainer,
               { marginHorizontal: SPACING / 2 }
             ]}
+            onPress={() => handleRecipePress(food)}
+            activeOpacity={0.8}
           >
             <Image 
               style={styles.image} resizeMode='cover'
@@ -76,7 +89,7 @@ const HotRecommended: React.FC<HotRecommendedProps> = ({
                 <Text style={styles.smallText}>{food.likes}</Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>

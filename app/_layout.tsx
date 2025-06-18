@@ -25,7 +25,24 @@ export default function RootLayout() {
         }} 
       />
       <Stack.Screen 
+        name="EditAccountScreen" 
+        options={{
+          headerShown: true,
+          title: 'Thông tin đăng nhập',
+          headerStyle: { backgroundColor: '#fff' },
+          headerTintColor: '#FF5D00',
+          headerTitleAlign: 'center',
+        }} 
+      />
+      <Stack.Screen 
         name="SearchResults" 
+        options={{
+          headerShown: true,
+          headerStyle: { backgroundColor: '#fff' },
+        }}
+      />
+      <Stack.Screen 
+        name="RecipeScreen" 
         options={{
           headerShown: true,
           headerStyle: { backgroundColor: '#fff' },
@@ -34,11 +51,7 @@ export default function RootLayout() {
       <Stack.Screen 
         name="UserProfile" 
         options={{
-          headerShown: true,
-          title: 'Thông tin người dùng',
-          headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#FF5D00',
-          headerTitleAlign: 'center',
+          headerShown: false, // Vì đã có custom header
         }}
       />
     </Stack>

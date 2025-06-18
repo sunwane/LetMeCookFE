@@ -1,36 +1,58 @@
 import AccountBanner from '@/components/AccountBanner';
 import AccountNav from '@/components/ui/navigation/AccountNav';
-import '@/config/globalTextConfig'; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
+import '@/config/globalTextConfig';
 import { sampleAccounts } from '@/services/types/AccountItem';
 import { sampleComments } from '@/services/types/CommentItem';
 import { sampleFavorites } from '@/services/types/FavoritesRecipe';
-import { useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const UserProfile = () => {
-  const params = useLocalSearchParams();
-  const userId = parseInt(params.userId as string);
+  const { userId } = useLocalSearchParams();
   
-  // Tìm account dựa vào userId
-  const account = sampleAccounts.find(acc => acc.id === userId) || sampleAccounts[0];
+  // Chuyển userId thành number nếu cần
+  const userIdNumber = userId ? parseInt(userId as string) : null;
   
-  // Filter comments và favorites của user này
-  const userComments = sampleComments.filter(comment => comment.account.id === userId);
-  const userFavorites = sampleFavorites.filter(favorite => favorite.account.id === userId);
+  // Tìm user theo ID
+  const userAccount = sampleAccounts.find(acc => 
+    acc.id === userIdNumber || acc.id.toString() === userId
+  ) || sampleAccounts[0];
+  
+  // Lấy comments của user này
+  const userComments = sampleComments.filter(comment => 
+    comment.account.id === userIdNumber || 
+    comment.account.id.toString() === userId
+  );
+
+  // Lấy favorites của user này
+  const userFavorites = sampleFavorites.filter(favorite => 
+    favorite.account.id === userIdNumber || 
+    favorite.account.id.toString() === userId
+  );
 
   return (
     <View style={styles.container}>
+      {/* Nút back */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => router.back()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#FF5D00" />
+      </TouchableOpacity>
+      
       <AccountBanner 
-        account={account}
+        account={userAccount}
         comments={userComments}
       />
+      
       <View style={styles.navContainer}>
         <AccountNav 
           comments={userComments}
-          favorites={userFavorites}
-          account={[account]}
+          favorites={userFavorites} // Truyền favorites đã lọc
+          account={[userAccount]}
+          isCurrentUser={false}
         />
       </View>
     </View>
@@ -44,6 +66,23 @@ const styles = StyleSheet.create({
   },
   navContainer: {
     flex: 1, 
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50, // Điều chỉnh theo status bar
+    left: 20,
+    zIndex: 1000,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 })
 

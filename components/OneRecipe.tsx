@@ -1,10 +1,11 @@
 import { FavoritesRecipe } from '@/services/types/FavoritesRecipe';
 import { sampleRecipeIngredients } from '@/services/types/RecipeIngredients';
 import { RecipeItem } from '@/services/types/RecipeItem';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const {width: screenWidth } = Dimensions.get('window');
+const {width: screenWidth } = Dimensions.get('screen');
 
 interface OneRecipeProps {
   item: RecipeItem | FavoritesRecipe;
@@ -14,21 +15,30 @@ interface OneRecipeProps {
 const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
   const [isBookmarked, setIsBookmarked] = useState(isFavorite);
   
-  const toggleBookmark = () => {
+  const toggleBookmark = (e: any) => {
+    e.stopPropagation(); // Prevent navigation when clicking bookmark
     setIsBookmarked(!isBookmarked);
   };
 
   // Helper function để lấy RecipeItem từ input
   const getRecipeData = (): RecipeItem => {
     if ('food' in item) {
-      // Nếu là FavoritesRecipe
       return item.food;
     }
-    // Nếu là RecipeItem
     return item;
   };
 
   const recipe = getRecipeData();
+
+  // Hàm navigate đến RecipeScreen
+  const handleRecipePress = () => {
+    router.push({
+      pathname: '/RecipeScreen',
+      params: {
+        recipeData: JSON.stringify(recipe)
+      }
+    });
+  };
 
   // Lấy danh sách tên nguyên liệu từ sampleRecipeIngredients
   const getIngredientsList = () => {
@@ -39,7 +49,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
   };
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={handleRecipePress} activeOpacity={0.8}>
       <Image
         source={{ uri: recipe.imageUrl }}
         style={styles.recipeImage}
@@ -54,7 +64,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
             >
               {recipe.foodName}
             </Text>
-            {/* <TouchableOpacity onPress={toggleBookmark}>
+            <TouchableOpacity onPress={toggleBookmark}>
               <Image
                 source={
                   isBookmarked 
@@ -63,7 +73,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
                 }
                 style={styles.mark}
               />
-            </TouchableOpacity> */}
+            </TouchableOpacity>
           </View>
           <View style={styles.desView}>
             <Text 
@@ -102,7 +112,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -110,21 +120,23 @@ export default OneRecipe;
 
 const styles = StyleSheet.create({
     container: {
-        paddingBottom: 20,
-        paddingHorizontal: 5,
+        paddingBottom: 15,
+        paddingHorizontal: 8, // Giảm từ 5 xuống để có thêm padding
         flexDirection: 'row',
-        gap: 8,
+        gap: 10, // Tăng gap để có khoảng cách đẹp hơn
         flexGrow: 1,
-        width: screenWidth - 15,
     },
     infor:{
         flex: 1,
         flexGrow: 1,
         justifyContent: 'space-between',
+        minWidth: 0, // Đảm bảo flex hoạt động đúng
     },
     titlePlace: {
-        maxWidth: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
+        flex: 1, // Sử dụng flex thay vì maxWidth cố định
     },
     row: {
         flexDirection: 'row',
@@ -132,32 +144,36 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     nextTo: {
-        marginRight: 5,
+        marginRight: 8, // Tăng margin để dễ nhìn hơn
     },
     recipeImage: {
-        width: 140,
-        height: 90,
+        width: 120, // Giảm từ 140 xuống 120
+        height: 80,  // Giảm từ 90 xuống 80
         borderRadius: 10,
+        flexShrink: 0, // Đảm bảo image không bị co lại
     },
     mark: {
         width: 14,
         height: 20,
-        tintColor: '#7A2917'
+        tintColor: '#7A2917',
+        flexShrink: 0, // Đảm bảo icon không bị co lại
     },
     bigTitle: {
         fontSize: 15,
         fontWeight: 'bold',
         color: '#7A2917',
-        maxWidth: screenWidth - 150, // Adjusted to fit the image and bookmark icon
-        marginRight: 5,
+        flex: 1, // Sử dụng flex thay vì width cố định
+        marginRight: 8, // Margin với bookmark icon
     },
     desView: {
         marginTop: 3,
+        flex: 1, // Cho phép mở rộng
     },
     des: {
         fontSize: 11.5,
         color: 'rgba(0,0,0,0.7)',
         textAlign: 'justify',
+        flexShrink: 1, // Cho phép text co lại nếu cần
     },
     bold:{
         fontWeight: 'bold',
@@ -166,12 +182,11 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: 'rgba(0,0,0,0.7)',
         fontWeight: '500',
-        marginLeft: 1,
     },
     icon: {
         width: 15,
         height: 15,
-        marginRight: 1,
+        marginRight: 2, // Tăng từ 1 lên 2
         tintColor: 'rgba(0,0,0,0.7)',
     },
 })

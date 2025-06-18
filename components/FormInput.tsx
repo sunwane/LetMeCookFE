@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useState } from 'react';
@@ -5,13 +6,23 @@ import { Image, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } 
 
 interface FormInputProps {
   label: string;
-  defaultValue: string;
-  type?: 'text' | 'number' | 'date' | 'select' | 'sex';
+  defaultValue?: string;
+  type?: 'text' | 'number' | 'date' | 'sex' | 'select' | 'email' | 'password';
   options?: string[];
+  placeholder?: string;
+  onChangeText?: (value: string) => void; // Thêm prop này
 }
 
-const FormInput = ({ label, defaultValue, type = 'text', options = [] }: FormInputProps) => {
+const FormInput = ({ 
+  label, 
+  defaultValue = '', 
+  type = 'text', 
+  options, 
+  placeholder,
+  onChangeText 
+}: FormInputProps) => {
   const [value, setValue] = useState(defaultValue);
+  const [showPassword, setShowPassword] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   
   // Khởi tạo date từ defaultValue nếu là kiểu date
@@ -36,8 +47,59 @@ const FormInput = ({ label, defaultValue, type = 'text', options = [] }: FormInp
     }
   };
 
+  const handleValueChange = (newValue: string) => {
+    setValue(newValue);
+    if (onChangeText) {
+      onChangeText(newValue);
+    }
+  };
+
+  // Render input based on type
   const renderInput = () => {
     switch (type) {
+      case 'email':
+        return (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[styles.input, styles.emailInput]}
+              value={value}
+              onChangeText={handleValueChange}
+              placeholder={placeholder || 'Nhập email'}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.iconContainer}>
+              <Ionicons name="mail-outline" size={20} color="#666" />
+            </View>
+          </View>
+        );
+
+      case 'password':
+        return (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[styles.input, styles.passwordInput]}
+              value={value}
+              onChangeText={handleValueChange}
+              placeholder={placeholder || 'Nhập mật khẩu'}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TouchableOpacity 
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.iconContainer}
+            >
+              <Ionicons 
+                name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                size={20} 
+                color="#666" 
+              />
+            </TouchableOpacity>
+          </View>
+        );
+
       case 'number':
         return (
           <View style={styles.inputContainer}>
@@ -123,7 +185,7 @@ const FormInput = ({ label, defaultValue, type = 'text', options = [] }: FormInp
               style={Platform.OS === 'web' ? styles.webPicker : styles.mobilePicker}
               itemStyle={styles.pickerItem} // Thêm itemStyle cho iOS
             >
-              {options.map((option) => (
+              {options?.map((option) => (
                 <Picker.Item 
                   key={option} 
                   label={option} 
@@ -144,26 +206,27 @@ const FormInput = ({ label, defaultValue, type = 'text', options = [] }: FormInp
         return (
           <TextInput
             style={styles.input}
-            defaultValue={defaultValue}
-            onChangeText={setValue}
+            value={value}
+            onChangeText={handleValueChange}
+            placeholder={placeholder}
           />
         );
     }
   };
 
   return (
-    <View style={styles.contain}>
-      <Text style={styles.title}>{label}</Text>
+    <View style={styles.container}>
+      <Text style={styles.label}>{label}</Text>
       {renderInput()}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  contain: {
+  container: {
     marginVertical: 8,
   },
-  title: {
+  label: {
     fontWeight: '600',
     color: '#666',
     fontSize: 15,
@@ -178,6 +241,26 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '500',
     marginHorizontal: -2,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  emailInput: {
+    flex: 1,
+    paddingRight: 50, // Chừa chỗ cho icon
+  },
+  passwordInput: {
+    flex: 1,
+    paddingRight: 50, // Chừa chỗ cho icon
+  },
+  iconContainer: {
+    position: 'absolute',
+    right: 18,
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sexContainer: {
     flexDirection: 'row',
@@ -205,11 +288,6 @@ const styles = StyleSheet.create({
   selectedSexButtonText: {
     color: '#FF5D00',
     fontWeight: '600',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
   },
   numberInput: {
     flex: 1,
@@ -250,24 +328,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 18,
-    paddingRight: 50, // Thêm padding để chừa chỗ cho icon
+    paddingRight: 50,
     fontSize: 17,
     fontWeight: '500',
     backgroundColor: 'transparent',
     color: '#333',
     outline: 'none',
     cursor: 'pointer',
-    // kệ lỗi này, không ảnh hưởng đến UX
-    // Xóa style mặc định của trình duyệt
-    appearance: 'none',
+    appearance: 'none', //để nó yên
     WebkitAppearance: 'none',
     MozAppearance: 'none',
-    // Cho Firefox
     backgroundImage: 'none',
-    // Cho IE/Edge
-    '::-ms-expand': {
-      display: 'none',
-    },
   },
   mobilePicker: {
     margin: -2,
@@ -288,7 +359,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 18,
     top: '50%',
-    transform: [{ translateY: -6 }], // Điều chỉnh để căn giữa
+    transform: [{ translateY: -6 }],
     pointerEvents: 'none',
   },
   dropdownIcon: {

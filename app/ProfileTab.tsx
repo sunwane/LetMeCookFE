@@ -7,9 +7,10 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 
 interface ProfileTabProps {
   account: AccountItem;
+  isCurrentUser?: boolean; // Thêm prop để phân biệt user hiện tại
 }
 
-const ProfileTab = ({ account }: ProfileTabProps) => {
+const ProfileTab = ({ account, isCurrentUser = true }: ProfileTabProps) => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <SectionTitle title='Thông tin cơ bản'/>
@@ -25,15 +26,19 @@ const ProfileTab = ({ account }: ProfileTabProps) => {
         <InfoItem label='Chế độ ăn' value={account.diet} badgeType='diet' />
         <InfoItem label='Tình trạng sức khỏe' value={account.healthStatus} badgeType='health' />
       </View>
-      <TouchableOpacity 
-        style={styles.edit}
-        onPress={() => router.push({
-          pathname: '/EditInforScreen',
-          params: { account: JSON.stringify(account) }
-        })}
-      >
-        <Text style={styles.buttonName}>Chỉnh sửa thông tin cá nhân</Text>
-      </TouchableOpacity>
+      
+      {/* Chỉ hiển thị nút sửa khi là user hiện tại */}
+      {isCurrentUser && (
+        <TouchableOpacity 
+          style={styles.edit}
+          onPress={() => router.push({
+            pathname: '/EditInforScreen',
+            params: { account: JSON.stringify(account) }
+          })}
+        >
+          <Text style={styles.buttonName}>Chỉnh sửa thông tin cá nhân</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   )
 }
@@ -56,7 +61,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     marginTop: 15,
-    marginBottom: 20, // Thêm margin bottom để tạo khoảng cách cuối
+    marginBottom: 20,
   },
   buttonName: {
     color: '#fff',

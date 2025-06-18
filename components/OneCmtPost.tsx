@@ -1,15 +1,17 @@
-import '@/config/globalTextConfig'; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
+import '@/config/globalTextConfig';
 import { CommentItem } from '@/services/types/CommentItem';
+import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface CommentPost {
   item: CommentItem;
-  currentUserId?: number; // ID của user hiện tại
+  currentUserId?: number;
 }
 
 const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
+    const navigation = useNavigation();
     const [isLiked, setIsLiked] = useState(false);
     
     const toggleLike = () => {
@@ -18,14 +20,23 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
 
     const handleUserPress = () => {
         if (item.account.id === currentUserId) {
-            // Nếu là tài khoản hiện tại, chuyển sang tab Profile
+            navigation.navigate('Tài khoản' as never);
         } else {
-            // Nếu là tài khoản khác, mở UserProfile với layout stack
             router.push({
                 pathname: '/UserProfile',
                 params: { userId: item.account.id.toString() }
             });
         }
+    };
+
+    // Hàm navigate đến RecipeScreen khi ấn vào tên món ăn
+    const handleRecipePress = () => {
+        router.push({
+            pathname: '/RecipeScreen',
+            params: {
+                recipeData: JSON.stringify(item.recipe)
+            }
+        });
     };
     
     return (
@@ -41,15 +52,13 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                     <View>
                         <View style={styles.row}>
                             <TouchableOpacity onPress={handleUserPress}>
-                                <Text style={[
-                                    styles.nameDisplay
-                                ]}>
+                                <Text style={styles.nameDisplay}>
                                     {item.account.userName}
                                 </Text> 
                             </TouchableOpacity>
                             <Text> đã nấu món</Text>
                         </View>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={handleRecipePress}>
                             <Text style={styles.foodTitle}>{item.recipe.foodName}</Text>
                         </TouchableOpacity>
                     </View>
@@ -60,12 +69,12 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                     {item.content}
                 </Text>
             </View>
-            <View style={styles.mid}>
+            <TouchableOpacity style={styles.mid} onPress={handleRecipePress}>
                 <Image
                     source={{uri: item.recipe.imageUrl}}
                     style={styles.foodImage}
                 />
-            </View>
+            </TouchableOpacity>
             <View style={[styles.bot]}>
                 <TouchableOpacity onPress={toggleLike}>
                     <View style={styles.bot}>

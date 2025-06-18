@@ -13,6 +13,7 @@ interface AccountNavProps {
   comments: CommentItem[];
   favorites: FavoritesRecipe[];
   account: AccountItem[];
+  isCurrentUser?: boolean; // Thêm prop
 }
 
 const TABS = [
@@ -21,19 +22,21 @@ const TABS = [
   { id: 'profile', label: 'Thông tin cá nhân' },
 ]
 
-const AccountNav = ({ comments, favorites, account }: AccountNavProps) => {
+const AccountNav = ({ comments, favorites, account, isCurrentUser = false }: AccountNavProps) => {
   const [activeTab, setActiveTab] = useState('activities')
 
   const renderContent = () => {
+    const currentUserId = account[0]?.id;
+    
     switch (activeTab) {
-      case 'activities':
-        return <ActivitiesTab comments={comments} />
-      case 'favorites':
-        return <FavoritesTab favorites={favorites} />
       case 'profile':
-        return <ProfileTab account={account[0]}/>
+        return <ProfileTab account={account[0]} isCurrentUser={isCurrentUser} />;
+      case 'activities':
+        return <ActivitiesTab comments={comments} currentUserId={currentUserId} />
+      case 'favorites':
+        return <FavoritesTab favorites={favorites} currentUserId={currentUserId} />
       default:
-        return <ActivitiesTab comments={comments} />
+        return <ProfileTab account={account[0]} isCurrentUser={isCurrentUser} />;
     }
   }
 

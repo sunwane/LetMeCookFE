@@ -12,6 +12,18 @@ export interface FavoritesRecipe {
       food: foodData[0]
     },
     {
+      account: sampleAccounts[1],
+      food: foodData[3]
+    },
+    {
+      account: sampleAccounts[1],
+      food: foodData[4]
+    },
+    {
+      account: sampleAccounts[1],
+      food: foodData[5]
+    },
+    {
       account: sampleAccounts[0],
       food: foodData[1]
     },

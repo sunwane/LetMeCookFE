@@ -1,6 +1,7 @@
 export interface AccountItem {
     id: number;
     userName: string;
+    email?: string; // Optional email field
     avatar: string;
     sex: string;
     age: number;
