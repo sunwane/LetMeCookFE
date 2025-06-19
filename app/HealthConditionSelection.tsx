@@ -1,24 +1,24 @@
 "use client";
 
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Animated,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
-  Animated,
-  Dimensions,
-  StatusBar,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
 
 // Import components
-import ProgressBar from "../components/ui/ProgressBar";
 import ContinueButton from "../components/ui/ContinueButton";
 import HealthConditionPicker from "../components/ui/HealthConditionPicker";
+import ProgressBar from "../components/ui/ProgressBar";
 
 const { width } = Dimensions.get("window");
 
@@ -88,7 +88,9 @@ export default function HealthConditionSelection({
     if (onContinue) {
       onContinue();
     }
-    router.push("/Summary");
+
+    // Trả về trang chủ đã đăng nhập
+    router.replace("/?logged=true");
   };
 
   return (
@@ -149,7 +151,7 @@ export default function HealthConditionSelection({
             </Text>
 
             {/* Continue Button */}
-            <ContinueButton onPress={handleContinue} />
+            <ContinueButton onPress={handleContinue} disabled={false} />
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>

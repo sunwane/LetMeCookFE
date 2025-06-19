@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
@@ -8,30 +8,22 @@ import ContinueButton from "../components/ui/ContinueButton";
 import GenderOption from "../components/ui/GenderOption";
 import ProgressBar from "../components/ui/ProgressBar";
 
-interface GenderSelectionProps {
-  onGenderSelect?: (gender: string) => void;
-  onContinue?: () => void;
-}
-
-export default function GenderSelection({
-  onGenderSelect,
-  onContinue,
-}: GenderSelectionProps) {
+export default function GenderSelection() {
+  const params = useLocalSearchParams();
   const [selectedGender, setSelectedGender] = useState<string>("");
 
   const handleGenderSelect = (gender: string) => {
     setSelectedGender(gender);
-    if (onGenderSelect) {
-      onGenderSelect(gender);
-    }
   };
 
   const handleContinue = () => {
     if (selectedGender) {
-      if (onContinue) {
-        onContinue();
-      }
-      router.push("/HeightSelection");
+      router.push({
+        pathname: "/HeightSelection",
+        params: {
+          sex: selectedGender,
+        },
+      });
     }
   };
 

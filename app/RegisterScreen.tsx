@@ -21,6 +21,13 @@ import CustomInput from "../components/ui/CustomInput";
 import RegisterHeader from "../components/ui/RegisterHeader";
 import VerificationInput from "../components/ui/VerificationInput";
 
+// ✅ ADD: Import API functions
+import {
+  sendCodeAPI,
+  createAccountAPI,
+  AccountCreationRequest,
+} from "../services/types/AccountItem";
+
 const { height } = Dimensions.get("window");
 
 interface RegisterScreenProps {}
@@ -41,6 +48,11 @@ export default function RegisterScreen({}: RegisterScreenProps) {
     useState<boolean>(false);
 
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+
+  // ✅ ADD: Loading and error states
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [codeSent, setCodeSent] = useState<boolean>(false);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -67,18 +79,86 @@ export default function RegisterScreen({}: RegisterScreenProps) {
     Keyboard.dismiss();
   };
 
-  const handleSendVerificationCode = (): void => {
-    console.log("Gửi mã xác nhận cho email:", email);
+  // ✅ UPDATE: handleSendVerificationCode với real API
+  const handleSendVerificationCode = async (): Promise<void> => {
+    if (!email.trim()) {
+      setError("Vui lòng nhập email");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      console.log("🔥 Sending code to:", email);
+      const result = await sendCodeAPI(email.trim());
+      console.log("✅ Code sent:", result);
+
+      setCodeSent(true);
+      // ✅ FIX: Show success message instead of error
+      setError("✅ Mã xác thực đã được gửi đến email của bạn");
+    } catch (error) {
+      console.error("❌ Send code error:", error);
+      setError("❌ Gửi mã xác thực thất bại. Vui lòng thử lại");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRegister = (): void => {
-    console.log("Đăng ký tài khoản:", {
-      username,
-      password,
-      confirmPassword,
-      email,
-      verificationCode,
-    });
+  // ✅ UPDATE: handleRegister với real API
+  const handleRegister = async (): Promise<void> => {
+    // Validation
+    if (
+      !username.trim() ||
+      !password ||
+      !confirmPassword ||
+      !email.trim() ||
+      !verificationCode
+    ) {
+      setError("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    // ✅ Check username length (backend requires min 5)
+    if (username.trim().length < 5) {
+      setError("Tên người dùng phải có ít nhất 5 ký tự");
+      return;
+    }
+
+    // ✅ Check password length (backend requires min 7)
+    if (password.length < 7) {
+      setError("Mật khẩu phải có ít nhất 7 ký tự");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const registerData: AccountCreationRequest = {
+        username: username.trim(), // ← ADD username
+        email: email.trim(),
+        password: password,
+        code: verificationCode,
+      };
+
+      console.log("🔥 Registering account:", registerData);
+      const result = await createAccountAPI(registerData);
+      console.log("✅ Account created:", result);
+
+      // Success - navigate to welcome screen
+      router.push("/GenderSelection");
+    } catch (error) {
+      console.error("❌ Register error:", error);
+      setError("Đăng ký thất bại. Vui lòng kiểm tra thông tin");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const navigateToLogin = (): void => {
@@ -176,11 +256,20 @@ export default function RegisterScreen({}: RegisterScreenProps) {
               onSendCode={handleSendVerificationCode}
             />
 
-            {/* Register Button */}
+            {/* ✅ ADD: Error message display */}
+            {error ? (
+              <Text style={styles.errorText}>{error}</Text>
+            ) : null}
+
+            {/* ✅ UPDATE: Register Button với loading state */}
             <CustomButton
-              title="Đăng ký"
+              title={isLoading ? "Đang xử lý..." : "Đăng ký"}
               onPress={handleRegister}
-              style={styles.registerButton}
+              style={[
+                styles.registerButton,
+                isLoading && styles.buttonDisabled,
+              ]}
+              disabled={isLoading}
             />
 
             {/* Login Link */}
@@ -197,6 +286,7 @@ export default function RegisterScreen({}: RegisterScreenProps) {
   );
 }
 
+// ✅ ADD: Error text style
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -236,5 +326,18 @@ const styles = StyleSheet.create({
     color: "#FF5722",
     fontWeight: "700",
     fontSize: 13,
+  },
+
+  // ✅ ADD: Error text style
+  errorText: {
+    color: "#FF5722",
+    fontSize: 12,
+    textAlign: "center",
+    marginVertical: 10,
+    paddingHorizontal: 10,
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
