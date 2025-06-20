@@ -7,8 +7,7 @@ export interface UserInfoCreationRequest {
   height: number;
   weight: number;
   age: number;
-  dob: string; // Format: "YYYY-MM-DD"
-  dietTypes: string[]; // ["VEGETARIAN", "KETO", etc.]
+  dietTypes: string[]; 
 }
 
 export interface UserInfoUpdateRequest {
@@ -16,7 +15,6 @@ export interface UserInfoUpdateRequest {
   height?: number;
   weight?: number;
   age?: number;
-  dob?: string;
   dietTypes?: string[];
 }
 
@@ -26,9 +24,9 @@ export interface UserInfoResponse {
   height: number;
   weight: number;
   age: number;
-  dob: string;
   dietTypes: string[];
   avatar?: string;
+  accountId: string; // ✅ ADD: missing field
   createdAt: string;
   updatedAt: string;
 }
@@ -388,3 +386,5 @@ export const getRecipeCountByUserAPI = async (): Promise<number> => {
     return 0;
   }
 };
+
+
