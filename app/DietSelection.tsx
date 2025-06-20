@@ -126,6 +126,25 @@ export default function DietSelection({
         throw new Error('Missing login credentials');
       }
 
+      // ✅ Get accountId từ setup-token (như logic cũ)
+      console.log("🔄 Getting setup auth token to get accountId...");
+      
+      const authResponse = await fetch(`${API_BASE_URL}/auth/setup-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, password: userPassword }),
+      });
+
+      if (!authResponse.ok) {
+        throw new Error('Failed to get setup token');
+      }
+
+      const authData = await authResponse.json();
+      const tokenPayload = JSON.parse(atob(authData.result.token.split('.')[1]));
+      const accountId = tokenPayload.sub;
+      
+      console.log("🆔 Account ID from token:", accountId);
+
       const userInfoData: UserInfoCreationRequest = {
         sex: params.sex === "male" ? "MALE" : "FEMALE",
         height: parseInt(params.height as string),
@@ -135,100 +154,15 @@ export default function DietSelection({
         dietTypes: [mapDietToEnum(selectedDiet)],
       };
 
-      console.log("🔥 Creating UserInfo:", userInfoData);
-
-      // ✅ Step 1: Create UserInfo first (might need auth)
-      // ✅ Step 2: If 401, get fresh token and retry
+      // ✅ Call createUserInfoAPI với accountId từ token
+      await createUserInfoAPI(userInfoData, accountId);
       
-      let response = await fetch(`http://192.168.1.5:8080/user-info?accountId=${userEmail}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // ✅ Try without auth first
-        },
-        body: JSON.stringify(userInfoData),
-      });
-
-      // ✅ If 401, get fresh token and retry
-      if (response.status === 401) {
-        console.log("🔄 Getting setup auth token...");
-        
-        // ✅ DEBUG: Check credentials
-        console.log("🔍 Debug credentials:");
-        console.log("📧 userEmail:", userEmail);
-        console.log("🔐 userPassword exists:", !!userPassword);
-        console.log("🔐 userPassword length:", userPassword?.length);
-        
-        try {
-          const authRequestBody = { email: userEmail, password: userPassword };
-          console.log("📤 Auth request body:", authRequestBody);
-          
-          const authResponse = await fetch(`${API_BASE_URL}/auth/setup-token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: userEmail, password: userPassword }),
-          });
-
-          console.log("🔑 Setup auth response status:", authResponse.status);
-          
-          // ✅ DEBUG: Check response details
-          const responseText = await authResponse.text();
-          console.log("📥 Setup auth response body:", responseText);
-
-          if (authResponse.ok) {
-            const authData = JSON.parse(responseText);
-            console.log("✅ Got setup token, retrying UserInfo creation");
-
-            // ✅ CALL API WITHOUT accountId parameter
-            response = await fetch(`${API_BASE_URL}/user-info`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authData.result.token}`,
-              },
-              body: JSON.stringify(userInfoData),
-            });
-
-            console.log("📥 Response status:", response.status);
-
-            await AsyncStorage.setItem('authToken', authData.result.token);
-          } else {
-            console.error("❌ Setup auth failed:", responseText);
-            
-            // ✅ Try to see if credentials are wrong
-            if (responseText.includes("1027") || responseText.includes("Unauthenticated")) {
-              setError("Thông tin đăng nhập không đúng. Vui lòng đăng nhập lại.");
-              router.push("/");
-              return;
-            }
-            
-            throw new Error('Failed to authenticate for setup');
-          }
-        } catch (authError) {
-          console.error("❌ Failed to get setup token:", authError);
-          throw new Error('Authentication failed');
-        }
-      }
-
-      console.log("📥 Final response status:", response.status);
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log("✅ UserInfo created successfully:", result);
-        
-        // ✅ Clean up temporary password
-        await AsyncStorage.removeItem('userPassword');
-        
-        router.push({
-          pathname: "/",
-          params: { logged: 'true' }
-        });
-      } else {
-        const errorText = await response.text();
-        console.error("❌ UserInfo creation failed:", errorText);
-        throw new Error(`Failed to create UserInfo: ${response.status}`);
-      }
+      // ✅ Save token và cleanup
+      await AsyncStorage.setItem('authToken', authData.result.token);
+      await AsyncStorage.removeItem('userPassword');
       
+      router.replace('/?logged=true');
+        
     } catch (error: any) {
       console.error("❌ Failed to create UserInfo:", error);
       setError("Tạo thông tin thất bại. Vui lòng thử lại.");

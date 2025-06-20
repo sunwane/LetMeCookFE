@@ -75,20 +75,28 @@ const getAuthToken = async (): Promise<string | null> => {
 };
 
 // Helper function to get account ID
+// UserInfo.ts - sửa getAccountId function
 const getAccountId = async (): Promise<string> => {
   try {
-    // Try to get from AsyncStorage first
+    // ✅ Priority 1: Real accountId from register
     const storedAccountId = await AsyncStorage.getItem('accountId');
     if (storedAccountId) {
-      console.log("📱 Found accountId in storage:", storedAccountId);
+      console.log("📱 Found real accountId in storage:", storedAccountId);
       return storedAccountId;
     }
     
-    // Try to get from email as fallback
-    const storedEmail = await AsyncStorage.getItem('userEmail');
-    if (storedEmail) {
-      console.log("📧 Using email as accountId:", storedEmail);
-      return storedEmail;
+    // ✅ Priority 2: Decode from token (for authenticated users)
+    const token = await getAuthToken();
+    if (token) {
+      try {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        if (tokenPayload.sub && tokenPayload.sub !== tokenPayload.email) {
+          console.log("🔑 Found accountId in token:", tokenPayload.sub);
+          return tokenPayload.sub;
+        }
+      } catch (tokenError) {
+        console.log("⚠️ Failed to decode token");
+      }
     }
     
     throw new Error('No account identifier found');
@@ -100,29 +108,36 @@ const getAccountId = async (): Promise<string> => {
 
 // POST /user-info?accountId={accountId}
 export const createUserInfoAPI = async (
-  data: UserInfoCreationRequest
+  data: UserInfoCreationRequest,
+  accountId?: string // ✅ Optional accountId parameter
 ): Promise<UserInfoResponse> => {
   try {
-    const token = await getAuthToken();
-    const accountId = await getAccountId();
+    let targetAccountId = accountId;
     
-    if (!token) {
-      throw new Error('No authentication token found');
+    // ✅ Nếu không có accountId, lấy từ AsyncStorage
+    if (!targetAccountId) {
+      targetAccountId = await getAccountId();
     }
     
-    console.log(`🌐 API URL: ${API_BASE_URL}/user-info?accountId=${accountId}`);
+    console.log(`🌐 API URL: ${API_BASE_URL}/user-info?accountId=${targetAccountId}`);
     console.log("📤 Request data:", data);
-    console.log("🔑 Using token:", token.substring(0, 20) + "...");
+    console.log("🔓 Public API - No token required");
 
-    const response = await fetch(`${API_BASE_URL}/user-info?accountId=${accountId}`, {
+    // ✅ Không cần token và Authorization header
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
+
+    const response = await fetch(`${API_BASE_URL}/user-info?accountId=${targetAccountId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(data),
+      signal: controller.signal, // ✅ Add abort signal
     });
 
+    clearTimeout(timeoutId);
+    
     console.log("📥 Response status:", response.status);
     
     if (!response.ok) {
@@ -136,6 +151,9 @@ export const createUserInfoAPI = async (
     
     return apiResponse.result;
   } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - please try again');
+    }
     console.error('❌ Failed to create user info:', error);
     throw error;
   }
@@ -323,42 +341,48 @@ export const searchByUsernameAPI = async (keyword: string): Promise<UsernameResp
 };
 
 // GET /recipe/getRecipeByAccount - count recipes from response
+// UserInfo.ts - sửa getRecipeCountByUserAPI
 export const getRecipeCountByUserAPI = async (): Promise<number> => {
   try {
-    const token = await getAuthToken();
+    // ✅ Get normal token first, if 401 -> use setup-token flow
+    let token = await AsyncStorage.getItem('authToken');
     
     if (!token) {
-      throw new Error('No authentication token found');
+      console.log("🔄 No auth token, getting setup token...");
+      const userEmail = await AsyncStorage.getItem('userEmail');
+      const userPassword = await AsyncStorage.getItem('userPassword');
+      
+      if (userEmail && userPassword) {
+        const authResponse = await fetch(`${API_BASE_URL}/auth/setup-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userEmail, password: userPassword }),
+        });
+        
+        if (authResponse.ok) {
+          const authData = await authResponse.json();
+          token = authData.result.token;
+          await AsyncStorage.setItem('authToken', token);
+        }
+      }
     }
 
-    console.log(`🌐 API URL: ${API_BASE_URL}/recipe/getRecipeByAccount`);
-    console.log("🔑 Using token:", token.substring(0, 20) + "...");
-
-    // ✅ Get all recipes by current user
     const response = await fetch(`${API_BASE_URL}/recipe/getRecipeByAccount`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
     });
 
-    console.log("📥 Response status:", response.status);
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ Response error:", errorText);
+      console.error(`❌ Response error: ${errorText}`);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const apiResponse: ApiResponse<RecipeResponse[]> = await response.json();
-    console.log("✅ Recipes API response:", apiResponse);
-    
-    // ✅ Count the number of recipes
-    const recipeCount = apiResponse.result?.length || 0;
-    console.log("🔢 Recipe count:", recipeCount);
-    
-    return recipeCount;
+    const result = await response.json();
+    return result.result?.length || 0;
   } catch (error) {
     console.error('❌ Failed to get recipe count:', error);
     return 0;

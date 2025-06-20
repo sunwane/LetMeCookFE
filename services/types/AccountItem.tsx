@@ -87,21 +87,30 @@ export interface ApiResponse<T> {
 // POST /accounts/send-code
 export const sendCodeAPI = async (email: string): Promise<string> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/accounts/send-code?email=${email}`, {
+    console.log(`🌐 Sending verification code to: ${email}`);
+    
+    const response = await fetch(`${API_BASE_URL}/accounts/send-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ email }),
     });
 
+    console.log(`📥 Send code response: ${response.status}`);
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`❌ Send code failed: ${response.status} - ${errorText}`);
+      
+      // ✅ Include error body in the thrown error for frontend parsing
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
     }
 
-    const apiResponse: ApiResponse<string> = await response.json();
-    return apiResponse.message || 'Mã xác thực đã được gửi';
+    const result = await response.json();
+    return result.result || "Mã xác thực đã được gửi";
   } catch (error) {
-    console.error('❌ Failed to send code:', error);
+    console.error('❌ Failed to send verification code:', error);
     throw error;
   }
 };

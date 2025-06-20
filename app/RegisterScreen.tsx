@@ -13,6 +13,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Import components
 import BackgroundDecorations from "../components/ui/BackgroundDecorations";
@@ -95,11 +96,41 @@ export default function RegisterScreen({}: RegisterScreenProps) {
       console.log("✅ Code sent:", result);
 
       setCodeSent(true);
-      // ✅ FIX: Show success message instead of error
       setError("✅ Mã xác thực đã được gửi đến email của bạn");
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Send code error:", error);
-      setError("❌ Gửi mã xác thực thất bại. Vui lòng thử lại");
+
+      // ✅ Parse error response để lấy specific error code
+      let errorMessage = "❌ Gửi mã xác thực thất bại. Vui lòng thử lại";
+
+      try {
+        // ✅ Extract error details from API response
+        if (error.message && error.message.includes("body:")) {
+          const bodyMatch = error.message.match(/body: (.+)$/);
+          if (bodyMatch) {
+            const errorData = JSON.parse(bodyMatch[1]);
+
+            if (errorData.code === 1051) {
+              // EMAIL_ALREADY_EXISTED
+              errorMessage =
+                "📧 Email này đã được đăng ký. Vui lòng đăng nhập để tiếp tục thiết lập tài khoản.";
+            } else if (errorData.code === 1027) {
+              // ✅ ADD: UNAUTHENTICATED
+              errorMessage =
+                "📧 Email này đã được đăng ký. Vui lòng đăng nhập để tiếp tục thiết lập tài khoản.";
+            } else if (errorData.code === 1015) {
+              // SEND_EMAIL_FAILED
+              errorMessage = "📧 Không thể gửi email. Vui lòng kiểm tra địa chỉ email.";
+            } else if (errorData.message) {
+              errorMessage = `❌ ${errorData.message}`;
+            }
+          }
+        }
+      } catch (parseError) {
+        console.log("⚠️ Could not parse error response");
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -150,6 +181,11 @@ export default function RegisterScreen({}: RegisterScreenProps) {
       console.log("🔥 Registering account:", registerData);
       const result = await createAccountAPI(registerData);
       console.log("✅ Account created:", result);
+
+      // ✅ CHỈ lưu credentials, KHÔNG lưu accountId
+      await AsyncStorage.setItem("userEmail", email.trim());
+      await AsyncStorage.setItem("userPassword", password);
+      // ❌ REMOVE: await AsyncStorage.setItem("accountId", result.id);
 
       // Success - navigate to welcome screen
       router.push("/GenderSelection");

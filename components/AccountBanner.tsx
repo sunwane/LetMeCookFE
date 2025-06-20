@@ -96,6 +96,25 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
     ? comments.filter(comment => comment.account.id === currentUser.id).length 
     : 0;
 
+  // Debug logs
+  useEffect(() => {
+    const debugToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log("🔍 Token payload:", payload);
+          console.log("📧 Token subject (email):", payload.sub);
+          console.log("📧 Stored email:", await AsyncStorage.getItem('userEmail'));
+        }
+      } catch (error) {
+        console.error("❌ Failed to decode token:", error);
+      }
+    };
+    
+    debugToken();
+  }, []);
+
   if (isLoadingUser || !currentUser) {
     return (
       <View style={styles.container}>
