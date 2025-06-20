@@ -6,16 +6,18 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View
+  View,
+  ActivityIndicator
 } from 'react-native';
 
 interface LogoutModalProps {
   visible: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  isLoading?: boolean; // ✅ Add loading prop
 }
 
-const LogoutModal = ({ visible, onConfirm, onCancel }: LogoutModalProps) => {
+const LogoutModal = ({ visible, onConfirm, onCancel, isLoading = false }: LogoutModalProps) => {
   return (
     <Modal
       visible={visible}
@@ -38,17 +40,23 @@ const LogoutModal = ({ visible, onConfirm, onCancel }: LogoutModalProps) => {
               
               <View style={styles.modalButtons}>
                 <TouchableOpacity 
-                  style={styles.cancelButton}
+                  style={[styles.button, styles.cancelButton]} 
                   onPress={onCancel}
+                  disabled={isLoading}
                 >
-                  <Text style={styles.cancelButtonText}>Hủy</Text>
+                  <Text style={styles.cancelText}>Hủy</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
-                  style={styles.confirmButton}
+                  style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]} 
                   onPress={onConfirm}
+                  disabled={isLoading}
                 >
-                  <Text style={styles.confirmButtonText}>Đăng xuất</Text>
+                  {isLoading ? (
+                    <ActivityIndicator color="white" size="small" />
+                  ) : (
+                    <Text style={styles.confirmText}>Đăng xuất</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -96,30 +104,31 @@ const styles = StyleSheet.create({
     gap: 12,
     width: '100%',
   },
-  cancelButton: {
+  button: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#ddd',
     alignItems: 'center',
   },
-  cancelButtonText: {
+  cancelButton: {
+    borderWidth: 1.5,
+    borderColor: '#ddd',
+  },
+  cancelText: {
     color: '#666',
     fontSize: 16,
     fontWeight: '500',
   },
   confirmButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
     backgroundColor: '#FF5D00',
-    alignItems: 'center',
   },
-  confirmButtonText: {
+  confirmText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
 

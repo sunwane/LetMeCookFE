@@ -26,15 +26,6 @@ const EditInforScreen = () => {
     'Ăn kiêng ít carb',
   ]
 
-  const healthOptions = [
-    'Khỏe mạnh',
-    'Tiểu đường',
-    'Cao huyết áp',
-    'Bệnh tim mạch',
-    'Dị ứng thực phẩm',
-    'Khác',
-  ]
-
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -80,12 +71,6 @@ const EditInforScreen = () => {
             defaultValue={account.diet} 
             type='select' 
             options={dietOptions}
-          />
-          <FormInput 
-            label='Tình trạng sức khỏe' 
-            defaultValue={account.healthStatus} 
-            type='select' 
-            options={healthOptions}
           />
         </View>
         <TouchableOpacity 

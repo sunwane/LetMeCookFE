@@ -28,7 +28,27 @@ export default function RootLayout() {
         name="EditAccountScreen" 
         options={{
           headerShown: true,
-          title: 'Thông tin đăng nhập',
+          title: 'Thay đổi mật khẩu',
+          headerStyle: { backgroundColor: '#fff' },
+          headerTintColor: '#FF5D00',
+          headerTitleAlign: 'center',
+        }} 
+      />
+      <Stack.Screen 
+        name="NotificationScreen" 
+        options={{
+          headerShown: true,
+          title: 'Thông báo',
+          headerStyle: { backgroundColor: '#fff' },
+          headerTintColor: '#FF5D00',
+          headerTitleAlign: 'center',
+        }} 
+      />
+      <Stack.Screen 
+        name="SettingScreen" 
+        options={{
+          headerShown: true,
+          title: 'Cài đặt',
           headerStyle: { backgroundColor: '#fff' },
           headerTintColor: '#FF5D00',
           headerTitleAlign: 'center',

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, View, Text } from "react-native";
 import AppHeader from "../components/ui/AppHeader";
@@ -8,31 +8,22 @@ import HeightPicker from "../components/ui/HeightPicker";
 import ProgressBar from "../components/ui/ProgressBar";
 import QuestionSection from "../components/ui/QuestionSection";
 
-interface HeightSelectionProps {
-  onHeightSelect?: (height: number) => void;
-  onContinue?: () => void;
-}
-
-export default function HeightSelection({
-  onHeightSelect,
-  onContinue,
-}: HeightSelectionProps) {
+export default function HeightSelection() {
+  const params = useLocalSearchParams();
   const [selectedHeight, setSelectedHeight] = useState<number>(170);
 
   const handleHeightChange = (height: number) => {
     setSelectedHeight(height);
-    if (onHeightSelect) {
-      onHeightSelect(height);
-    }
   };
 
   const handleContinue = () => {
-    if (selectedHeight > 0) {
-      if (onContinue) {
-        onContinue();
-      }
-      router.push("../AgeSelection");
-    }
+    router.push({
+      pathname: "/AgeSelection",
+      params: {
+        sex: params.sex,
+        height: selectedHeight.toString(),
+      },
+    });
   };
 
   return (

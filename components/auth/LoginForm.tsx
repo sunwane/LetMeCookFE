@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CustomButton from "../ui/CustomButton";
 import CustomInput from "../ui/CustomInput";
 
+
 interface LoginFormProps {
   email: string;
   password: string;
@@ -13,6 +14,8 @@ interface LoginFormProps {
   handleLogin: () => void;
   navigateToRegister: () => void;
   navigateToForgotPassword: () => void;
+  isLoading?: boolean; // ✅ Add this
+  error?: string; // ✅ Add this
 }
 
 export default function LoginForm({
@@ -23,6 +26,8 @@ export default function LoginForm({
   handleLogin,
   navigateToRegister,
   navigateToForgotPassword,
+  isLoading = false, // ✅ Add this
+  error, // ✅ Add this
 }: LoginFormProps) {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
@@ -62,11 +67,17 @@ export default function LoginForm({
         </TouchableOpacity>
       </View>
 
+      {/* Error Message */}
+      {error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : null}
+
       {/* Login Button */}
       <CustomButton
-        title="Đăng nhập"
+        title={isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
         onPress={handleLogin}
-        style={styles.loginButton}
+        style={[styles.loginButton, isLoading && styles.disabledButton]}
+        disabled={isLoading}
       />
 
       {/* Register Link */}
@@ -117,5 +128,16 @@ const styles = StyleSheet.create({
     color: "#FF5722",
     fontWeight: "700",
     fontSize: 13,
+  },
+
+  errorText: {
+    color: "#FF5722",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 15,
+  },
+
+  disabledButton: {
+    opacity: 0.6,
   },
 });

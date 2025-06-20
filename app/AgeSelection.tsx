@@ -1,7 +1,7 @@
 // AgeSelection.tsx - Refactored version
 import React, { useState } from "react";
 import { StyleSheet, Text, View, Image } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 // Import các components đã tách
 import BackgroundDecorations from "../components/ui/BackgroundDecorations";
@@ -10,31 +10,23 @@ import AppHeader from "../components/ui/AppHeader";
 import AgePicker from "../components/ui/AgePicker";
 import ContinueButton from "../components/ui/ContinueButton";
 
-interface AgeSelectionProps {
-  onAgeSelect?: (age: number) => void;
-  onContinue?: () => void;
-}
-
-export default function AgeSelection({
-  onAgeSelect,
-  onContinue,
-}: AgeSelectionProps) {
+export default function AgeSelection() {
+  const params = useLocalSearchParams();
   const [selectedAge, setSelectedAge] = useState<number>(25);
 
   const handleAgeChange = (age: number) => {
     setSelectedAge(age);
-    if (onAgeSelect) {
-      onAgeSelect(age);
-    }
   };
 
   const handleContinue = () => {
-    if (selectedAge > 0) {
-      if (onContinue) {
-        onContinue();
-      }
-      router.push("/WeightSelection");
-    }
+    router.push({
+      pathname: "/WeightSelection",
+      params: {
+        sex: params.sex,
+        height: params.height,
+        age: selectedAge.toString(),
+      },
+    });
   };
 
   return (

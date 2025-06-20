@@ -1,17 +1,16 @@
 import FormInput from '@/components/FormInput';
-import SectionTitle from '@/components/SectionTitle';
 import { sampleAccounts } from '@/services/types/AccountItem';
 import { useNavigation } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const EditAccountScreen = () => {
@@ -110,7 +109,6 @@ const EditAccountScreen = () => {
         style={styles.formContainer}
         showsVerticalScrollIndicator={false}
       >
-        <SectionTitle title='Thông tin đăng nhập'/>
         <View style={styles.list}>
           <FormInput 
             label='Email' 
@@ -118,15 +116,11 @@ const EditAccountScreen = () => {
             type='email'
             onChangeText={(value) => handleInputChange('email', value)}
           />
-        </View>
-
-        <SectionTitle title='Đổi mật khẩu'/>
-        <View style={styles.list}>
           <FormInput 
-            label='Mật khẩu hiện tại' 
+            label='Mã xác nhận' 
             defaultValue={formData.currentPassword}
-            type='password'
-            placeholder='Nhập mật khẩu hiện tại'
+            type='code'
+            placeholder='Nhập mã'
             onChangeText={(value) => handleInputChange('currentPassword', value)}
           />
           <FormInput 
@@ -143,12 +137,6 @@ const EditAccountScreen = () => {
             placeholder='Nhập lại mật khẩu mới'
             onChangeText={(value) => handleInputChange('confirmPassword', value)}
           />
-        </View>
-
-        <View style={styles.noteContainer}>
-          <Text style={styles.noteText}>
-            💡 Chỉ cần nhập mật khẩu hiện tại nếu bạn muốn đổi mật khẩu
-          </Text>
         </View>
 
         <TouchableOpacity 
@@ -197,22 +185,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     fontWeight: '500'
-  },
-  noteContainer: {
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 8,
-    marginTop: 10,
-    marginHorizontal: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF5D00',
-    marginBottom: 20,
-  },
-  noteText: {
-    fontSize: 13,
-    color: '#666',
-    fontStyle: 'italic',
-    lineHeight: 18,
   },
   bottomPadding: {
     height: 20 // Thêm padding dưới cùng để tránh nút bị che khi scroll

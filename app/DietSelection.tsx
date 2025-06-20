@@ -11,9 +11,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { createUserInfoAPI, UserInfoCreationRequest } from "../services/types/UserInfo";
+import { API_BASE_URL } from '../constants/api';
 
 // Import components
 import ProgressBar from "../components/ui/ProgressBar";
@@ -31,8 +36,11 @@ export default function DietSelection({
   onDietSelect,
   onContinue,
 }: DietSelectionProps) {
+  const params = useLocalSearchParams();
   const [selectedDiet, setSelectedDiet] = useState<string>("");
   const [customDiet, setCustomDiet] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
 
@@ -74,70 +82,174 @@ export default function DietSelection({
     router.push("/HealthConditionSelection");
   };
 
+  // Map frontend options to backend enum
+  const mapDietToEnum = (diet: string): string => {
+    const dietMap: { [key: string]: string } = {
+      "ăn uống thông thường": "NORMAL",
+      normal: "NORMAL",
+      standard: "NORMAL", // ✅ Add this mapping
+      "ăn chay": "VEGETARIAN",
+      vegetarian: "VEGETARIAN",
+      "ăn thuần chay": "VEGETARIAN",
+      vegan: "VEGETARIAN",
+      keto: "KETO",
+      "low-carb": "LOW_CARB",
+      mediterranean: "MEDITERRANEAN",
+      "tự nhập chế độ ăn khác": "NORMAL",
+      custom: "NORMAL",
+    };
+
+    console.log(
+      `🍽️ Mapping diet: "${diet}" → "${
+        dietMap[diet.toLowerCase()] || "NORMAL"
+      }"`
+    );
+    return dietMap[diet.toLowerCase()] || "NORMAL";
+  };
+
+  const calculateDOB = (age: number): string => {
+    const currentYear = new Date().getFullYear();
+    const birthYear = currentYear - age;
+    return `${birthYear}-01-01`;
+  };
+
+  // ✅ SIMPLE APPROACH - GET FRESH TOKEN WHEN NEEDED
+  const handleFinalSubmit = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const userEmail = await AsyncStorage.getItem('userEmail');
+      const userPassword = await AsyncStorage.getItem('userPassword');
+      
+      if (!userEmail || !userPassword) {
+        throw new Error('Missing login credentials');
+      }
+
+      // ✅ Get accountId từ setup-token (như logic cũ)
+      console.log("🔄 Getting setup auth token to get accountId...");
+      
+      const authResponse = await fetch(`${API_BASE_URL}/auth/setup-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, password: userPassword }),
+      });
+
+      if (!authResponse.ok) {
+        throw new Error('Failed to get setup token');
+      }
+
+      const authData = await authResponse.json();
+      const tokenPayload = JSON.parse(atob(authData.result.token.split('.')[1]));
+      const accountId = tokenPayload.sub;
+      
+      console.log("🆔 Account ID from token:", accountId);
+
+      const userInfoData: UserInfoCreationRequest = {
+        sex: params.sex === "male" ? "MALE" : "FEMALE",
+        height: parseInt(params.height as string),
+        weight: parseInt(params.weight as string),
+        age: parseInt(params.age as string),
+        dob: calculateDOB(parseInt(params.age as string)),
+        dietTypes: [mapDietToEnum(selectedDiet)],
+      };
+
+      // ✅ Call createUserInfoAPI với accountId từ token
+      await createUserInfoAPI(userInfoData, accountId);
+      
+      // ✅ Save token và cleanup
+      await AsyncStorage.setItem('authToken', authData.result.token);
+      await AsyncStorage.removeItem('userPassword');
+      
+      router.replace('/?logged=true');
+        
+    } catch (error: any) {
+      console.error("❌ Failed to create UserInfo:", error);
+      setError("Tạo thông tin thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF8F0" />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFF8F0" />
 
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={["#FFF8F0", "#F8F4E6", "#F5F1E8"]}
-        style={StyleSheet.absoluteFillObject}
-      />
+        {/* Background Gradient */}
+        <LinearGradient
+          colors={["#FFF8F0", "#F8F4E6", "#F5F1E8"]}
+          style={StyleSheet.absoluteFillObject}
+        />
 
-      {/* Progress Bar */}
-      <ProgressBar progress={75} />
+        {/* Progress Bar */}
+        <ProgressBar progress={75} />
 
-      {/* KeyboardAvoidingView bao bọc toàn bộ ScrollView */}
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={true}
-          keyboardShouldPersistTaps="handled" // Cho phép lướt khi bàn phím mở
-          keyboardDismissMode="interactive" // Đóng bàn phím khi lướt
+        {/* KeyboardAvoidingView bao bọc toàn bộ ScrollView */}
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          <Animated.View
-            style={[
-              styles.content,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={true}
+            keyboardShouldPersistTaps="handled" // Cho phép lướt khi bàn phím mở
+            keyboardDismissMode="interactive" // Đóng bàn phím khi lướt
           >
-            {/* Header Section - Clean and Simple */}
-            <View style={styles.headerSection}>
-              <Text style={styles.question}>Bạn theo chế độ ăn nào?</Text>
-              <Text style={styles.subtitle}>
-                Chọn phong cách ăn uống phù hợp với bạn
+            <Animated.View
+              style={[
+                styles.content,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              {/* Header Section - Clean and Simple */}
+              <View style={styles.headerSection}>
+                <Text style={styles.question}>Bạn theo chế độ ăn nào?</Text>
+                <Text style={styles.subtitle}>
+                  Chọn phong cách ăn uống phù hợp với bạn
+                </Text>
+              </View>
+
+              {/* Enhanced Diet Picker without KeyboardAvoidingView */}
+              <DietPicker
+                selectedDiet={selectedDiet}
+                onDietChange={handleDietChange}
+                customDiet={customDiet}
+                setCustomDiet={setCustomDiet}
+              />
+
+              {/* Description Text */}
+              <Text style={styles.description}>
+                Chúng tôi sẽ đề xuất các món ăn và kế hoạch dinh dưỡng phù hợp với
+                sở thích và nhu cầu sức khỏe của bạn.
               </Text>
-            </View>
 
-            {/* Enhanced Diet Picker without KeyboardAvoidingView */}
-            <DietPicker
-              selectedDiet={selectedDiet}
-              onDietChange={handleDietChange}
-              customDiet={customDiet}
-              setCustomDiet={setCustomDiet}
-            />
+              {/* Error Message */}
+              {error ? (
+                <Text style={styles.errorText}>{error}</Text>
+              ) : null}
 
-            {/* Description Text */}
-            <Text style={styles.description}>
-              Chúng tôi sẽ đề xuất các món ăn và kế hoạch dinh dưỡng phù hợp với
-              sở thích và nhu cầu sức khỏe của bạn.
-            </Text>
-
-            {/* Continue Button */}
-            <ContinueButton onPress={handleContinue} />
-          </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+              {/* Continue Button */}
+              <ContinueButton
+                onPress={handleFinalSubmit}
+                title={isLoading ? "Đang xử lý..." : "Hoàn thành"}
+                style={[
+                  styles.continueButton,
+                  (!selectedDiet || isLoading) && styles.disabledButton,
+                ]}
+                disabled={!selectedDiet || isLoading}
+              />
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -201,5 +313,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     opacity: 0.9,
     maxWidth: width - 48,
+  },
+
+  errorText: {
+    color: "#FF5722",
+    fontSize: 14,
+    textAlign: "center",
+    marginVertical: 10,
+    paddingHorizontal: 20,
+  },
+
+  disabledButton: {
+    opacity: 0.6,
   },
 });

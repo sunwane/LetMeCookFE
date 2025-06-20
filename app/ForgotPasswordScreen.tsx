@@ -21,6 +21,13 @@ import CustomInput from "../components/ui/CustomInput";
 import RegisterHeader from "../components/ui/RegisterHeader";
 import VerificationInput from "../components/ui/VerificationInput";
 
+// ✅ ADD: Import API functions
+import {
+  requestPasswordResetAPI,
+  resetPasswordAPI,
+  ResetPasswordRequest,
+} from "../services/types/AccountItem";
+
 const { height } = Dimensions.get("window");
 
 interface ForgotPasswordScreenProps {}
@@ -39,6 +46,12 @@ export default function ForgotPasswordScreen({}: ForgotPasswordScreenProps) {
     useState<boolean>(false);
 
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+
+  // ✅ ADD: Loading and error states
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [codeSent, setCodeSent] = useState<boolean>(false);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -65,39 +78,93 @@ export default function ForgotPasswordScreen({}: ForgotPasswordScreenProps) {
     Keyboard.dismiss();
   };
 
-  const handleSendVerificationCode = (): void => {
+  // ✅ UPDATE: handleSendVerificationCode với real API
+  const handleSendVerificationCode = async (): Promise<void> => {
     if (!email.trim()) {
-      console.log("Vui lòng nhập email trước khi gửi mã xác nhận");
+      setError("Vui lòng nhập email trước khi gửi mã xác nhận");
+      setSuccessMessage("");
       return;
     }
-    console.log("Gửi mã xác nhận cho email:", email);
+
+    setIsLoading(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      console.log("🔥 Sending reset code to:", email);
+      const result = await requestPasswordResetAPI(email.trim());
+      console.log("✅ Reset code sent:", result);
+
+      setCodeSent(true);
+      setSuccessMessage("✅ Mã xác nhận đã được gửi đến email của bạn");
+      setError("");
+    } catch (error) {
+      console.error("❌ Send reset code error:", error);
+      setError("❌ Gửi mã xác nhận thất bại. Vui lòng kiểm tra email");
+      setSuccessMessage("");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleResetPassword = (): void => {
+  // ✅ UPDATE: handleResetPassword với real API
+  const handleResetPassword = async (): Promise<void> => {
+    // Validation
     if (
       !email.trim() ||
       !verificationCode.trim() ||
       !newPassword.trim() ||
       !confirmPassword.trim()
     ) {
-      console.log("Vui lòng điền đầy đủ thông tin");
+      setError("Vui lòng điền đầy đủ thông tin");
+      setSuccessMessage("");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      console.log("Mật khẩu xác nhận không khớp");
+      setError("Mật khẩu xác nhận không khớp");
+      setSuccessMessage("");
       return;
     }
 
-    console.log("Đặt lại mật khẩu:", {
-      email,
-      verificationCode,
-      newPassword,
-      confirmPassword,
-    });
+    if (newPassword.length < 7) {
+      setError("Mật khẩu phải có ít nhất 7 ký tự");
+      setSuccessMessage("");
+      return;
+    }
 
-    // Sau khi đặt lại mật khẩu thành công, quay về login
-    router.back();
+    setIsLoading(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const resetData: ResetPasswordRequest = {
+        email: email.trim(),
+        code: verificationCode.trim(),
+        newPassword: newPassword,
+      };
+
+      console.log("🔥 Resetting password:", {
+        email: resetData.email,
+        code: resetData.code,
+      });
+      const result = await resetPasswordAPI(resetData);
+      console.log("✅ Password reset successful:", result);
+
+      setSuccessMessage("✅ Đặt lại mật khẩu thành công!");
+      setError("");
+
+      // Delay 2 seconds then navigate back to login
+      setTimeout(() => {
+        router.back();
+      }, 2000);
+    } catch (error) {
+      console.error("❌ Reset password error:", error);
+      setError("❌ Đặt lại mật khẩu thất bại. Vui lòng kiểm tra mã xác nhận");
+      setSuccessMessage("");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const navigateToLogin = (): void => {
@@ -145,6 +212,7 @@ export default function ForgotPasswordScreen({}: ForgotPasswordScreenProps) {
               iconName="envelope"
               keyboardType="email-address"
               returnKeyType="next"
+              editable={!isLoading}
             />
 
             {/* Verification Code Input */}
@@ -155,6 +223,7 @@ export default function ForgotPasswordScreen({}: ForgotPasswordScreenProps) {
               onBlur={() => setVerificationCodeFocused(false)}
               focused={verificationCodeFocused}
               onSendCode={handleSendVerificationCode}
+              disabled={isLoading}
             />
 
             {/* New Password Input */}
@@ -168,6 +237,7 @@ export default function ForgotPasswordScreen({}: ForgotPasswordScreenProps) {
               iconName="lock"
               secureTextEntry
               returnKeyType="next"
+              editable={!isLoading}
             />
 
             {/* Confirm New Password Input */}
@@ -181,19 +251,40 @@ export default function ForgotPasswordScreen({}: ForgotPasswordScreenProps) {
               iconName="lock"
               secureTextEntry
               returnKeyType="done"
+              editable={!isLoading}
             />
 
+            {/* ✅ ADD: Error and Success Messages */}
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            {successMessage ? (
+              <Text style={styles.successText}>{successMessage}</Text>
+            ) : null}
+
+            {/* ✅ UPDATE: Reset Password Button với loading state */}
             <CustomButton
-              title="Đặt lại mật khẩu"
+              title={isLoading ? "Đang xử lý..." : "Đặt lại mật khẩu"}
               onPress={handleResetPassword}
-              style={styles.primaryButton}
+              style={[
+                styles.primaryButton,
+                isLoading && styles.buttonDisabled,
+              ]}
+              disabled={isLoading}
             />
 
             {/* Back to Login Link */}
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Nhớ mật khẩu?</Text>
-              <TouchableOpacity onPress={navigateToLogin}>
-                <Text style={styles.link}> Đăng nhập</Text>
+              <TouchableOpacity onPress={navigateToLogin} disabled={isLoading}>
+                <Text
+                  style={[
+                    styles.link,
+                    isLoading && styles.linkDisabled,
+                  ]}
+                >
+                  {" "}
+                  Đăng nhập
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -242,5 +333,30 @@ const styles = StyleSheet.create({
     color: "#FF5722",
     fontWeight: "700",
     fontSize: 13,
+  },
+
+  // ✅ ADD: New styles for messages and loading states
+  errorText: {
+    color: "#FF5722",
+    fontSize: 12,
+    textAlign: "center",
+    marginVertical: 10,
+    paddingHorizontal: 10,
+  },
+
+  successText: {
+    color: "#4CAF50",
+    fontSize: 12,
+    textAlign: "center",
+    marginVertical: 10,
+    paddingHorizontal: 10,
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  linkDisabled: {
+    opacity: 0.6,
   },
 });

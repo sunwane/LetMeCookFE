@@ -1,7 +1,7 @@
 // WeightSelection.tsx - Main Component (Refactored)
 import React, { useState } from "react";
 import { StyleSheet, Text, View, Image } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 // Import components
 import BackgroundDecorations from "../components/ui/BackgroundDecorations";
@@ -19,6 +19,7 @@ export default function WeightSelection({
   onWeightSelect,
   onContinue,
 }: WeightSelectionProps) {
+  const params = useLocalSearchParams();
   const [selectedWeight, setSelectedWeight] = useState<number>(60);
 
   // Tạo mảng cân nặng từ 30 đến 150 kg
@@ -32,12 +33,15 @@ export default function WeightSelection({
   };
 
   const handleContinue = () => {
-    if (selectedWeight > 0) {
-      if (onContinue) {
-        onContinue();
-      }
-      router.push("/DietSelection");
-    }
+    router.push({
+      pathname: "/DietSelection",
+      params: {
+        sex: params.sex,
+        height: params.height,
+        age: params.age,
+        weight: selectedWeight.toString(),
+      },
+    });
   };
 
   return (

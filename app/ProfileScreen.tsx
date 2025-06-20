@@ -1,81 +1,140 @@
 import AccountBanner from '@/components/AccountBanner';
 import LogoutModal from '@/components/LogoutModal';
 import AccountNav from '@/components/ui/navigation/AccountNav';
-import '@/config/globalTextConfig'; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
+import '@/config/globalTextConfig';
 import { sampleAccounts } from '@/services/types/AccountItem';
 import { sampleComments } from '@/services/types/CommentItem';
 import { sampleFavorites } from '@/services/types/FavoritesRecipe';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { logoutAPI } from '../services/types/auth';
 
 const ProfileScreen = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  
-  // Giả sử user hiện tại là sampleAccounts[0] (có thể lấy từ context/state)
-  const currentUser = sampleAccounts[0];
-  
-  // Lọc comments và favorites của user hiện tại
-  const currentUserComments = sampleComments.filter(comment => 
-    comment.account.id === currentUser.id
-  );
-  
-  const currentUserFavorites = sampleFavorites.filter(favorite => 
-    favorite.account.id === currentUser.id
-  );
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
   };
 
-  const confirmLogout = () => {
-    // Xử lý logic đăng xuất ở đây
-    console.log('Đăng xuất thành công');
-    setShowLogoutModal(false);
-    // router.replace('/login') hoặc logic đăng xuất khác
-  };
-
-  // Thêm handler cho nút sửa thông tin
-  const handleEditAccount = () => {
-    router.push('/EditAccountScreen');
+  const confirmLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      
+      // ✅ Get token from AsyncStorage
+      const authToken = await AsyncStorage.getItem('authToken');
+      
+      if (authToken) {
+        console.log('🚪 Logging out with token...');
+        
+        // ✅ Call logout API
+        await logoutAPI({ token: authToken });
+        console.log('✅ Logout API success');
+      } else {
+        console.log('⚠️ No token found, skipping API call');
+      }
+      
+      // ✅ Clear all stored data
+      await AsyncStorage.multiRemove([
+        'authToken',
+        'userEmail', 
+        'userPassword',
+        'refreshToken'
+      ]);
+      
+      console.log('✅ Cleared AsyncStorage');
+      
+      // ✅ Navigate to login
+      router.replace('/');
+      
+    } catch (error) {
+      console.error('❌ Logout failed:', error);
+      
+      // ✅ Even if API fails, still clear local data and redirect
+      await AsyncStorage.multiRemove([
+        'authToken',
+        'userEmail',
+        'userPassword', 
+        'refreshToken'
+      ]);
+      
+      Alert.alert(
+        'Đăng xuất',
+        'Có lỗi xảy ra nhưng bạn đã được đăng xuất khỏi thiết bị này.',
+        [{ text: 'OK', onPress: () => router.replace('/') }]
+      );
+      
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
+    }
   };
 
   const cancelLogout = () => {
     setShowLogoutModal(false);
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // ✅ This will trigger AccountBanner to refetch recipe count
+      console.log('🔄 Refreshing profile data...');
+      // You can add any additional refresh logic here
+    } catch (error) {
+      console.error('❌ Refresh failed:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Handle navigation to notification screen
+  const handleNotification = () => {
+    router.push('/NotificationScreen');
+  };
+
+  // Handle navigation to setting screen
+  const handleSettings = () => {
+    router.push('/SettingScreen');
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* Container chứa hai nút ở góc trên */}
       <View style={styles.topButtonsContainer}>
         <TouchableOpacity 
-          style={styles.editButton} 
-          onPress={handleEditAccount}
+          style={styles.notificationButton} 
+          onPress={handleNotification}
           activeOpacity={0.8}
         >
-          <Ionicons name="person" size={20} color="#FF5D00" />
+          <Ionicons name="notifications-outline" size={20} color="#FF5D00" />
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.logoutButton} 
-          onPress={handleLogout}
+          style={styles.settingsButton}
+          onPress={handleSettings}
           activeOpacity={0.8}
         >
-          <Ionicons name="log-out-outline" size={20} color="#FF5D00" />
+          <Ionicons name="settings-outline" size={20} color="#FF5D00" />
         </TouchableOpacity>
       </View>
       
       <AccountBanner 
-        account={currentUser}
-        comments={currentUserComments}
+        comments={sampleComments}
       />
       <View style={styles.navContainer}>
         <AccountNav 
-          comments={currentUserComments}
-          favorites={currentUserFavorites}
-          account={[currentUser]}
-          isCurrentUser={true}
+          comments={sampleComments}
+          favorites={sampleFavorites}
+          account={sampleAccounts}
         />
       </View>
 
@@ -83,12 +142,12 @@ const ProfileScreen = () => {
         visible={showLogoutModal}
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
+        isLoading={isLoggingOut} // ✅ Pass loading state to modal
       />
-    </View>
-  );
-};
+    </ScrollView>
+  )
+}
 
-// Cập nhật styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -98,29 +157,14 @@ const styles = StyleSheet.create({
   },
   topButtonsContainer: {
     position: 'absolute',
-    top: 20, // Điều chỉnh theo status bar
+    top: 20,
     right: 20,
     flexDirection: 'row',
     zIndex: 1000,
     gap: 10,
   },
-  editButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 20,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(76, 175, 80, 0.1)',
-  },
-  logoutButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  notificationButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
     padding: 8,
     shadowColor: '#000',
@@ -134,6 +178,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 93, 0, 0.1)',
   },
-})
+  settingsButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 93, 0, 0.1)',
+  },
+});
 
 export default ProfileScreen;

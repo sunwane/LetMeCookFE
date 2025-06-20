@@ -7,10 +7,11 @@ import { Image, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } 
 interface FormInputProps {
   label: string;
   defaultValue?: string;
-  type?: 'text' | 'number' | 'date' | 'sex' | 'select' | 'email' | 'password';
+  type?: 'text' | 'number' | 'date' | 'sex' | 'select' | 'email' | 'password' | 'code';
   options?: string[];
   placeholder?: string;
-  onChangeText?: (value: string) => void; // Thêm prop này
+  onChangeText?: (value: string) => void;
+  onSendCode?: () => void; // Thêm prop cho việc gửi mã
 }
 
 const FormInput = ({ 
@@ -19,7 +20,8 @@ const FormInput = ({
   type = 'text', 
   options, 
   placeholder,
-  onChangeText 
+  onChangeText,
+  onSendCode 
 }: FormInputProps) => {
   const [value, setValue] = useState(defaultValue);
   const [showPassword, setShowPassword] = useState(false);
@@ -57,6 +59,32 @@ const FormInput = ({
   // Render input based on type
   const renderInput = () => {
     switch (type) {
+      case 'code':
+        return (
+          <View style={styles.codeContainer}>
+            <View style={styles.codeInputContainer}>
+              <Ionicons name="shield-outline" size={20} color="#666" style={styles.codeIcon} />
+              <TextInput
+                style={styles.codeInput}
+                value={value}
+                onChangeText={handleValueChange}
+                placeholder={placeholder || 'Nhập mã xác thực'}
+                keyboardType="numeric"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.sendCodeButton}
+              onPress={onSendCode}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.sendCodeText}>Gửi mã</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
       case 'email':
         return (
           <View style={styles.inputContainer}>
@@ -247,17 +275,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
+  
+  // Code input styles - giống với input khác
+  codeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  codeInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#cecece',
+    borderWidth: 2,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    marginHorizontal: -2,
+  },
+  codeIcon: {
+    marginLeft: 15,
+    marginRight: 5,
+    color: '#666',
+  },
+  codeInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingRight: 18,
+    fontSize: 17,
+    fontWeight: '500',
+    color: '#333',
+  },
+  sendCodeButton: {
+    backgroundColor: '#FF5D00',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendCodeText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+
   emailInput: {
     flex: 1,
-    paddingRight: 50, // Chừa chỗ cho icon
+    paddingRight: 50, // Để chỗ cho icon bên phải
   },
   passwordInput: {
     flex: 1,
-    paddingRight: 50, // Chừa chỗ cho icon
+    paddingRight: 50, // Để chỗ cho icon bên phải  
   },
   iconContainer: {
     position: 'absolute',
-    right: 18,
+    right: 18, // Icon ở bên phải
     padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
@@ -335,7 +407,7 @@ const styles = StyleSheet.create({
     color: '#333',
     outline: 'none',
     cursor: 'pointer',
-    appearance: 'none', //để nó yên
+    appearance: 'none',
     WebkitAppearance: 'none',
     MozAppearance: 'none',
     backgroundImage: 'none',

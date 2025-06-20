@@ -24,7 +24,6 @@ const ProfileTab = ({ account, isCurrentUser = true }: ProfileTabProps) => {
       <SectionTitle title='Chế độ ăn uống & sức khỏe'/>
       <View style={styles.list}>
         <InfoItem label='Chế độ ăn' value={account.diet} badgeType='diet' />
-        <InfoItem label='Tình trạng sức khỏe' value={account.healthStatus} badgeType='health' />
       </View>
       
       {/* Chỉ hiển thị nút sửa khi là user hiện tại */}
