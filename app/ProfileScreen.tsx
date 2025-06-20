@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, RefreshControl, StyleSheet, TouchableOpacity, View, SafeAreaView } from 'react-native';
 import { logoutAPI } from '../services/types/auth';
 
 const ProfileScreen = () => {
@@ -102,12 +102,7 @@ const ProfileScreen = () => {
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
+    <SafeAreaView style={styles.container}>
       {/* Container chứa hai nút ở góc trên */}
       <View style={styles.topButtonsContainer}>
         <TouchableOpacity 
@@ -142,15 +137,16 @@ const ProfileScreen = () => {
         visible={showLogoutModal}
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
-        isLoading={isLoggingOut} // ✅ Pass loading state to modal
+        isLoading={isLoggingOut}
       />
-    </ScrollView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   navContainer: {
     flex: 1, 

@@ -90,12 +90,13 @@ export const sendCodeAPI = async (email: string): Promise<string> => {
   try {
     console.log(`🌐 Sending verification code to: ${email}`);
     
-    const response = await fetch(`${API_BASE_URL}/accounts/send-code`, {
+    // ✅ FIX: Thêm email vào query parameter
+    const response = await fetch(`${API_BASE_URL}/accounts/send-code?email=${encodeURIComponent(email)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email }),
+      // ❌ REMOVE body
     });
 
     console.log(`📥 Send code response: ${response.status}`);
@@ -103,8 +104,6 @@ export const sendCodeAPI = async (email: string): Promise<string> => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ Send code failed: ${response.status} - ${errorText}`);
-      
-      // ✅ Include error body in the thrown error for frontend parsing
       throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
     }
 
