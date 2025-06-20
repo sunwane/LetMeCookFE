@@ -1,3 +1,4 @@
+import ReportModal from '@/components/ReportModal';
 import '@/config/globalTextConfig';
 import { CommentItem } from '@/services/types/CommentItem';
 import { useNavigation } from '@react-navigation/native';
@@ -13,7 +14,8 @@ interface CommentPost {
 const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
     const navigation = useNavigation();
     const [isLiked, setIsLiked] = useState(false);
-    const [isBookmarked, setIsBookmarked] = useState(false); // State cho bookmark
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [reportModalVisible, setReportModalVisible] = useState(false); // State cho report modal
     
     const toggleLike = () => {
         setIsLiked(!isLiked);
@@ -21,8 +23,11 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
 
     const toggleBookmark = () => {
         setIsBookmarked(!isBookmarked);
-        // Có thể thêm logic lưu vào database
         console.log(`Recipe ${isBookmarked ? 'removed from' : 'saved to'} bookmarks`);
+    };
+
+    const handleReport = () => {
+        setReportModalVisible(true);
     };
 
     const handleUserPress = () => {
@@ -36,7 +41,6 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
         }
     };
 
-    // Hàm navigate đến RecipeScreen khi ấn vào tên món ăn
     const handleRecipePress = () => {
         router.push({
             pathname: '/RecipeScreen',
@@ -47,82 +51,92 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
     };
     
     return (
-        <View style={styles.postContent}>
-            <View style={styles.top}>
-                <View style={styles.infor}>
-                    <TouchableOpacity onPress={handleUserPress}>
-                        <Image
-                            source={{uri: item.account.avatar}}
-                            style={styles.avatar}
-                        />
-                    </TouchableOpacity>
-                    <View>
-                        <View style={styles.row}>
-                            <TouchableOpacity onPress={handleUserPress}>
-                                <Text style={styles.nameDisplay}>
-                                    {item.account.userName}
-                                </Text> 
-                            </TouchableOpacity>
-                            <Text> đã nấu món</Text>
-                        </View>
-                        <TouchableOpacity onPress={handleRecipePress}>
-                            <Text style={styles.foodTitle}>{item.recipe.foodName}</Text>
+        <>
+            <View style={styles.postContent}>
+                <View style={styles.top}>
+                    <View style={styles.infor}>
+                        <TouchableOpacity onPress={handleUserPress}>
+                            <Image
+                                source={{uri: item.account.avatar}}
+                                style={styles.avatar}
+                            />
                         </TouchableOpacity>
+                        <View>
+                            <View style={styles.row}>
+                                <TouchableOpacity onPress={handleUserPress}>
+                                    <Text style={styles.nameDisplay}>
+                                        {item.account.userName}
+                                    </Text> 
+                                </TouchableOpacity>
+                                <Text> đã nấu món</Text>
+                            </View>
+                            <TouchableOpacity onPress={handleRecipePress}>
+                                <Text style={styles.foodTitle}>{item.recipe.foodName}</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
-            </View>
-            <View style={styles.des}>
-                <Text style={styles.description}>
-                    {item.content}
-                </Text>
-            </View>
-            <TouchableOpacity style={styles.mid} onPress={handleRecipePress}>
-                <Image
-                    source={{uri: item.recipe.imageUrl}}
-                    style={styles.foodImage}
-                />
-                {/* Bookmark button overlay */}
-                <TouchableOpacity 
-                    style={styles.bookmarkButton} 
-                    onPress={toggleBookmark}
-                    activeOpacity={0.8}
-                >
+                <View style={styles.des}>
+                    <Text style={styles.description}>
+                        {item.content}
+                    </Text>
+                </View>
+                <TouchableOpacity style={styles.mid} onPress={handleRecipePress}>
                     <Image
-                        source={
-                            isBookmarked 
-                            ? require('@/assets/images/icons/Bookmark_Active.png')
-                            : require('@/assets/images/icons/Bookmark.png')
-                        }
-                        style={styles.bookmarkIcon}
+                        source={{uri: item.recipe.imageUrl}}
+                        style={styles.foodImage}
                     />
-                    <Text style={styles.bookmarkText}>Lưu công thức</Text>
-                </TouchableOpacity>
-            </TouchableOpacity>
-            <View style={[styles.bot]}>
-                <TouchableOpacity onPress={toggleLike}>
-                    <View style={styles.bot}>
+                    {/* Bookmark button overlay */}
+                    <TouchableOpacity 
+                        style={styles.bookmarkButton} 
+                        onPress={toggleBookmark}
+                        activeOpacity={0.8}
+                    >
                         <Image
                             source={
-                                isLiked 
-                                ? require('@/assets/images/icons/Like_Active.png')
-                                : require('@/assets/images/icons/Like.png')
+                                isBookmarked 
+                                ? require('@/assets/images/icons/Bookmark_Active.png')
+                                : require('@/assets/images/icons/Bookmark.png')
                             }
-                            style={styles.icon}
+                            style={styles.bookmarkIcon}
                         />
-                        <Text style={styles.iconText}>{item.like} người đã thích</Text>
-                    </View>
+                        <Text style={styles.bookmarkText}>Lưu công thức</Text>
+                    </TouchableOpacity>
                 </TouchableOpacity>
-                <TouchableOpacity>
-                    <View style={styles.bot}>
-                        <Image
-                            source={require('@/assets/images/icons/Error.png')}
-                            style={styles.icon}
-                        />
-                        <Text style={styles.iconText}>Báo cáo</Text>
-                    </View>
-                </TouchableOpacity>
+                <View style={[styles.bot]}>
+                    <TouchableOpacity onPress={toggleLike}>
+                        <View style={styles.bot}>
+                            <Image
+                                source={
+                                    isLiked 
+                                    ? require('@/assets/images/icons/Like_Active.png')
+                                    : require('@/assets/images/icons/Like.png')
+                                }
+                                style={styles.icon}
+                            />
+                            <Text style={styles.iconText}>{item.like} người đã thích</Text>
+                        </View>
+                    </TouchableOpacity>
+                    {/* Report Button với Modal */}
+                    <TouchableOpacity onPress={handleReport}>
+                        <View style={styles.bot}>
+                            <Image
+                                source={require('@/assets/images/icons/Error.png')}
+                                style={styles.icon}
+                            />
+                            <Text style={styles.iconText}>Báo cáo</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
             </View>
-        </View>
+
+            {/* Report Modal */}
+            <ReportModal
+                visible={reportModalVisible}
+                onClose={() => setReportModalVisible(false)}
+                userName={item.account.userName}
+            />
+        </>
     )
 }
 

@@ -13,6 +13,7 @@ export interface RecipeItem {
   subCategory?: SubCategoryItem; 
   status?: boolean,
   userID?: string,
+  createAt?: string; // Thêm trường createAt
 }
 
 //file riêng
@@ -25,6 +26,7 @@ export const foodData: RecipeItem[] = [
     cookingTime: '50m',
     likes: 100,
     subCategory: sampleSubCategories[0],
+    createAt: '2024-12-15',
   },
   {
     id: '2',
@@ -35,6 +37,7 @@ export const foodData: RecipeItem[] = [
     likes: 150,
     category: sampleCategories[0],
     subCategory: sampleSubCategories[1],
+    createAt: '2024-12-10',
   },
   {
     id: '3',
@@ -45,6 +48,7 @@ export const foodData: RecipeItem[] = [
     likes: 100,
     category: sampleCategories[0],
     subCategory: sampleSubCategories[8],
+    createAt: '2024-12-08',
   },
   {
     id: '4',
@@ -55,6 +59,7 @@ export const foodData: RecipeItem[] = [
     likes: 150,
     category: sampleCategories[0],
     subCategory: sampleSubCategories[8],
+    createAt: '2024-12-05',
   },
   {
     id: '5',
@@ -65,6 +70,7 @@ export const foodData: RecipeItem[] = [
     likes: 100,
     category: sampleCategories[1],
     subCategory: sampleSubCategories[5],
+    createAt: '2024-12-03',
   },
   {
     id: '6',
@@ -75,6 +81,7 @@ export const foodData: RecipeItem[] = [
     likes: 150,
     category: sampleCategories[0],
     subCategory: sampleSubCategories[8],
+    createAt: '2024-11-28',
   },
   {
     id: '7',
@@ -85,6 +92,7 @@ export const foodData: RecipeItem[] = [
     likes: 100,
     category: sampleCategories[3],
     subCategory: sampleSubCategories[3],
+    createAt: '2024-11-25',
   },
   {
     id: '8',
@@ -95,6 +103,7 @@ export const foodData: RecipeItem[] = [
     likes: 150,
     category: sampleCategories[2],
     subCategory: sampleSubCategories[11],
+    createAt: '2024-11-20',
   },
   {
     id: '9',
@@ -105,5 +114,6 @@ export const foodData: RecipeItem[] = [
     likes: 200,
     category: sampleCategories[3], // Cơm
     subCategory: sampleSubCategories[3], // Cơm chiên
+    createAt: '2024-11-15',
   },
 ];
