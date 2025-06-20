@@ -64,7 +64,7 @@ export const foodData: RecipeItem[] = [
     cookingTime: '1h50m',
     likes: 100,
     category: sampleCategories[1],
-    subCategory: sampleSubCategories[6],
+    subCategory: sampleSubCategories[5],
   },
   {
     id: '6',
@@ -94,7 +94,7 @@ export const foodData: RecipeItem[] = [
     cookingTime: '5h30m',
     likes: 150,
     category: sampleCategories[2],
-    subCategory: sampleSubCategories[5],
+    subCategory: sampleSubCategories[11],
   },
   {
     id: '9',

@@ -13,9 +13,16 @@ interface CommentPost {
 const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
     const navigation = useNavigation();
     const [isLiked, setIsLiked] = useState(false);
+    const [isBookmarked, setIsBookmarked] = useState(false); // State cho bookmark
     
     const toggleLike = () => {
         setIsLiked(!isLiked);
+    };
+
+    const toggleBookmark = () => {
+        setIsBookmarked(!isBookmarked);
+        // Có thể thêm logic lưu vào database
+        console.log(`Recipe ${isBookmarked ? 'removed from' : 'saved to'} bookmarks`);
     };
 
     const handleUserPress = () => {
@@ -74,6 +81,22 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                     source={{uri: item.recipe.imageUrl}}
                     style={styles.foodImage}
                 />
+                {/* Bookmark button overlay */}
+                <TouchableOpacity 
+                    style={styles.bookmarkButton} 
+                    onPress={toggleBookmark}
+                    activeOpacity={0.8}
+                >
+                    <Image
+                        source={
+                            isBookmarked 
+                            ? require('@/assets/images/icons/Bookmark_Active.png')
+                            : require('@/assets/images/icons/Bookmark.png')
+                        }
+                        style={styles.bookmarkIcon}
+                    />
+                    <Text style={styles.bookmarkText}>Lưu công thức</Text>
+                </TouchableOpacity>
             </TouchableOpacity>
             <View style={[styles.bot]}>
                 <TouchableOpacity onPress={toggleLike}>
@@ -145,10 +168,33 @@ const styles = StyleSheet.create({
     },
     foodImage: {
         width: '100%',
-        height: 200,
+        height: 220,
     },
     mid: {
         position: 'relative',
+    },
+    // Bookmark button styles
+    bookmarkButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(122, 41, 23,0.7)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
+        gap: 6,
+    },
+    bookmarkIcon: {
+        width: 10,
+        height: 15,
+        tintColor: '#fff',
+    },
+    bookmarkText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '600',
     },
     bot: {
         flexDirection: 'row',
@@ -177,4 +223,4 @@ const styles = StyleSheet.create({
         color: '#333',
         lineHeight: 22,
     },
-})
+});

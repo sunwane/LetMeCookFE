@@ -6,9 +6,9 @@ interface SearchBarProps {
   defaultValue?: string;
   containerStyle?: any;
   onSearch?: (query: string) => void;
-  searchMode?: 'FindRecipe' | 'FindCategory'; // Thêm prop để xác định chế độ
-  onFilterChange?: (query: string) => void; // Callback cho filter trong FilterDialog
-  placeholder?: string; // Custom placeholder
+  searchMode?: 'FindRecipe' | 'FindCategory';
+  onFilterChange?: (query: string) => void;
+  placeholder?: string;
 }
 
 const SearchBar = ({ 
@@ -21,7 +21,6 @@ const SearchBar = ({
 }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState(defaultValue);
 
-  // Đồng bộ searchQuery với defaultValue khi defaultValue thay đổi
   useEffect(() => {
     setSearchQuery(defaultValue);
   }, [defaultValue]);
@@ -29,7 +28,6 @@ const SearchBar = ({
   const handleTextChange = (text: string) => {
     setSearchQuery(text);
     
-    // Nếu là chế độ FindCategory và có callback, gọi ngay khi text thay đổi
     if (searchMode === 'FindCategory' && onFilterChange) {
       onFilterChange(text);
     }
@@ -40,7 +38,6 @@ const SearchBar = ({
       if (onSearch) {
         onSearch(searchQuery);
       } else if (searchMode === 'FindRecipe') {
-        // Chế độ tìm kiếm món ăn - chuyển sang SearchResults
         router.push({
           pathname: '/SearchResults',
           params: { query: searchQuery }
@@ -55,35 +52,27 @@ const SearchBar = ({
   };
 
   return (
-    <View style={[styles.header, containerStyle]}>
-      <View style={styles.headerContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder={getPlaceholder()}
-          placeholderTextColor="rgba(145, 64, 35, 0.5)"
-          value={searchQuery}
-          onChangeText={handleTextChange}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-          autoFocus={searchMode === 'FindCategory'} // Auto focus cho search trong filter
-        />
-        <Image 
-          source={require('@/assets/images/icons/icon_search.png')}
-          style={styles.searchIcon}
-        />
-      </View>
+    <View style={[styles.searchContainer, containerStyle]}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder={getPlaceholder()}
+        placeholderTextColor="rgba(145, 64, 35, 0.5)"
+        value={searchQuery}
+        onChangeText={handleTextChange}
+        onSubmitEditing={handleSearch}
+        returnKeyType="search"
+        autoFocus={searchMode === 'FindCategory'}
+      />
+      <Image 
+        source={require('@/assets/images/icons/icon_search.png')}
+        style={styles.searchIcon}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: '#ffffff',
-    paddingBottom: 20,
-  },
-  headerContainer: {
-    marginHorizontal: 10,
-    marginTop: 20,
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9f9f9',

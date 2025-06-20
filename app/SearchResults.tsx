@@ -7,13 +7,49 @@ import { foodData } from '@/services/types/RecipeItem';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 const SearchResults = () => {
   const { query, selectedTags: initialSelectedTagsParam } = useLocalSearchParams();
   const navigation = useNavigation();
   const [showFilter, setShowFilter] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Keyboard listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setIsKeyboardVisible(true);
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // Initialize selectedTags từ params khi component mount
   useEffect(() => {
@@ -74,29 +110,46 @@ const SearchResults = () => {
     setSelectedTags([]);
   };
 
-  // Cập nhật header với SearchBar chế độ FindRecipe
+  // Cập nhật header với SearchBar không có wrapper styling
   React.useLayoutEffect(() => {
     navigation.setOptions({
       header: () => (
-        <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#FF5D00" />
-          </TouchableOpacity>
-          <SearchBar 
-            defaultValue={(query as string) || ''} 
-            containerStyle={styles.searchHeader}
-            searchMode="FindRecipe"
-            onSearch={(newQuery) => {
-              router.push({
-                pathname: '/SearchResults',
-                params: { query: newQuery },
-              });
-            }}
-          />
-        </View>
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'position' : 'height'}
+            keyboardVerticalOffset={0}
+          >
+            <View style={[
+              styles.headerContainer,
+              isKeyboardVisible && {
+                paddingTop: Math.max(10, 50 - keyboardHeight * 0.05),
+              }
+            ]}>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color="#FF5D00" />
+              </TouchableOpacity>
+              <View style={styles.searchBarWrapper}>
+                <SearchBar 
+                  defaultValue={(query as string) || ''} 
+                  containerStyle={[
+                    styles.searchBarInHeader,
+                    isKeyboardVisible && styles.searchBarFocused
+                  ]}
+                  searchMode="FindRecipe"
+                  onSearch={(newQuery) => {
+                    router.push({
+                      pathname: '/SearchResults',
+                      params: { query: newQuery },
+                    });
+                  }}
+                />
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       ),
     });
-  }, [navigation, query]);
+  }, [navigation, query, isKeyboardVisible, keyboardHeight]);
 
   return (
     <View style={styles.container}>
@@ -132,6 +185,7 @@ const SearchResults = () => {
             keyExtractor={(item, index) => index.toString()}
             renderItem={({ item }) => <OneRecipe item={item} />}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           />
         ) : (
           <View style={styles.noResultsContainer}>
@@ -162,8 +216,10 @@ const SearchResults = () => {
   );
 };
 
-// Thêm styles mới
 const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     paddingBottom: 10,
@@ -172,11 +228,11 @@ const styles = StyleSheet.create({
   },
   fillContain: {
     flexDirection: 'row',
-    alignItems: 'flex-start', // Thay đổi để tags không bị stretch
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: 10,
     marginRight: 5,
-    minHeight: 40, // Đặt height tối thiểu
+    minHeight: 40,
   },
   tagContain: {
     flex: 1,
@@ -185,8 +241,8 @@ const styles = StyleSheet.create({
   buttonContain: {
     flexDirection: 'row',
     gap: 8,
-    alignItems: 'flex-start', // Align buttons ở top
-    marginTop: 5, // Thêm margin top để align với tags
+    alignItems: 'flex-start',
+    marginTop: 5,
   },
   circle: {
     borderRadius: 15,
@@ -203,14 +259,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EB3223'
   },
   listContainer: {
-    flex: 1, // Đảm bảo FlatList chiếm hết không gian còn lại
-  },
-  text: {
-    fontSize: 16,
-    color: '#74341C',
-    fontWeight: 'bold',
-    paddingVertical: 10, 
-    paddingHorizontal: 5,
+    flex: 1,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -221,14 +270,27 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     gap: 10,
   },
-  backButton: {},
-  searchHeader: {
+  backButton: {
+    padding: 5,
+  },
+  searchBarWrapper: {
     flex: 1,
-    paddingBottom: 5,
-    paddingTop: 0,
-    marginTop: -15,
-    marginRight: -10,
-    marginVertical: 0,
+    paddingLeft: 10,
+  },
+  searchBarInHeader: {
+    marginHorizontal: 0,
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  searchBarFocused: {
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   noResultsContainer: {
     flex: 1,
