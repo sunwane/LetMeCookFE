@@ -64,7 +64,7 @@ export default function AgeSelection() {
         </Text>
 
         {/* Continue Button */}
-        <ContinueButton onPress={handleContinue} />
+        <ContinueButton onPress={handleContinue} disabled={false} />
       </View>
     </View>
   );
