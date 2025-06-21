@@ -44,6 +44,7 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // ✅ FIRST useEffect - Params check và keyboard listeners
   useEffect(() => {
     // Kiểm tra nếu có parameter logged=true
     if (params.logged === 'true') {
@@ -73,6 +74,56 @@ export default function Index() {
       keyboardDidHideListener?.remove();
       keyboardDidShowListener?.remove();
     };
+  }, [params]);
+
+  // ✅ SECOND useEffect - Token verification
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        // ✅ Check if user already logged in
+        if (params.logged === 'true') {
+          setIsLoggedIn(true);
+          return;
+        }
+        
+        // ✅ Check existing token
+        const existingToken = await AsyncStorage.getItem('authToken');
+        
+        if (existingToken) {
+          console.log("🔑 Found existing token, verifying...");
+          
+          // ✅ Test token validity with simple API call
+          try {
+            const response = await fetch(`${API_BASE_URL}/user-info`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${existingToken}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (response.ok) {
+              console.log("✅ Token valid, auto-login");
+              setIsLoggedIn(true);
+              return;
+            } else {
+              console.log("❌ Token invalid, clearing...");
+              await AsyncStorage.removeItem('authToken');
+            }
+          } catch (tokenError) {
+            console.log("❌ Token verification failed, clearing...");
+            await AsyncStorage.removeItem('authToken');
+          }
+        }
+        
+    
+        
+      } catch (error) {
+        console.error("❌ Auth check error:", error);
+      }
+    };
+    
+    checkAuthStatus();
   }, [params]);
 
   // ✅ Function to check email status
@@ -108,6 +159,7 @@ export default function Index() {
     Keyboard.dismiss();
   };
 
+  // index.tsx - Clean up handleLogin
   const handleLogin = async () => {
     if (!email || !password) {
       setError("Vui lòng nhập email và mật khẩu");
@@ -117,66 +169,28 @@ export default function Index() {
     setIsLoading(true);
     setError("");
     
-    await AsyncStorage.clear();
-    
     try {
-      // ✅ Check account status first
-      const emailStatus = await checkEmailStatus(email);
+      console.log('🔑 Attempting login...');
       
-      if (emailStatus?.status === 'PENDING') {
-        // ✅ Account chưa hoàn tất → chuyển đến setup
-        setIsLoading(false);
-        
-        Alert.alert(
-          'Hoàn tất đăng ký',
-          'Tài khoản của bạn chưa được thiết lập hoàn tất. Bạn có muốn tiếp tục thiết lập không?',
-          [
-            { 
-              text: 'Hủy', 
-              style: 'cancel',
-              onPress: () => console.log('❌ User cancelled setup completion')
-            },
-            { 
-              text: 'Tiếp tục', 
-              onPress: async () => {
-                console.log('🔄 Continuing account setup...');
-                
-                // ✅ Save credentials and navigate to setup
-                await AsyncStorage.setItem('userEmail', email.trim());
-                await AsyncStorage.setItem('userPassword', password);
-                
-                router.push('/GenderSelection');
-              }
-            }
-          ]
-        );
-        return;
-      }
-      
-      if (emailStatus?.status === 'NOT_EXISTS') {
-        // ✅ Email chưa được đăng ký
-        setError('Email chưa được đăng ký. Vui lòng đăng ký tài khoản mới.');
-        setIsLoading(false);
-        return;
-      }
-      
-      // ✅ Account đã hoàn tất (COMPLETED) hoặc status check fail → login bình thường
-      console.log('🔑 Attempting normal login...');
-      
+      // ✅ DIRECT LOGIN - Không cần check status trước
       const result = await loginAPI({ email: email.trim(), password });
       
-      console.log("✅ Login successful - has UserInfo");
+      console.log("✅ Login successful:", result);
+      
+      // ✅ CRITICAL: Save token ngay sau khi login thành công
       await AsyncStorage.setItem('authToken', result.token);
       await AsyncStorage.setItem('userEmail', email.trim());
+      
+      console.log("💾 Token saved successfully");
+      
       setIsLoggedIn(true);
       
     } catch (error: any) {
       console.error("❌ Login error:", error);
       
-      // ✅ Fallback: Error 1054 = User authenticated but no UserInfo
+      // ✅ Parse specific backend error codes
       if (error.message?.includes("1054")) {
-        console.log("🔄 User exists but no UserInfo, saving credentials...");
-        
+        // User authenticated but no UserInfo created yet
         Alert.alert(
           'Thiết lập tài khoản',
           'Tài khoản của bạn cần hoàn tất thông tin. Tiếp tục thiết lập?',
@@ -185,16 +199,31 @@ export default function Index() {
             { 
               text: 'Tiếp tục', 
               onPress: async () => {
-                // ✅ Save credentials for UserInfo creation
+                // Save credentials for UserInfo creation flow
                 await AsyncStorage.setItem('userEmail', email.trim());
                 await AsyncStorage.setItem('userPassword', password);
-                
                 router.push("/GenderSelection");
               }
             }
           ]
         );
-        
+      } else if (error.message?.includes("1012")) {
+        // Account registered but incomplete
+        Alert.alert(
+          'Hoàn tất đăng ký',
+          'Tài khoản của bạn chưa được thiết lập hoàn tất. Tiếp tục thiết lập?',
+          [
+            { text: 'Hủy', style: 'cancel' },
+            { 
+              text: 'Tiếp tục', 
+              onPress: async () => {
+                await AsyncStorage.setItem('userEmail', email.trim());
+                await AsyncStorage.setItem('userPassword', password);
+                router.push("/GenderSelection");
+              }
+            }
+          ]
+        );
       } else {
         setError("Email hoặc mật khẩu không đúng");
       }
@@ -266,7 +295,7 @@ export default function Index() {
   );
 }
 
-// Thêm cấu hình để ẩn header
+// ✅ Thêm cấu hình để ẩn header
 export const options = {
   headerShown: false,
 };
@@ -284,73 +313,3 @@ const styles = StyleSheet.create({
     minHeight: height - 100,
   },
 });
-
-// index.tsx - ensure proper flow order
-useEffect(() => {
-  const initializeApp = async () => {
-    try {
-      // ✅ 1. Check if user has auth token first
-      const existingToken = await AsyncStorage.getItem('authToken');
-      
-      if (existingToken) {
-        console.log("🔑 Found existing token, checking validity...");
-        
-        // ✅ 2. If has token, verify it works
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/introspect`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${existingToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token: existingToken }),
-          });
-          
-          if (response.ok) {
-            console.log("✅ Token valid, user already logged in");
-            setIsLoggedIn(true);
-            return;
-          } else {
-            console.log("❌ Token invalid, clearing...");
-            await AsyncStorage.removeItem('authToken');
-          }
-        } catch (tokenError) {
-          console.log("❌ Token check failed, clearing...");
-          await AsyncStorage.removeItem('authToken');
-        }
-      }
-      
-      // ✅ 3. No valid token, check account status (PUBLIC call)
-      const userEmail = await AsyncStorage.getItem('userEmail');
-      if (userEmail) {
-        console.log("📧 Checking status for:", userEmail);
-        
-        const statusResponse = await fetch(`${API_BASE_URL}/accounts/check-status?email=${userEmail}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          // ✅ NO Authorization header for public endpoint
-        });
-        
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-          console.log("📊 Account status:", statusData);
-          
-          if (statusData.result.hasUserInfo) {
-            console.log("✅ Account has UserInfo, can login normally");
-            // Proceed with normal login flow
-          } else {
-            console.log("⚠️ Account exists but no UserInfo, redirect to setup");
-            // Redirect to gender selection
-          }
-        } else {
-          console.log("❌ Status check failed:", statusResponse.status);
-        }
-      }
-      
-    } catch (error) {
-      console.error("❌ App initialization error:", error);
-    }
-  };
-  
-  initializeApp();
-}, []);
