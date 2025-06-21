@@ -1,10 +1,11 @@
 import FilterSection from '@/components/FilterSection';
 import SearchBar from '@/components/searchbar';
 import '@/config/globalTextConfig';
-import { sampleCategories } from '@/services/types/Category';
-import { sampleSubCategories } from '@/services/types/SubCategoryItem';
+import { Category, getAllCategories } from '@/services/types/Category';
+import { getAllSubCategories, SubCategoryItem } from '@/services/types/SubCategoryItem';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   Keyboard,
   Modal,
@@ -33,9 +34,46 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
+  // State for API data
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     setSelectedTags(initialSelectedTags);
   }, [initialSelectedTags]);
+
+  // Fetch data when dialog becomes visible
+  useEffect(() => {
+    if (visible) {
+      const fetchData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          // Gọi cả 2 API song song để tăng tốc độ
+          const [categoriesResponse, subCategoriesResponse] = await Promise.all([
+            getAllCategories(),
+            getAllSubCategories()
+          ]);
+
+          if (categoriesResponse?.result) {
+            setCategories(categoriesResponse.result);
+          }
+          if (subCategoriesResponse?.result) {
+            setSubCategories(subCategoriesResponse.result);
+          }
+        } catch (err) {
+          console.error("Failed to fetch filter data:", err);
+          setError("Không thể tải dữ liệu bộ lọc. Vui lòng thử lại.");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchData();
+    }
+  }, [visible]);
 
   // Keyboard listeners
   useEffect(() => {
@@ -64,30 +102,30 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
   // Hàm filter categories và subcategories dựa trên search query
   const getFilteredData = () => {
     if (!searchQuery.trim()) {
-      return sampleCategories.map(category => ({
+      return categories.map(category => ({
         category,
-        subCategories: sampleSubCategories.filter(sub => sub.category?.id === category.id)
+        subCategories: subCategories.filter(sub => sub.categoryId === category.id)
       }));
     }
 
-    const filteredData = sampleCategories
+    const filteredData = categories
       .map(category => {
-        const matchingSubCategories = sampleSubCategories.filter(sub => 
-          sub.category?.id === category.id &&
-          sub.name.toLowerCase().includes(searchQuery.toLowerCase())
+        const matchingSubCategories = subCategories.filter(sub => 
+          sub.categoryId === category.id &&
+          sub.subCategoryName.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
-        const categoryMatches = category.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const categoryMatches = category.categoryName.toLowerCase().includes(searchQuery.toLowerCase());
 
         return {
           category,
           subCategories: categoryMatches 
-            ? sampleSubCategories.filter(sub => sub.category?.id === category.id)
+            ? subCategories.filter(sub => sub.categoryId === category.id)
             : matchingSubCategories
         };
       })
       .filter(({ category, subCategories }) => {
-        const categoryMatches = category.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const categoryMatches = category.categoryName.toLowerCase().includes(searchQuery.toLowerCase());
         return categoryMatches || subCategories.length > 0;
       });
 
@@ -136,7 +174,6 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
   // Tính toán layout động dựa trên keyboard
   const getContainerStyle = () => {
     if (isKeyboardVisible) {
-      // Khi keyboard hiện: dialog chiếm toàn màn hình
       return {
         position: 'absolute' as const,
         top: 0,
@@ -149,7 +186,6 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
       };
     }
     
-    // Khi keyboard ẩn: dialog bình thường
     return {
       height: screenHeight * 2/3,
       borderTopLeftRadius: 20,
@@ -162,17 +198,14 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
     const footerHeight = 80;  // Estimate
     
     if (isKeyboardVisible) {
-      // Khi keyboard hiện: content chiếm từ dưới header đến trên footer
       return screenHeight - headerHeight - footerHeight;
     }
     
-    // Khi keyboard ẩn: content bình thường
     return (screenHeight * 2/3) - headerHeight - footerHeight;
   };
 
   const getFooterStyle = () => {
     if (isKeyboardVisible) {
-      // Khi keyboard hiện: footer ở bottom của màn hình (có thể bị che bởi keyboard)
       return {
         position: 'absolute' as const,
         bottom: 0,
@@ -182,7 +215,6 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
       };
     }
     
-    // Khi keyboard ẩn: footer bình thường
     return {
       backgroundColor: '#fff',
     };
@@ -198,7 +230,7 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
       <TouchableWithoutFeedback onPress={handleClose}>
         <View style={[
           styles.overlay,
-          isKeyboardVisible && { backgroundColor: 'rgba(0, 0, 0, 0.3)' } // Làm mờ overlay khi keyboard hiện
+          isKeyboardVisible && { backgroundColor: 'rgba(0, 0, 0, 0.3)' }
         ]}>
           <TouchableWithoutFeedback onPress={() => {}}>
             <View style={[
@@ -237,26 +269,32 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={styles.scrollContent}
               >
-                {groupedSubCategories.length > 0 ? (
+                {isLoading ? (
+                  <ActivityIndicator size="large" color="#FF5D00" style={{ marginTop: 50 }} />
+                ) : error ? (
+                  <View style={styles.noResultsContainer}>
+                    <Text style={styles.noResultsText}>{error}</Text>
+                  </View>
+                ) : groupedSubCategories.length > 0 ? (
                   groupedSubCategories.map(({ category, subCategories }) => (
-                    <FilterSection key={category.id} title={category.name}>
+                    <FilterSection key={category.id} title={category.categoryName}>
                       {subCategories.length > 0 ? (
                         subCategories.map((subCategory) => (
                           <TouchableOpacity 
                             key={subCategory.id} 
                             style={[
                               styles.filterItem,
-                              selectedTags.includes(subCategory.name) && styles.selectedFilterItem
+                              selectedTags.includes(subCategory.subCategoryName) && styles.selectedFilterItem
                             ]}
-                            onPress={() => toggleTag(subCategory.name)}
+                            onPress={() => toggleTag(subCategory.subCategoryName)}
                           >
                             <Text style={[
                               styles.filterItemText,
-                              selectedTags.includes(subCategory.name) && styles.selectedFilterItemText
+                              selectedTags.includes(subCategory.subCategoryName) && styles.selectedFilterItemText
                             ]}>
-                              {subCategory.name}
+                              {subCategory.subCategoryName}
                             </Text>
-                            {selectedTags.includes(subCategory.name) && (
+                            {selectedTags.includes(subCategory.subCategoryName) && (
                               <Text style={styles.checkmark}>✓</Text>
                             )}
                           </TouchableOpacity>
@@ -280,9 +318,9 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
                 
                 {/* Subcategories không có category */}
                 {(() => {
-                  const uncategorizedSubs = sampleSubCategories.filter(sub => 
-                    !sub.category &&
-                    (searchQuery === '' || sub.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                  const uncategorizedSubs = subCategories.filter(sub => 
+                    !sub.categoryId &&
+                    (searchQuery === '' || sub.subCategoryName.toLowerCase().includes(searchQuery.toLowerCase()))
                   );
                   return uncategorizedSubs.length > 0 ? (
                     <FilterSection title="Khác">
@@ -291,17 +329,17 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
                           key={subCategory.id} 
                           style={[
                             styles.filterItem,
-                            selectedTags.includes(subCategory.name) && styles.selectedFilterItem
+                            selectedTags.includes(subCategory.subCategoryName) && styles.selectedFilterItem
                           ]}
-                          onPress={() => toggleTag(subCategory.name)}
+                          onPress={() => toggleTag(subCategory.subCategoryName)}
                         >
                           <Text style={[
                             styles.filterItemText,
-                            selectedTags.includes(subCategory.name) && styles.selectedFilterItemText
+                            selectedTags.includes(subCategory.subCategoryName) && styles.selectedFilterItemText
                           ]}>
-                            {subCategory.name}
+                            {subCategory.subCategoryName}
                           </Text>
-                          {selectedTags.includes(subCategory.name) && (
+                          {selectedTags.includes(subCategory.subCategoryName) && (
                             <Text style={styles.checkmark}>✓</Text>
                           )}
                         </TouchableOpacity>
@@ -310,11 +348,10 @@ const FilterDialog = ({ visible, onClose, onApply, initialSelectedTags = [] }: F
                   ) : null;
                 })()}
                 
-                {/* Thêm padding bottom để tránh content bị che bởi footer khi keyboard hiện */}
                 {isKeyboardVisible && <View style={{ height: 100 }} />}
               </ScrollView>
               
-              {/* Footer - vị trí thay đổi theo keyboard state */}
+              {/* Footer */}
               <View style={[
                 styles.footer,
                 getFooterStyle()
@@ -357,7 +394,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   headerWithKeyboard: {
-    paddingTop: 50, // Thêm padding top khi keyboard hiện để tránh status bar
+    paddingTop: 50,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
   },

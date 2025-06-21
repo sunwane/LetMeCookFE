@@ -51,7 +51,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
   return (
     <TouchableOpacity style={styles.container} onPress={handleRecipePress} activeOpacity={0.8}>
       <Image
-        source={{ uri: recipe.imageUrl }}
+        source={{ uri: recipe.image }}
         style={styles.recipeImage}
       />
       <View style={styles.infor}>
@@ -62,7 +62,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {recipe.foodName}
+              {recipe.title}
             </Text>
             <TouchableOpacity onPress={toggleBookmark}>
               <Image
@@ -108,7 +108,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
               source={require('@/assets/images/icons/Like_Active.png')} 
               style={styles.icon}
             />
-            <Text style={styles.smallText}>{recipe.likes}</Text>
+            <Text style={styles.smallText}>{recipe.totalLikes}</Text>
           </View>
         </View>
       </View>

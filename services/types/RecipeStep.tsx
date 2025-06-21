@@ -1,5 +1,12 @@
 import { foodData, RecipeItem } from "./RecipeItem";
 
+
+export interface ApiResponse<T> {
+  code?: number
+  message?: string
+  result: T
+}
+
 export interface RecipeStep {
     id: string;
     step: number;
@@ -7,6 +14,27 @@ export interface RecipeStep {
     recipe: RecipeItem;
     waitTime?: number; // Thời gian chờ đợi nấu (nếu có)
     stepImg?: string; // Hình ảnh mô tả bước nấu
+}
+
+export interface RecipeStepsResponse {
+  id: string
+  step: number
+  recipeName: string
+  description: string
+  waitingTime?: string
+  recipeStepImage?: string
+}
+
+export interface RecipeStepsCreationRequest {
+  step: number
+  description: string
+  waitingTime?: string
+}
+
+export interface RecipeStepsUpdateRequest {
+  step: number
+  description: string
+  waitingTime?: string
 }
 
 export const sampleRecipeSteps: RecipeStep[] = [

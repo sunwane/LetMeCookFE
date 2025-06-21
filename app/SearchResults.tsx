@@ -3,11 +3,13 @@ import OneRecipe from '@/components/OneRecipe';
 import SearchBar from '@/components/searchbar';
 import SelectedTags from '@/components/SelectedTags';
 import '@/config/globalTextConfig';
-import { foodData } from '@/services/types/RecipeItem';
+import { getRecipesBySubCategory, RecipeItem } from '@/services/types/RecipeItem';
+import { getAllSubCategories, SubCategoryItem } from '@/services/types/SubCategoryItem';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -26,6 +28,14 @@ const SearchResults = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  
+  // State cho dữ liệu từ API
+  const [recipes, setRecipes] = useState<RecipeItem[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMorePages, setHasMorePages] = useState(true);
 
   // Keyboard listeners
   useEffect(() => {
@@ -64,35 +74,122 @@ const SearchResults = () => {
     }
   }, [initialSelectedTagsParam]);
 
-  // Logic filter 2 lớp: theo tên món ăn và theo tags
-  const getFilteredFood = () => {
-    let filteredData = foodData;
+  // Fetch subcategories để map tag names với IDs
+  useEffect(() => {
+    const fetchSubCategories = async () => {
+      try {
+        const response = await getAllSubCategories();
+        if (response?.result) {
+          setSubCategories(response.result);
+        }
+      } catch (error) {
+        console.error('Error fetching subcategories:', error);
+      }
+    };
 
-    // Lớp 1: Filter theo query (tên món ăn)
-    if (query && typeof query === 'string' && query.trim()) {
-      filteredData = filteredData.filter(food => 
-        food.foodName.toLowerCase().includes(query.toLowerCase())
+    fetchSubCategories();
+  }, []);
+
+  // Fetch recipes khi selectedTags thay đổi
+  useEffect(() => {
+    if (selectedTags.length > 0 && subCategories.length > 0) {
+      fetchRecipesByTags();
+    } else {
+      setRecipes([]);
+    }
+  }, [selectedTags, subCategories]);
+
+  // Hàm fetch recipes dựa trên selected tags
+  const fetchRecipesByTags = async () => {
+    setIsLoading(true);
+    setError(null);
+    setCurrentPage(0);
+    
+    try {
+      // Tìm subcategories có tên trong selectedTags
+      const matchingSubCategories = subCategories.filter(sub => 
+        selectedTags.includes(sub.subCategoryName)
       );
-    }
 
-    // Lớp 2: Filter theo selectedTags (categories/subcategories)
-    if (selectedTags.length > 0) {
-      filteredData = filteredData.filter(food => {
-        // Kiểm tra xem món ăn có thuộc category hoặc subcategory nào được chọn không
-        const matchesCategory = food.category && selectedTags.includes(food.category.name);
-        const matchesSubCategory = food.subCategory && selectedTags.includes(food.subCategory.name);
-        
-        // Cũng có thể match trực tiếp với tên món ăn nếu được tag
-        const matchesFoodName = selectedTags.includes(food.foodName);
-        
-        return matchesCategory || matchesSubCategory || matchesFoodName;
-      });
-    }
+      if (matchingSubCategories.length === 0) {
+        setRecipes([]);
+        setHasMorePages(false);
+        return;
+      }
 
-    return filteredData;
+      // Fetch recipes từ tất cả subcategories được chọn
+      const allRecipes: RecipeItem[] = [];
+      
+      for (const subCategory of matchingSubCategories) {
+        try {
+          const response = await getRecipesBySubCategory(subCategory.id, 0, 5);
+          if (response?.result?.content) {
+            allRecipes.push(...response.result.content);
+          }
+        } catch (error) {
+          console.error(`Error fetching recipes for subcategory ${subCategory.id}:`, error);
+        }
+      }
+
+      // Filter theo query nếu có
+      let filteredRecipes = allRecipes;
+      if (query && typeof query === 'string' && query.trim()) {
+        filteredRecipes = allRecipes.filter(recipe => 
+          recipe.title.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+
+      setRecipes(filteredRecipes);
+      setHasMorePages(false); // Không hỗ trợ pagination cho multi-subcategory search
+      
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+      setError('Không thể tải dữ liệu công thức. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const SearchFilterFood = getFilteredFood();
+  // Hàm load more recipes (cho single subcategory)
+  const loadMoreRecipes = async () => {
+    if (isLoading || !hasMorePages || selectedTags.length !== 1) return;
+
+    // Chỉ load more khi có đúng 1 tag được chọn
+    const matchingSubCategory = subCategories.find(sub => 
+      selectedTags.includes(sub.subCategoryName)
+    );
+
+    if (!matchingSubCategory) return;
+
+    setIsLoading(true);
+    
+    try {
+      const response = await getRecipesBySubCategory(
+        matchingSubCategory.id, 
+        currentPage + 1, 
+        20
+      );
+      
+      if (response?.result?.content) {
+        let newRecipes = response.result.content;
+        
+        // Filter theo query nếu có
+        if (query && typeof query === 'string' && query.trim()) {
+          newRecipes = newRecipes.filter(recipe => 
+            recipe.title.toLowerCase().includes(query.toLowerCase())
+          );
+        }
+        
+        setRecipes(prev => [...prev, ...newRecipes]);
+        setCurrentPage(prev => prev + 1);
+        setHasMorePages(!response.result.last);
+      }
+    } catch (error) {
+      console.error('Error loading more recipes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Hàm xử lý khi apply filter
   const handleApplyFilter = (tags: string[]) => {
@@ -108,9 +205,10 @@ const SearchResults = () => {
   // Hàm xóa tất cả tags
   const clearAllTags = () => {
     setSelectedTags([]);
+    setRecipes([]);
   };
 
-  // Cập nhật header với SearchBar không có wrapper styling
+  // Cập nhật header với SearchBar
   React.useLayoutEffect(() => {
     navigation.setOptions({
       header: () => (
@@ -139,7 +237,10 @@ const SearchResults = () => {
                   onSearch={(newQuery) => {
                     router.push({
                       pathname: '/SearchResults',
-                      params: { query: newQuery },
+                      params: { 
+                        query: newQuery,
+                        selectedTags: JSON.stringify(selectedTags)
+                      },
                     });
                   }}
                 />
@@ -149,7 +250,21 @@ const SearchResults = () => {
         </SafeAreaView>
       ),
     });
-  }, [navigation, query, isKeyboardVisible, keyboardHeight]);
+  }, [navigation, query, selectedTags, isKeyboardVisible, keyboardHeight]);
+
+  const renderRecipeItem = ({ item }: { item: RecipeItem }) => (
+    <OneRecipe item={item} />
+  );
+
+  const renderFooter = () => {
+    if (!isLoading) return null;
+    return (
+      <View style={styles.loadingFooter}>
+        <ActivityIndicator size="small" color="#FF5D00" />
+        <Text style={styles.loadingText}>Đang tải thêm...</Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -179,26 +294,48 @@ const SearchResults = () => {
       </View>
 
       <View style={styles.listContainer}>
-        {SearchFilterFood.length > 0 ? (
+        {isLoading && recipes.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF5D00" />
+            <Text style={styles.loadingText}>Đang tải công thức...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.noResultsContainer}>
+            <Text style={styles.noResultsText}>{error}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={() => {
+                if (selectedTags.length > 0) {
+                  fetchRecipesByTags();
+                }
+              }}
+            >
+              <Text style={styles.retryButtonText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
+        ) : recipes.length > 0 ? (
           <FlatList
-            data={SearchFilterFood}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => <OneRecipe item={item} />}
+            data={recipes}
+            keyExtractor={(item, index) => `${item.id}-${index}`}
+            renderItem={renderRecipeItem}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            onEndReached={loadMoreRecipes}
+            onEndReachedThreshold={0.1}
+            ListFooterComponent={renderFooter}
           />
         ) : (
           <View style={styles.noResultsContainer}>
             <Text style={styles.noResultsText}>
               {selectedTags.length > 0 
-                ? `Không tìm thấy món ăn nào trong thể loại "${selectedTags.join(', ')}"`
+                ? `Không tìm thấy công thức nào trong thể loại "${selectedTags.join(', ')}"`
                 : query 
-                  ? `Không tìm thấy món ăn nào phù hợp với "${query}"`
-                  : 'Không tìm thấy món ăn nào phù hợp với bộ lọc'
+                  ? `Không tìm thấy công thức nào phù hợp với "${query}"`
+                  : 'Chọn thể loại để xem công thức'
               }
               {selectedTags.length > 0 && (
                 <Text style={styles.noResultsSubText}>
-                  {'\n'}Thử xóa bớt bộ lọc để xem thêm kết quả
+                  {'\n'}Thử chọn thể loại khác để xem thêm kết quả
                 </Text>
               )}
             </Text>
@@ -292,6 +429,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#999',
+  },
   noResultsContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -303,11 +456,23 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     lineHeight: 24,
+    marginBottom: 20,
   },
   noResultsSubText: {
     fontSize: 14,
     color: '#ccc',
     fontStyle: 'italic',
+  },
+  retryButton: {
+    backgroundColor: '#FF5D00',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 
