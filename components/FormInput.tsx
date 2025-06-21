@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface FormInputProps {
@@ -12,6 +12,7 @@ interface FormInputProps {
   placeholder?: string;
   onChangeText?: (value: string) => void;
   onSendCode?: () => void; // Thêm prop cho việc gửi mã
+  editable?: boolean; // Thêm prop editable
 }
 
 const FormInput = ({ 
@@ -21,7 +22,9 @@ const FormInput = ({
   options, 
   placeholder,
   onChangeText,
-  onSendCode 
+  onSendCode,
+  editable = true,
+  ...props 
 }: FormInputProps) => {
   const [value, setValue] = useState(defaultValue);
   const [showPassword, setShowPassword] = useState(false);
@@ -49,7 +52,15 @@ const FormInput = ({
     }
   };
 
+  // FormInput.tsx - Fix các handlers
   const handleValueChange = (newValue: string) => {
+    console.log('📝 FormInput handleValueChange:', {
+      label,
+      oldValue: value,
+      newValue,
+      hasCallback: !!onChangeText
+    });
+    
     setValue(newValue);
     if (onChangeText) {
       onChangeText(newValue);
@@ -73,6 +84,7 @@ const FormInput = ({
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"
+                editable={editable} // Thêm editable
               />
             </View>
             <TouchableOpacity
@@ -96,6 +108,7 @@ const FormInput = ({
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              editable={editable} // Thêm editable
             />
             <View style={styles.iconContainer}>
               <Ionicons name="mail-outline" size={20} color="#666" />
@@ -114,6 +127,7 @@ const FormInput = ({
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoCorrect={false}
+              editable={editable} // Thêm editable
             />
             <TouchableOpacity 
               onPress={() => setShowPassword(!showPassword)}
@@ -133,9 +147,10 @@ const FormInput = ({
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, styles.numberInput]}
-              defaultValue={defaultValue}
+              value={value} // ✅ FIX: Dùng value thay vì defaultValue
               keyboardType="numeric"
-              onChangeText={setValue}
+              onChangeText={handleValueChange} // ✅ FIX: Dùng handleValueChange
+              editable={editable} // Thêm editable
             />
             <Text style={styles.unit}>
               {label.toLowerCase().includes('cao') ? 'cm' : 'kg'}
@@ -180,25 +195,25 @@ const FormInput = ({
             <TouchableOpacity 
               style={[
                 styles.sexButton,
-                value === 'Nam' && styles.selectedSexButton
+                value === 'MALE' && styles.selectedSexButton // ✅ FIX: Đổi từ 'Nam' thành 'MALE'
               ]}
-              onPress={() => setValue('Nam')}
+              onPress={() => handleValueChange('MALE')} // ✅ FIX: Dùng handleValueChange
             >
               <Text style={[
                 styles.sexButtonText,
-                value === 'Nam' && styles.selectedSexButtonText
+                value === 'MALE' && styles.selectedSexButtonText
               ]}>Nam</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[
                 styles.sexButton,
-                value === 'Nữ' && styles.selectedSexButton
+                value === 'FEMALE' && styles.selectedSexButton // ✅ FIX: Đổi từ 'Nữ' thành 'FEMALE'
               ]}
-              onPress={() => setValue('Nữ')}
+              onPress={() => handleValueChange('FEMALE')} // ✅ FIX: Dùng handleValueChange
             >
               <Text style={[
                 styles.sexButtonText,
-                value === 'Nữ' && styles.selectedSexButtonText
+                value === 'FEMALE' && styles.selectedSexButtonText
               ]}>Nữ</Text>
             </TouchableOpacity>
           </View>
@@ -209,24 +224,20 @@ const FormInput = ({
           <View style={styles.selectContainer}>
             <Picker
               selectedValue={value}
-              onValueChange={setValue}
+              onValueChange={handleValueChange} // ✅ FIX: Dùng handleValueChange
               style={Platform.OS === 'web' ? styles.webPicker : styles.mobilePicker}
-              itemStyle={styles.pickerItem} // Thêm itemStyle cho iOS
+              itemStyle={styles.pickerItem}
+              enabled={editable}
             >
               {options?.map((option) => (
                 <Picker.Item 
                   key={option} 
                   label={option} 
                   value={option}
-                  style={styles.pickerItemText} // Style cho từng item
+                  style={styles.pickerItemText}
                 />
               ))}
             </Picker>
-            {Platform.OS === 'web' && (
-              <View style={styles.dropdownIconContainer}>
-                <Text style={styles.dropdownIcon}>▼</Text>
-              </View>
-            )}
           </View>
         );
 
@@ -235,12 +246,18 @@ const FormInput = ({
           <TextInput
             style={styles.input}
             value={value}
-            onChangeText={handleValueChange}
+            onChangeText={handleValueChange} // ✅ FIX: Dùng handleValueChange
             placeholder={placeholder}
+            editable={editable} // Thêm editable
           />
         );
     }
   };
+
+  // ✅ ADD: Update local state when defaultValue changes
+  useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue]);
 
   return (
     <View style={styles.container}>
@@ -405,12 +422,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     backgroundColor: 'transparent',
     color: '#333',
-    outline: 'none',
-    cursor: 'pointer',
-    appearance: 'none',
-    WebkitAppearance: 'none',
-    MozAppearance: 'none',
-    backgroundImage: 'none',
   },
   mobilePicker: {
     margin: -2,

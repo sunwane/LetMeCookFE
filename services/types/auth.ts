@@ -75,7 +75,7 @@ export const loginAPI = async (data: AuthRequest): Promise<AuthResponse> => {
     console.log("✅ Parsed response:", apiResponse);
     
     return apiResponse.result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Login API Error:', error);
     console.error('❌ Error details:', {
       message: error.message,
@@ -102,7 +102,7 @@ export const googleSignInAPI = async (data: GoogleSignInRequest): Promise<AuthRe
 
     const apiResponse: ApiResponse<AuthResponse> = await response.json();
     return apiResponse.result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Google sign-in failed:', error);
     throw error;
   }
@@ -125,7 +125,7 @@ export const introspectAPI = async (data: IntrospectRequest): Promise<Introspect
 
     const apiResponse: ApiResponse<IntrospectResponse> = await response.json();
     return apiResponse.result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Token introspection failed:', error);
     throw error;
   }
@@ -145,7 +145,7 @@ export const logoutAPI = async (data: LogoutRequest): Promise<void> => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Logout failed:', error);
     throw error;
   }
@@ -168,7 +168,7 @@ export const refreshTokenAPI = async (data: RefreshRequest): Promise<AuthRespons
 
     const apiResponse: ApiResponse<AuthResponse> = await response.json();
     return apiResponse.result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Token refresh failed:', error);
     throw error;
   }
