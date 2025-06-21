@@ -1,11 +1,13 @@
 import CookingStep from '@/components/CookingStep';
 import InfoItem from '@/components/InfoItem';
+import OneCmt from '@/components/OneCmt';
 import ServingAdjuster from '@/components/ServingAdjuster';
+import { sampleComments } from '@/services/types/CommentItem';
 import { sampleRecipeIngredients } from '@/services/types/RecipeIngredients';
 import { RecipeItem } from '@/services/types/RecipeItem';
 import { sampleRecipeSteps } from '@/services/types/RecipeStep';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -53,6 +55,19 @@ const RecipeScreen = () => {
     return nutritionPerServing.reduce((total, item) => total + item.calories, 0);
   }, [nutritionPerServing]);
 
+  // ✅ NEW: Lấy comments cho recipe hiện tại
+  const recipeComments = useMemo(() => {
+    if (!recipe) return [];
+    return sampleComments.filter(comment => comment.recipe.id === recipe.id);
+  }, [recipe]);
+
+  // ✅ NEW: Lấy 2 comments nổi bật (theo số like)
+  const featuredComments = useMemo(() => {
+    return recipeComments
+      .sort((a, b) => parseInt(b.like) - parseInt(a.like))
+      .slice(0, 2);
+  }, [recipeComments]);
+
   // Toggle bookmark
   const toggleBookmark = () => {
     setIsBookmarked(!isBookmarked);
@@ -71,6 +86,28 @@ const RecipeScreen = () => {
   // Handle serving size change
   const handleServingSizeChange = (newSize: number) => {
     setServingSize(newSize);
+  };
+
+  // ✅ Navigate to step-by-step cooking
+  const navigateToStepByCooking = () => {
+    router.push({
+      pathname: "/RecipeStepScreen",
+      params: {
+        recipeData: JSON.stringify(recipe),
+        steps: JSON.stringify(recipeSteps),
+      },
+    });
+  };
+
+  // ✅ NEW: Navigate to all comments
+  const navigateToAllComments = () => {
+    router.push({
+      pathname: "/CommentScreen",
+      params: {
+        recipeData: JSON.stringify(recipe),
+        comments: JSON.stringify(recipeComments),
+      },
+    });
   };
 
   // Cập nhật header cố định
@@ -176,7 +213,6 @@ const RecipeScreen = () => {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Nguyên liệu dùng cho công thức</Text>
           
-          {/* Sử dụng ServingAdjuster component */}
           <ServingAdjuster
             initialValue={4}
             onValueChange={handleServingSizeChange}
@@ -204,14 +240,12 @@ const RecipeScreen = () => {
           <View style={styles.listContainer}>
             {nutritionPerServing.length > 0 ? (
               <>
-                {/* Tổng calories */}
                 <InfoItem
                   label="Tổng năng lượng"
                   value={`${Math.round(totalCaloriesPerServing)} kcal`}
                   badgeType="diet"
                 />
                 
-                {/* Chi tiết từng nguyên liệu */}
                 {nutritionPerServing.map((item, index) => (
                   <InfoItem
                     key={index}
@@ -219,7 +253,6 @@ const RecipeScreen = () => {
                     value={`${Math.round(item.calories)} kcal`}
                   />
                 ))}
-                
               </>
             ) : (
               <Text style={styles.noDataText}>Không lấy được dữ liệu</Text>
@@ -227,11 +260,49 @@ const RecipeScreen = () => {
           </View>
         </View>
 
-        {/* Instructions Section - Sử dụng CookingStep component */}
+        {/* ✅ NEW: Comment Section */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.commentSectionHeader}>
+            <Text style={styles.sectionTitle}>Bình luận nổi bật</Text>
+            <Text style={styles.commentCount}>({recipeComments.length} bình luận)</Text>
+          </View>
+          
+          {featuredComments.length > 0 ? (
+            <View style={styles.commentsContainer}>
+              {featuredComments.map((comment) => (
+                <OneCmt 
+                  key={comment.id} 
+                  comment={comment}
+                  showReportButton={true}
+                />
+              ))}
+              
+              {/* Button xem tất cả bình luận */}
+              <TouchableOpacity 
+                style={styles.viewAllCommentsButton}
+                onPress={navigateToAllComments}
+              >
+                <Text style={styles.viewAllCommentsText}>Tất cả bình luận</Text>
+                <Ionicons name="chevron-forward" size={16} color="#FF5D00" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.noCommentsContainer}>
+              <Text style={styles.noCommentsText}>Chưa có bình luận nào</Text>
+              <TouchableOpacity 
+                style={styles.firstCommentButton}
+                onPress={navigateToAllComments}
+              >
+                <Text style={styles.firstCommentText}>Hãy là người đầu tiên bình luận</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* Instructions Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Hướng dẫn nấu</Text>
           
-          {/* Cooking Stats Container */}
           <View style={styles.cookingStatContainer}>
             <View style={[styles.statSection, styles.dividerLine]}>
               <Text style={styles.statLabel}>Thời gian nấu:</Text>
@@ -244,7 +315,17 @@ const RecipeScreen = () => {
             </View>
           </View>
 
-          
+          <TouchableOpacity 
+            style={styles.stepByCookingButton}
+            onPress={navigateToStepByCooking}
+            activeOpacity={0.8}
+          >
+            <View style={styles.buttonContent}>
+              <Ionicons name="play-circle" size={24} color="#FF5D00" />
+              <Text style={styles.buttonText}>Nấu theo từng bước</Text>
+              <Ionicons name="chevron-forward" size={20} color="#FF5D00" />
+            </View>
+          </TouchableOpacity>
           
           <View style={styles.instructionsList}>
             {recipeSteps.length > 0 ? (
@@ -402,6 +483,57 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   
+  // ✅ NEW: Comment Section Styles
+  commentSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+  commentCount: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  commentsContainer: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
+    padding: 10,
+  },
+  viewAllCommentsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 5,
+    gap: 5,
+  },
+  viewAllCommentsText: {
+    fontSize: 14,
+    color: '#FF5D00',
+    fontWeight: '600',
+  },
+  noCommentsContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
+  },
+  noCommentsText: {
+    fontSize: 14,
+    color: '#999',
+    marginBottom: 10,
+  },
+  firstCommentButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  firstCommentText: {
+    fontSize: 14,
+    color: '#FF5D00',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  
   // Cooking Stats Container Styles
   cookingStatContainer: {
     backgroundColor: '#ececec',
@@ -410,7 +542,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 20,
-    marginBottom: 20,
+    marginBottom: 10,
     position: 'relative',
     paddingHorizontal: 30,
   },
@@ -434,10 +566,41 @@ const styles = StyleSheet.create({
     paddingRight: 30,
     paddingVertical: -20,
   },
+
+  // Step-by-step cooking button styles
+  stepByCookingButton: {
+    backgroundColor: '#FFF1E6',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FF5D00',
+    marginBottom: 25,
+    shadowColor: '#FF5D00',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  buttonText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FF5D00',
+    textAlign: 'center',
+    marginHorizontal: 10,
+  },
   
   instructionsList: {
   },
-  // Style cho text fallback
   noDataText: {
     fontSize: 14,
     color: '#999',

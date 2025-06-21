@@ -24,7 +24,8 @@ export const sampleAccounts: AccountItem[] = [
     height: 165,
     weight: 55,
     diet: "Eat clean",
-    userBirthday: '20/05/2000'
+    userBirthday: '20/05/2000',
+    email: "beptruong@gmail.com"
   },
   {
     id: 2,
@@ -35,8 +36,45 @@ export const sampleAccounts: AccountItem[] = [
     height: 175,
     weight: 70,
     diet: "Balanced",
-    userBirthday: '10/03/1995'
-  }
+    userBirthday: '10/03/1995',
+    email: "daubepnhi@gmail.com"
+  },
+  {
+    id: 3,
+    userName: "ChefAnNa",
+    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+    sex: "Nữ",
+    age: 28,
+    height: 160,
+    weight: 52,
+    diet: "Vegetarian",
+    userBirthday: '15/07/1996',
+    email: "chefanna@gmail.com"
+  },
+  {
+    id: 4,
+    userName: "MasterCook99",
+    avatar: "https://randomuser.me/api/portraits/men/25.jpg",
+    sex: "Nam",
+    age: 35,
+    height: 180,
+    weight: 75,
+    diet: "Keto",
+    userBirthday: '22/11/1989',
+    email: "mastercook99@gmail.com"
+  },
+  {
+    id: 5,
+    userName: "FoodieQueen",
+    avatar: "https://randomuser.me/api/portraits/women/68.jpg",
+    sex: "Nữ",
+    age: 26,
+    height: 168,
+    weight: 58,
+    diet: "Mediterranean",
+    userBirthday: '08/09/1998',
+    email: "foodiequeen@gmail.com"
+  },
 ];
 
 // ===== BACKEND API INTERFACES =====

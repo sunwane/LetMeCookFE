@@ -37,11 +37,7 @@ export default function RootLayout() {
       <Stack.Screen 
         name="NotificationScreen" 
         options={{
-          headerShown: true,
-          title: 'Thông báo',
-          headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#FF5D00',
-          headerTitleAlign: 'center',
+          headerShown: false, // Sử dụng custom header
         }} 
       />
       <Stack.Screen 
@@ -66,6 +62,26 @@ export default function RootLayout() {
         options={{
           headerShown: true,
           headerStyle: { backgroundColor: '#fff' },
+        }}
+      />
+      <Stack.Screen 
+        name="RecipeStepScreen" 
+        options={{
+          headerShown: true,
+          title: 'Hướng dẫn từng bước',
+          headerStyle: { backgroundColor: '#fff' },
+          headerTintColor: '#FF5D00',
+          headerTitleAlign: 'center',
+        }}
+      />
+      <Stack.Screen 
+        name="CommentScreen" 
+        options={{
+          headerShown: true,
+          title: 'Bình luận',
+          headerStyle: { backgroundColor: '#fff' },
+          headerTintColor: '#FF5D00',
+          headerTitleAlign: 'center',
         }}
       />
       <Stack.Screen 
