@@ -134,7 +134,7 @@ const AvatarSelection = () => {
       <BackgroundDecorations />
 
       {/* Progress Bar */}
-      <ProgressBar progress={87.5} />
+      <ProgressBar progress={80} />
 
       <View style={styles.content}>
         {/* Header Section */}

@@ -1,30 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  Animated,
-  Dimensions,
-  StatusBar,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import React, { useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
+import { API_BASE_URL } from '../constants/api';
 import { createUserInfoAPI, UserInfoCreationRequest } from "../services/types/UserInfo";
 import { loginAPI } from "../services/types/auth";
-import { API_BASE_URL } from '../constants/api';
 
 // Import components
-import ProgressBar from "../components/ui/ProgressBar";
 import ContinueButton from "../components/ui/ContinueButton";
 import DietPicker from "../components/ui/DietPicker";
+import ProgressBar from "../components/ui/ProgressBar";
 
 const { width } = Dimensions.get("window");
 
@@ -70,19 +70,7 @@ export default function DietSelection({
       onDietSelect(diet === "custom" ? customValue || "custom" : diet);
     }
   };
-
-  const handleContinue = () => {
-    if (!selectedDiet || (selectedDiet === "custom" && !customDiet)) {
-      console.log("Vui lòng chọn hoặc nhập chế độ ăn");
-      return;
-    }
-
-    if (onContinue) {
-      onContinue();
-    }
-    router.push("/HealthConditionSelection");
-  };
-
+  
   // Map frontend options to backend enum
   const mapDietToEnum = (diet: string): string => {
     const dietMap: { [key: string]: string } = {
@@ -200,7 +188,7 @@ export default function DietSelection({
         />
 
         {/* Progress Bar */}
-        <ProgressBar progress={75} />
+        <ProgressBar progress={95} />
 
         {/* KeyboardAvoidingView bao bọc toàn bộ ScrollView */}
         <KeyboardAvoidingView

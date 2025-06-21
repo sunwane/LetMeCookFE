@@ -31,7 +31,7 @@ export default function GenderSelection() {
     <View style={styles.container}>
       <BackgroundDecorations />
 
-      <ProgressBar progress={25} />
+      <ProgressBar progress={10} />
 
       <View style={styles.content}>
         <AppHeader />

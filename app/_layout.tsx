@@ -12,8 +12,6 @@ export default function RootLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="RegisterScreen" />
       <Stack.Screen name="ForgotPasswordScreen" />
-      <Stack.Screen name="WelcomeNameScreen" />
-      <Stack.Screen name="HealthConditionSelection" />
       <Stack.Screen 
         name="EditInforScreen" 
         options={{
