@@ -1,7 +1,3 @@
-import { API_BASE_URL } from '../constants/api';
-import { logoutAPI } from '../services/types/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
 import AccountBanner from '@/components/AccountBanner';
 import LogoutModal from '@/components/LogoutModal';
 import AccountNav from '@/components/ui/navigation/AccountNav';
@@ -10,9 +6,11 @@ import { sampleAccounts } from '@/services/types/AccountItem';
 import { sampleComments } from '@/services/types/CommentItem';
 import { sampleFavorites } from '@/services/types/FavoritesRecipe';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
-import { getUserInfoAPI } from '@/services/types/UserInfo';
+import { Alert, RefreshControl, StyleSheet, TouchableOpacity, View, SafeAreaView } from 'react-native';
+import { logoutAPI } from '../services/types/auth';
 
 const ProfileScreen = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -93,24 +91,36 @@ const ProfileScreen = () => {
     }
   }, []);
 
+  // Handle navigation to notification screen
+  const handleNotification = () => {
+    router.push('/NotificationScreen');
+  };
+
+  // Handle navigation to setting screen
+  const handleSettings = () => {
+    router.push('/SettingScreen');
+  };
+
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <TouchableOpacity 
-        style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
-        onPress={handleLogout}
-        disabled={isLoggingOut}
-      >
-        <Ionicons 
-          name="log-out-outline" 
-          size={24} 
-          color={isLoggingOut ? "#ccc" : "#FF5D00"} 
-        />
-      </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      {/* Container chứa hai nút ở góc trên */}
+      <View style={styles.topButtonsContainer}>
+        <TouchableOpacity 
+          style={styles.notificationButton} 
+          onPress={handleNotification}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="notifications-outline" size={20} color="#FF5D00" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={handleSettings}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="settings-outline" size={20} color="#FF5D00" />
+        </TouchableOpacity>
+      </View>
       
       <AccountBanner 
         comments={sampleComments}
@@ -127,25 +137,30 @@ const ProfileScreen = () => {
         visible={showLogoutModal}
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
-        isLoading={isLoggingOut} // ✅ Pass loading state to modal
+        isLoading={isLoggingOut}
       />
-    </ScrollView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   navContainer: {
     flex: 1, 
   },
-  logoutButton: {
+  topButtonsContainer: {
     position: 'absolute',
     top: 20,
     right: 20,
+    flexDirection: 'row',
     zIndex: 1000,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    gap: 10,
+  },
+  notificationButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
     padding: 8,
     shadowColor: '#000',
@@ -156,10 +171,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 93, 0, 0.1)',
   },
-  logoutButtonDisabled: {
-    opacity: 0.5,
+  settingsButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 93, 0, 0.1)',
   },
-})
+});
 
-export default ProfileScreen
+export default ProfileScreen;

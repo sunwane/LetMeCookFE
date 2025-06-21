@@ -1,26 +1,43 @@
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react'; // Thêm useEffect
+import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, TextInput, View } from 'react-native';
 
 interface SearchBarProps {
   defaultValue?: string;
   containerStyle?: any;
   onSearch?: (query: string) => void;
+  searchMode?: 'FindRecipe' | 'FindCategory';
+  onFilterChange?: (query: string) => void;
+  placeholder?: string;
 }
 
-const SearchBar = ({ defaultValue = '', containerStyle, onSearch }: SearchBarProps) => {
+const SearchBar = ({ 
+  defaultValue = '', 
+  containerStyle, 
+  onSearch, 
+  searchMode = 'FindRecipe',
+  onFilterChange,
+  placeholder
+}: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState(defaultValue);
 
-  // Đồng bộ searchQuery với defaultValue khi defaultValue thay đổi
   useEffect(() => {
     setSearchQuery(defaultValue);
   }, [defaultValue]);
+
+  const handleTextChange = (text: string) => {
+    setSearchQuery(text);
+    
+    if (searchMode === 'FindCategory' && onFilterChange) {
+      onFilterChange(text);
+    }
+  };
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
       if (onSearch) {
         onSearch(searchQuery);
-      } else {
+      } else if (searchMode === 'FindRecipe') {
         router.push({
           pathname: '/SearchResults',
           params: { query: searchQuery }
@@ -29,36 +46,33 @@ const SearchBar = ({ defaultValue = '', containerStyle, onSearch }: SearchBarPro
     }
   };
 
+  const getPlaceholder = () => {
+    if (placeholder) return placeholder;
+    return searchMode === 'FindRecipe' ? 'Bạn muốn nấu gì?' : 'Tìm kiếm thể loại...';
+  };
+
   return (
-    <View style={[styles.header, containerStyle]}>
-      <View style={styles.headerContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Bạn muốn nấu gì?"
-          placeholderTextColor="rgba(145, 64, 35, 0.5)"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-          autoFocus={true}
-        />
-        <Image 
-          source={require('@/assets/images/icons/icon_search.png')}
-          style={styles.searchIcon}
-        />
-      </View>
+    <View style={[styles.searchContainer, containerStyle]}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder={getPlaceholder()}
+        placeholderTextColor="rgba(145, 64, 35, 0.5)"
+        value={searchQuery}
+        onChangeText={handleTextChange}
+        onSubmitEditing={handleSearch}
+        returnKeyType="search"
+        autoFocus={searchMode === 'FindCategory'}
+      />
+      <Image 
+        source={require('@/assets/images/icons/icon_search.png')}
+        style={styles.searchIcon}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: '#ffffff',
-    paddingBottom: 20,
-  },
-  headerContainer: {
-    marginHorizontal: 10,
-    marginTop: 20,
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9f9f9',

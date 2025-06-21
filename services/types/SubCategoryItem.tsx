@@ -27,7 +27,7 @@ export const sampleSubCategories: SubCategoryItem[] = [
     },
     {
       id: '4',
-      name: 'Cơm',
+      name: 'Cơm chiên',
       imageUrl: 'https://baolamdong.vn/file/e7837c02845ffd04018473e6df282e92/052023/1.com-tam-viet-nam-hap-dan-du-khach-khi-den-da-lat-2_20230529114050.jpg',
       category: sampleCategories[3],
     },
@@ -55,7 +55,7 @@ export const sampleSubCategories: SubCategoryItem[] = [
     },
     {
       id: '9',
-      name: 'Mì Ý',
+      name: 'Mì',
       imageUrl: 'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/2023_10_2_638318510704271571_ca-ch-la-m-mi-y-00.jpg',
       category: sampleCategories[0],
     },
@@ -64,6 +64,18 @@ export const sampleSubCategories: SubCategoryItem[] = [
       name: 'Lẩu chay',
       imageUrl: 'https://bearvietnam.vn/wp-content/uploads/2023/11/cach-nau-lau-chay.png',
       category: sampleCategories[2],
+    },
+    {
+      id: '11',
+      name: 'Thịt người thực vật',
+      imageUrl: 'https://bearvietnam.vn/wp-content/uploads/2023/11/cach-nau-lau-chay.png',
+      category: sampleCategories[1],
+    },
+    {
+      id: '12',
+      name: 'Cơm trộn',
+      imageUrl: 'https://bearvietnam.vn/wp-content/uploads/2023/11/cach-nau-lau-chay.png',
+      category: sampleCategories[3],
     },
     // Thêm các món khác...
   ];

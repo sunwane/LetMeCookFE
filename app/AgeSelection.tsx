@@ -1,14 +1,14 @@
 // AgeSelection.tsx - Refactored version
-import React, { useState } from "react";
-import { StyleSheet, Text, View, Image } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import React, { useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 // Import các components đã tách
-import BackgroundDecorations from "../components/ui/BackgroundDecorations";
-import ProgressBar from "../components/ui/ProgressBar";
-import AppHeader from "../components/ui/AppHeader";
 import AgePicker from "../components/ui/AgePicker";
+import AppHeader from "../components/ui/AppHeader";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
 import ContinueButton from "../components/ui/ContinueButton";
+import ProgressBar from "../components/ui/ProgressBar";
 
 export default function AgeSelection() {
   const params = useLocalSearchParams();
@@ -35,7 +35,7 @@ export default function AgeSelection() {
       <BackgroundDecorations />
 
       {/* Progress Bar */}
-      <ProgressBar progress={50} />
+      <ProgressBar progress={40} />
 
       <View style={styles.content}>
         {/* Header Section */}

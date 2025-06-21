@@ -7,8 +7,7 @@ export interface UserInfoCreationRequest {
   height: number;
   weight: number;
   age: number;
-  dob: string; // Format: "YYYY-MM-DD"
-  dietTypes: string[]; // ["VEGETARIAN", "KETO", etc.]
+  dietTypes: string[]; 
 }
 
 export interface UserInfoUpdateRequest {
@@ -16,7 +15,6 @@ export interface UserInfoUpdateRequest {
   height?: number;
   weight?: number;
   age?: number;
-  dob?: string;
   dietTypes?: string[];
 }
 
@@ -26,9 +24,9 @@ export interface UserInfoResponse {
   height: number;
   weight: number;
   age: number;
-  dob: string;
   dietTypes: string[];
   avatar?: string;
+  accountId: string; // ✅ ADD: missing field
   createdAt: string;
   updatedAt: string;
 }
@@ -75,31 +73,17 @@ const getAuthToken = async (): Promise<string | null> => {
 };
 
 // Helper function to get account ID
-// UserInfo.ts - sửa getAccountId function
 const getAccountId = async (): Promise<string> => {
   try {
-    // ✅ Priority 1: Real accountId from register
-    const storedAccountId = await AsyncStorage.getItem('accountId');
-    if (storedAccountId) {
-      console.log("📱 Found real accountId in storage:", storedAccountId);
-      return storedAccountId;
-    }
-    
-    // ✅ Priority 2: Decode from token (for authenticated users)
     const token = await getAuthToken();
-    if (token) {
-      try {
-        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        if (tokenPayload.sub && tokenPayload.sub !== tokenPayload.email) {
-          console.log("🔑 Found accountId in token:", tokenPayload.sub);
-          return tokenPayload.sub;
-        }
-      } catch (tokenError) {
-        console.log("⚠️ Failed to decode token");
-      }
+    if (!token) {
+      throw new Error('No authentication token found');
     }
     
-    throw new Error('No account identifier found');
+    // Decode account ID from JWT token
+    const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+    return tokenPayload.sub;
+    
   } catch (error) {
     console.error('Failed to get account ID:', error);
     throw error;
@@ -150,12 +134,18 @@ export const createUserInfoAPI = async (
     console.log("✅ API Response:", apiResponse);
     
     return apiResponse.result;
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout - please try again');
+  } catch (error: unknown) { // ✅ Explicit unknown type
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - please try again');
+      }
+      console.error('❌ Failed to create user info:', error.message);
+      throw error;
     }
-    console.error('❌ Failed to create user info:', error);
-    throw error;
+    
+    // ✅ Handle non-Error types
+    console.error('❌ Failed to create user info:', String(error));
+    throw new Error('An unknown error occurred while creating user info');
   }
 };
 
@@ -186,9 +176,14 @@ export const updateUserInfoAPI = async (
 
     const apiResponse: ApiResponse<UserInfoResponse> = await response.json();
     return apiResponse.result;
-  } catch (error) {
-    console.error('❌ Failed to update user info:', error);
-    throw error;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('❌ Failed to update user info:', error.message);
+      throw error;
+    }
+    
+    console.error('❌ Failed to update user info:', String(error));
+    throw new Error('An unknown error occurred while updating user info');
   }
 };
 
@@ -215,9 +210,14 @@ export const getUserInfoAPI = async (): Promise<UserInfoResponse> => {
 
     const apiResponse: ApiResponse<UserInfoResponse> = await response.json();
     return apiResponse.result;
-  } catch (error) {
-    console.error('❌ Failed to get user info:', error);
-    throw error;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('❌ Failed to get user info:', error.message);
+      throw error;
+    }
+    
+    console.error('❌ Failed to get user info:', String(error));
+    throw new Error('An unknown error occurred while fetching user info');
   }
 };
 
@@ -341,30 +341,13 @@ export const searchByUsernameAPI = async (keyword: string): Promise<UsernameResp
 };
 
 // GET /recipe/getRecipeByAccount - count recipes from response
-// UserInfo.ts - sửa getRecipeCountByUserAPI
 export const getRecipeCountByUserAPI = async (): Promise<number> => {
   try {
-    // ✅ Get normal token first, if 401 -> use setup-token flow
-    let token = await AsyncStorage.getItem('authToken');
+    const token = await AsyncStorage.getItem('authToken');
     
     if (!token) {
-      console.log("🔄 No auth token, getting setup token...");
-      const userEmail = await AsyncStorage.getItem('userEmail');
-      const userPassword = await AsyncStorage.getItem('userPassword');
-      
-      if (userEmail && userPassword) {
-        const authResponse = await fetch(`${API_BASE_URL}/auth/setup-token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: userEmail, password: userPassword }),
-        });
-        
-        if (authResponse.ok) {
-          const authData = await authResponse.json();
-          token = authData.result.token;
-          await AsyncStorage.setItem('authToken', token);
-        }
-      }
+      console.log("❌ No auth token found");
+      return 0; 
     }
 
     const response = await fetch(`${API_BASE_URL}/recipe/getRecipeByAccount`, {
@@ -376,15 +359,26 @@ export const getRecipeCountByUserAPI = async (): Promise<number> => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ Response error: ${errorText}`);
+      // ✅ If 401, token expired - just return 0
+      if (response.status === 401) {
+        console.log("⚠️ Token expired");
+        await AsyncStorage.removeItem('authToken');
+        return 0;
+      }
+      
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const result = await response.json();
     return result.result?.length || 0;
-  } catch (error) {
-    console.error('❌ Failed to get recipe count:', error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('❌ Failed to get recipe count:', error.message);
+    } else {
+      console.error('❌ Failed to get recipe count:', String(error));
+    }
     return 0;
   }
 };
+
+

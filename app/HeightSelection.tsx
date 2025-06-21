@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import AppHeader from "../components/ui/AppHeader";
 import BackgroundDecorations from "../components/ui/BackgroundDecorations";
 import ContinueButton from "../components/ui/ContinueButton";
@@ -29,7 +29,7 @@ export default function HeightSelection() {
   return (
     <View style={styles.container}>
       <BackgroundDecorations />
-      <ProgressBar progress={37.5} />
+      <ProgressBar progress={25} />
 
       <View style={styles.content}>
         <AppHeader />
@@ -49,7 +49,7 @@ export default function HeightSelection() {
         </Text>
 
         {/* Continue Button */}
-        <ContinueButton onPress={handleContinue} />
+        <ContinueButton onPress={handleContinue} disabled={false} />
       </View>
     </View>
   );

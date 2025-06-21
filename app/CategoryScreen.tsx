@@ -1,5 +1,6 @@
 import OneSubCategory from '@/components/oneSubCategory'
-import { sampleSubCategories } from '@/services/types/SubCategoryItem'
+import { SubCategoryItem, sampleSubCategories } from '@/services/types/SubCategoryItem'
+import { router } from 'expo-router'
 import { useState } from 'react'
 import { Dimensions, FlatList, StyleSheet, Text, View } from 'react-native'
 import CategoryNav from '../components/ui/navigation/CategoryNav'
@@ -12,6 +13,17 @@ const CategoryScreen = () => {
 
   const handleCategorySelect = (categoryId: number) => {
     setSelectedCategory(categoryId);
+  };
+
+  // Handle khi ấn vào subCategory
+  const handleSubCategoryPress = (item: SubCategoryItem) => {
+    router.push({
+      pathname: '/SearchResults',
+      params: { 
+        selectedTags: JSON.stringify([item.name]),
+        query: '' // Không có query search
+      }
+    });
   };
 
   // Lọc subcategories theo category được chọn
@@ -34,7 +46,7 @@ const CategoryScreen = () => {
         </View>
         <View style={styles.right}>
           <FlatList
-            data={filteredSubCategories} // Thay đổi từ sampleSubCategories sang filteredSubCategories
+            data={filteredSubCategories}
             numColumns={3}
             keyExtractor={(item) => item.id}
             columnWrapperStyle={styles.columnWrapper}
@@ -43,7 +55,10 @@ const CategoryScreen = () => {
               <View style={[
                 styles.itemContainer,
               ]}>
-                <OneSubCategory item={item} />
+                <OneSubCategory 
+                  item={item} 
+                  onPress={handleSubCategoryPress} // Truyền custom handler
+                />
               </View>
             )}
           />
@@ -61,7 +76,7 @@ const styles = StyleSheet.create({
   },
   headerContain: {
     backgroundColor: '#fff',
-    paddingTop: 40,
+    paddingTop: 70,
     paddingBottom: 15,
     alignItems: 'center',
     borderBottomWidth: 1,
@@ -93,7 +108,7 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     flex: 1,
-    maxWidth: '32%', // Thêm maxWidth thay vì width cố định
+    maxWidth: '33.3%', // Thêm maxWidth thay vì width cố định
     maxHeight: 115,
     minHeight: 110,
   },

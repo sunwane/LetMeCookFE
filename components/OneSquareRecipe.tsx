@@ -1,6 +1,7 @@
 import { RecipeItem } from '@/services/types/RecipeItem';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const {width: ScreenWidth} = Dimensions.get('window');
 
@@ -15,11 +16,22 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
     setIsBookmarked(!isBookmarked);
   };
 
+  // Hàm navigate đến RecipeScreen
+  const handleRecipePress = () => {
+    router.push({
+      pathname: '/RecipeScreen',
+      params: {
+        recipeData: JSON.stringify(food)
+      }
+    });
+  };
+
   return (
-    <View style={styles.main}>
+    <TouchableOpacity style={styles.main} onPress={handleRecipePress} activeOpacity={0.8}>
       <Image 
         source={{ uri: food.imageUrl }} 
-        style={styles.foodImage} resizeMode='cover'
+        style={styles.foodImage} 
+        resizeMode='cover'
       />
       <View style={[styles.horizontalContainer, styles.titlePlace]}>
         <Text 
@@ -29,17 +41,6 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
         >
           {food.foodName}
         </Text>
-        {/* <TouchableOpacity onPress={toggleBookmark}>
-            <Image 
-              source={
-                isBookmarked 
-                  ? require('@/assets/images/icons/Bookmark_Active.png')
-                  : require('@/assets/images/icons/Bookmark.png')
-              } 
-              style={[
-                styles.mark]} 
-            />
-        </TouchableOpacity> */}
       </View>
       <View style={styles.horizontalContainer}>
         <View style={styles.horizontalContainer}>
@@ -63,7 +64,7 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
             <Text style={styles.smallText}>{food.likes}</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: 'bold',
         color: '#74341C',
-        marginBottom: 5,
+        marginBottom: 3,
         maxWidth: ScreenWidth / 2 - 0, // Adjusted to fit the image and bookmark icon -44
     },
     titlePlace: {
@@ -109,10 +110,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     nextTo: {
-        marginRight: 3,
+        marginRight: 4,
     },
     smallText: {
-        fontSize: 11,
+        fontSize: 11.5,
         color: 'rgba(0,0,0,0.7)',
         fontWeight: '500',
         marginLeft: 1,

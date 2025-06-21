@@ -1,14 +1,14 @@
 // WeightSelection.tsx - Main Component (Refactored)
-import React, { useState } from "react";
-import { StyleSheet, Text, View, Image } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import React, { useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 // Import components
-import BackgroundDecorations from "../components/ui/BackgroundDecorations";
-import ProgressBar from "../components/ui/ProgressBar";
 import AppHeader from "../components/ui/AppHeader";
-import WeightPicker from "../components/ui/WeightPicker";
+import BackgroundDecorations from "../components/ui/BackgroundDecorations";
 import ContinueButton from "../components/ui/ContinueButton";
+import ProgressBar from "../components/ui/ProgressBar";
+import WeightPicker from "../components/ui/WeightPicker";
 
 interface WeightSelectionProps {
   onWeightSelect?: (weight: number) => void;
@@ -34,7 +34,7 @@ export default function WeightSelection({
 
   const handleContinue = () => {
     router.push({
-      pathname: "/DietSelection",
+      pathname: "/AvatarSelection",
       params: {
         sex: params.sex,
         height: params.height,
@@ -50,7 +50,7 @@ export default function WeightSelection({
       <BackgroundDecorations />
 
       {/* Progress Bar */}
-      <ProgressBar progress={62.5} />
+      <ProgressBar progress={55} />
 
       <View style={styles.content}>
         {/* Header Section */}
@@ -83,7 +83,7 @@ export default function WeightSelection({
         </Text>
 
         {/* Continue Button */}
-        <ContinueButton onPress={handleContinue} />
+        <ContinueButton onPress={handleContinue} disabled={false} />
       </View>
     </View>
   );

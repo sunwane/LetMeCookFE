@@ -292,12 +292,12 @@ export default function RegisterScreen({}: RegisterScreenProps) {
               onSendCode={handleSendVerificationCode}
             />
 
-            {/* ✅ ADD: Error message display */}
+            {/* Error message display */}
             {error ? (
               <Text style={styles.errorText}>{error}</Text>
             ) : null}
 
-            {/* ✅ UPDATE: Register Button với loading state */}
+            {/* Register Button */}
             <CustomButton
               title={isLoading ? "Đang xử lý..." : "Đăng ký"}
               onPress={handleRegister}
@@ -322,7 +322,6 @@ export default function RegisterScreen({}: RegisterScreenProps) {
   );
 }
 
-// ✅ ADD: Error text style
 const styles = StyleSheet.create({
   container: {
     flex: 1,

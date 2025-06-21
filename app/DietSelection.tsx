@@ -1,29 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  Animated,
-  Dimensions,
-  StatusBar,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
-import { createUserInfoAPI, UserInfoCreationRequest } from "../services/types/UserInfo";
+import React, { useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import { API_BASE_URL } from '../constants/api';
+import { createUserInfoAPI, UserInfoCreationRequest } from "../services/types/UserInfo";
+import { loginAPI } from "../services/types/auth";
 
 // Import components
-import ProgressBar from "../components/ui/ProgressBar";
 import ContinueButton from "../components/ui/ContinueButton";
 import DietPicker from "../components/ui/DietPicker";
+import ProgressBar from "../components/ui/ProgressBar";
 
 const { width } = Dimensions.get("window");
 
@@ -69,25 +70,13 @@ export default function DietSelection({
       onDietSelect(diet === "custom" ? customValue || "custom" : diet);
     }
   };
-
-  const handleContinue = () => {
-    if (!selectedDiet || (selectedDiet === "custom" && !customDiet)) {
-      console.log("Vui lòng chọn hoặc nhập chế độ ăn");
-      return;
-    }
-
-    if (onContinue) {
-      onContinue();
-    }
-    router.push("/HealthConditionSelection");
-  };
-
+  
   // Map frontend options to backend enum
   const mapDietToEnum = (diet: string): string => {
     const dietMap: { [key: string]: string } = {
       "ăn uống thông thường": "NORMAL",
       normal: "NORMAL",
-      standard: "NORMAL", // ✅ Add this mapping
+      standard: "NORMAL", 
       "ăn chay": "VEGETARIAN",
       vegetarian: "VEGETARIAN",
       "ăn thuần chay": "VEGETARIAN",
@@ -95,8 +84,6 @@ export default function DietSelection({
       keto: "KETO",
       "low-carb": "LOW_CARB",
       mediterranean: "MEDITERRANEAN",
-      "tự nhập chế độ ăn khác": "NORMAL",
-      custom: "NORMAL",
     };
 
     console.log(
@@ -113,7 +100,7 @@ export default function DietSelection({
     return `${birthYear}-01-01`;
   };
 
-  // ✅ SIMPLE APPROACH - GET FRESH TOKEN WHEN NEEDED
+ 
   const handleFinalSubmit = async () => {
     try {
       setIsLoading(true);
@@ -126,45 +113,63 @@ export default function DietSelection({
         throw new Error('Missing login credentials');
       }
 
-      // ✅ Get accountId từ setup-token (như logic cũ)
-      console.log("🔄 Getting setup auth token to get accountId...");
+      // ✅ FIX: Use setup-token instead of regular login
+      console.log("🔑 Getting setup token...");
       
-      const authResponse = await fetch(`${API_BASE_URL}/auth/setup-token`, {
+      const setupTokenResponse = await fetch(`${API_BASE_URL}/auth/setup-token`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail, password: userPassword }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: userEmail, 
+          password: userPassword 
+        }),
       });
 
-      if (!authResponse.ok) {
-        throw new Error('Failed to get setup token');
+      if (!setupTokenResponse.ok) {
+        const errorText = await setupTokenResponse.text();
+        throw new Error(`Setup token failed: ${setupTokenResponse.status}, ${errorText}`);
       }
 
-      const authData = await authResponse.json();
-      const tokenPayload = JSON.parse(atob(authData.result.token.split('.')[1]));
-      const accountId = tokenPayload.sub;
+      const authData = await setupTokenResponse.json();
+      const token = authData.result.token;
       
-      console.log("🆔 Account ID from token:", accountId);
+      // ✅ Step 2: Save setup token temporarily
+      await AsyncStorage.setItem('authToken', token);
+      console.log("💾 Setup token saved successfully");
 
+      // ✅ Step 3: Create UserInfo using setup token
       const userInfoData: UserInfoCreationRequest = {
         sex: params.sex === "male" ? "MALE" : "FEMALE",
         height: parseInt(params.height as string),
         weight: parseInt(params.weight as string),
         age: parseInt(params.age as string),
-        dob: calculateDOB(parseInt(params.age as string)),
         dietTypes: [mapDietToEnum(selectedDiet)],
       };
 
-      // ✅ Call createUserInfoAPI với accountId từ token
-      await createUserInfoAPI(userInfoData, accountId);
+      console.log("🆔 Creating UserInfo with data:", userInfoData);
+      await createUserInfoAPI(userInfoData);
+
+      // ✅ Step 4: Now login properly with regular token
+      console.log("🔄 Getting final login token...");
+      const finalLoginResult = await loginAPI({ 
+        email: userEmail, 
+        password: userPassword 
+      });
       
-      // ✅ Save token và cleanup
-      await AsyncStorage.setItem('authToken', authData.result.token);
+      // ✅ Step 5: Replace setup token with real token
+      await AsyncStorage.setItem('authToken', finalLoginResult.token);
+      console.log("💾 Final token saved successfully");
+    
+      // ✅ Step 6: Cleanup sensitive data
       await AsyncStorage.removeItem('userPassword');
-      
+    
+      console.log("✅ Registration completed successfully");
       router.replace('/?logged=true');
         
     } catch (error: any) {
-      console.error("❌ Failed to create UserInfo:", error);
+      console.error("❌ Failed to complete registration:", error);
       setError("Tạo thông tin thất bại. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
@@ -183,7 +188,7 @@ export default function DietSelection({
         />
 
         {/* Progress Bar */}
-        <ProgressBar progress={75} />
+        <ProgressBar progress={95} />
 
         {/* KeyboardAvoidingView bao bọc toàn bộ ScrollView */}
         <KeyboardAvoidingView
@@ -239,10 +244,6 @@ export default function DietSelection({
               <ContinueButton
                 onPress={handleFinalSubmit}
                 title={isLoading ? "Đang xử lý..." : "Hoàn thành"}
-                style={[
-                  styles.continueButton,
-                  (!selectedDiet || isLoading) && styles.disabledButton,
-                ]}
                 disabled={!selectedDiet || isLoading}
               />
             </Animated.View>
