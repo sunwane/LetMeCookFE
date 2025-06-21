@@ -158,8 +158,7 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
       <Image source={require("@/assets/images/AccountBackground.png")} style={styles.background} resizeMode="cover" />
       <View style={styles.whiteOverlay} />
       <View style={styles.contentContainer}>
-        <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
-        <Text style={styles.userName}>{currentUser.userName}</Text>
+        <Text style={styles.userName}>{currentUser?.userName || 'Unknown User'}</Text>
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
