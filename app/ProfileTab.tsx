@@ -2,9 +2,10 @@ import InfoItem from '@/components/InfoItem'
 import SectionTitle from '@/components/SectionTitle'
 import { AccountItem } from '@/services/types/AccountItem'
 import { getUserInfoAPI, UserInfoResponse } from '@/services/types/UserInfo'
-import { router } from 'expo-router'
-import React, { useEffect, useState } from 'react'
+import { router, useLocalSearchParams } from 'expo-router'
+import React, { useCallback, useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native';
 
 interface ProfileTabProps {
   account?: AccountItem; // Optional fallback data
@@ -14,24 +15,47 @@ interface ProfileTabProps {
 const ProfileTab = ({ account, isCurrentUser = true }: ProfileTabProps) => {
   const [userInfo, setUserInfo] = useState<UserInfoResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // ✅ ADD: Listen for refresh params
+  const params = useLocalSearchParams();
+  const refreshTrigger = params.refresh;
+  const wasUpdated = params.updated;
 
-  // ✅ Chỉ fetch thông tin user hiện tại
   const fetchUserInfo = async () => {
     try {
       setLoading(true);
-      const response = await getUserInfoAPI(); // Lấy user hiện tại từ token
-      setUserInfo(response);
+      console.log('🔄 Fetching fresh user info...');
+      const result = await getUserInfoAPI();
+      console.log('📊 Fresh data received:', result);
+      setUserInfo(result);
     } catch (error) {
-      console.error('❌ Failed to fetch user info:', error);
-      // Sử dụng fallback data nếu có
+      console.error('❌ Error fetching user info:', error);
+      setUserInfo(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Initial load
   useEffect(() => {
     fetchUserInfo();
   }, []);
+
+  // ✅ Refresh when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      console.log('🔍 ProfileTab focused - refreshing data...');
+      fetchUserInfo();
+    }, [])
+  );
+
+  // ✅ Refresh when params change
+  useEffect(() => {
+    if (refreshTrigger || wasUpdated) {
+      console.log('🔄 Refresh triggered by params:', { refreshTrigger, wasUpdated });
+      fetchUserInfo();
+    }
+  }, [refreshTrigger, wasUpdated]);
 
   const formatDietTypes = (dietTypes: string[]): string => {
     return dietTypes?.join(', ') || 'Không có';

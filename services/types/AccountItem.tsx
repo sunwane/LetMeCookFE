@@ -2,21 +2,25 @@ import { API_BASE_URL } from '../../constants/api';
 
 // ===== EXISTING INTERFACES (keep for sample data) =====
 export interface AccountItem {
-  id: number;
+  id: string;
   userName: string;
   avatar: string;
   sex: string;
   age: number;
   height: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'BANNED';
   weight: number;
   diet: string;
+  dietTypes?: string[];
   userBirthday: string;
+  createdAt: string;
+  updatedAt: string; 
   email?: string; // Optional for sample data
 }
 
 export const sampleAccounts: AccountItem[] = [
   {
-    id: 1,
+    id: "1",
     userName: "BếpTrưởngTậpSự",
     avatar: "https://randomuser.me/api/portraits/women/17.jpg",
     sex: "Nữ",
@@ -24,10 +28,13 @@ export const sampleAccounts: AccountItem[] = [
     height: 165,
     weight: 55,
     diet: "Eat clean",
-    userBirthday: '20/05/2000'
+    userBirthday: '20/05/2000',
+    status: 'ACTIVE',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
-    id: 2,
+    id: "2",
     userName: "ĐầuBếpNhíNhố",
     avatar: "https://randomuser.me/api/portraits/men/32.jpg",
     sex: "Nam",
@@ -35,7 +42,10 @@ export const sampleAccounts: AccountItem[] = [
     height: 175,
     weight: 70,
     diet: "Balanced",
-    userBirthday: '10/03/1995'
+    userBirthday: '10/03/1995',
+    status: 'ACTIVE',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 

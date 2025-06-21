@@ -31,11 +31,18 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         const userEmail = await AsyncStorage.getItem('userEmail') || 'user@example.com';
         
         const accountItem: AccountItem = {
-          id: userInfo.id, // ✅ Use real UUID from backend
+          id: userInfo.id, 
           email: userEmail,
-          userName: `User_${userInfo.id.substring(0, 8)}`, // Generate username from ID
+          userName: `User_${userInfo.id.substring(0, 8)}`,
           avatar: userInfo.avatar || 'https://via.placeholder.com/150',
           status: 'ACTIVE',
+          // ✅ ADD: Missing properties from UserInfo
+          sex: userInfo.sex || 'Nam',
+          age: userInfo.age || 25,
+          height: userInfo.height || 170,
+          weight: userInfo.weight || 60,
+          diet: userInfo.dietTypes?.[0] || 'NORMAL',
+          userBirthday: new Date(Date.now() - (userInfo.age || 25) * 365.25 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN'),
           createdAt: userInfo.createdAt,
           updatedAt: userInfo.updatedAt,
         };
@@ -52,6 +59,13 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
           userName: 'Current User',
           avatar: 'https://via.placeholder.com/150',
           status: 'ACTIVE',
+          // ✅ ADD: Missing properties
+          sex: 'Nam',
+          age: 25,
+          height: 170,
+          weight: 60,
+          diet: 'NORMAL',
+          userBirthday: '01/01/2000',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
