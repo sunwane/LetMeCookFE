@@ -40,6 +40,14 @@ export interface FavoritesRecipe {
   accountName: string; // Tên người dùng đã lưu công thức
 }
 
+export interface LikesRecipe {
+  id: string;
+  recipeId: string; // ID của công thức nấu ăn
+  recipeName: string; // Tên công thức nấu ăn
+  accountId: string; // ID của người dùng đã lưu công thức
+  accountName: string; // Tên người dùng đã lưu công thức
+}
+
 export interface Page<T> {
   content: T[];
   totalPages: number;
@@ -198,42 +206,6 @@ export const getRecipesBySubCategory = async ( subCategoryId: string, page: numb
 }
 
 
-export const LikeRecipe = async (recipeId: string): Promise<ApiResponse<RecipeItem>> => {
-  const token = await getAuthToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}/recipe/like/${recipeId}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({}), // Gửi object rỗng cho LikeRecipeRequest
-  });
-
-  const result: ApiResponse<RecipeItem> = await handleResponse(response);
-  return result;
-}
-
-export const disLikeRecipe = async (recipeId: string): Promise<ApiResponse<RecipeItem>> => {
-  const token = await getAuthToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}/recipe/dislike/${recipeId}`, {
-    method: 'POST',
-    headers,
-  });
-
-  const result: ApiResponse<RecipeItem> = await handleResponse(response);
-  return result;
-}
 
 
 //favorite recipe
@@ -291,5 +263,61 @@ export const deleteFavoriteRecipe = async (recipeId: string): Promise<ApiRespons
   });
 
   const result: ApiResponse<FavoritesRecipe> = await handleResponse(response);
+  return result;
+}
+
+//Like recipe
+export const getAllRecipeAccoountLike = async (recipeId: string): Promise<ApiResponse<LikesRecipe[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/like/getAllAccountLikes/${recipeId}`, {
+    method: 'GET',
+    headers,
+  });
+
+  const result: ApiResponse<LikesRecipe[]> = await handleResponse(response);
+  return result;
+}
+
+export const createLikeRecipe = async (recipeId: string): Promise<ApiResponse<LikesRecipe>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/like/createLike/${recipeId}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({}), // Gửi object rỗng cho LikeRecipeRequest
+  });
+
+  const result: ApiResponse<LikesRecipe> = await handleResponse(response);
+  return result;
+} 
+
+export const deleteLikeRecipe = async (recipeId: string): Promise<ApiResponse<LikesRecipe>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/like/dislike/${recipeId}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  const result: ApiResponse<LikesRecipe> = await handleResponse(response);
   return result;
 }

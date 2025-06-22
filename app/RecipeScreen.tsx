@@ -5,7 +5,7 @@ import ServingAdjuster from '@/components/ServingAdjuster';
 import { sampleComments } from '@/services/types/CommentItem';
 import { getAllIngredients, Ingredients } from '@/services/types/Ingredients';
 import { getAllRecipeIngredientsByRecipeId, RecipeIngredientsResponse } from '@/services/types/RecipeIngredients';
-import { ApiResponse, createFavoriteRecipe, deleteFavoriteRecipe, disLikeRecipe, getAllFavouriteRecipe, LikeRecipe, RecipeItem } from '@/services/types/RecipeItem';
+import { createFavoriteRecipe, createLikeRecipe, deleteFavoriteRecipe, deleteLikeRecipe, getAllFavouriteRecipe, getAllRecipeAccoountLike, RecipeItem } from '@/services/types/RecipeItem';
 import { sampleRecipeSteps } from '@/services/types/RecipeStep';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
@@ -78,44 +78,61 @@ const RecipeScreen = () => {
     }
   };
 
-  // Toggle like với real-time update
-  const toggleLike = async (recipeId: string) => {
-    if (isLikeLoading || !recipe?.id) return;
-    
-    setIsLikeLoading(true);
-    
-    try {
-      let response: ApiResponse<RecipeItem>;
-      
-      if (isLiked) {
-        // Dislike
-        response = await disLikeRecipe(recipeId);
+   useEffect(() => {
+    const checkLikeStatus = async () => {
+      try {
+        const response = await getAllRecipeAccoountLike(recipe.id);
+        if (response?.result && Array.isArray(response.result)) {
+          const isInLikes = response.result.some(like => 
+            like.recipeId === recipe.id
+          );
+          setIsLiked(isInLikes);
+        }
+      } catch (error) {
+        console.error('Error checking like status:', error);
         setIsLiked(false);
-        console.log('Đã bỏ like công thức thành công');
-      } else {
-        // Like
-        response = await LikeRecipe(recipeId);
-        setIsLiked(true);
-        console.log('Đã like công thức thành công');
       }
+    };
 
-      // Cập nhật recipe state với totalLikes mới từ API response
-      if (response?.result) {
-        setRecipe(prevRecipe => ({
-          ...prevRecipe,
-          totalLikes: response.result.totalLikes
-        }));
-      }
-      
-    } catch (error) {
-      console.error('Lỗi khi xử lý like:', error);
-      
-      // Revert lại trạng thái nếu có lỗi
-      setIsLiked(!isLiked);
-    } finally {
-      setIsLikeLoading(false);
+    if (recipe?.id) {
+      checkLikeStatus();
     }
-  };
+  }, [recipe?.id]);
+
+const toggleLike = async (recipeId: string) => {
+  if (isLikeLoading || !recipe?.id) return; // Prevent multiple calls
+  
+  setIsLikeLoading(true);
+  
+  try {
+    if (isLiked) {
+      // Xử lý khi bỏ like
+      await deleteLikeRecipe(recipe.id);
+      setIsLiked(false);
+      // Giảm totalLikes đi 1
+      setRecipe(prevRecipe => ({
+        ...prevRecipe,
+        totalLikes: Math.max(0, prevRecipe.totalLikes - 1)
+      }));
+    } else {
+      // Xử lý khi thêm like
+      await createLikeRecipe(recipe.id);
+      setIsLiked(true);
+      // Tăng totalLikes lên 1
+      setRecipe(prevRecipe => ({
+        ...prevRecipe,
+        totalLikes: prevRecipe.totalLikes + 1
+      }));
+    }
+  } catch (error) {
+    console.error('Lỗi khi xử lý like:', error);
+    
+    // Revert lại trạng thái nếu có lỗi
+    // setIsLiked(!isLiked); // Có thể bỏ comment nếu muốn revert
+  } finally {
+    setIsLikeLoading(false);
+  }
+};
 
   // Fetch ingredients khi component mount
   useEffect(() => {
@@ -316,11 +333,11 @@ const RecipeScreen = () => {
             {recipe.description || 'Mì quảng nhưng mà người Quảng Ninh nấu, đặc biệt nước súp có vị than Quảng Ninh.'}
           </Text>
           
-          <Text style={styles.recipeTags}>
+          {/* <Text style={styles.recipeTags}>
             Xem thêm các món tương tự tại: 
             <Text style={styles.tagLink}> {recipe.category?.name || 'Bún, mì, phở'}</Text> và 
             <Text style={styles.tagLink}> {recipe.subCategory?.name || 'Mì'}</Text>
-          </Text>
+          </Text> */}
           
           {/* Độ khó, thời gian nấu, lượt like */}
           <View style={styles.statsContainer}>
