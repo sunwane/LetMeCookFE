@@ -1,8 +1,8 @@
-import ReportModal from '@/components/ReportModal';
 import { CommentItem } from '@/services/types/CommentItem';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getAvatarSource } from '../services/types/UserInfo';
 
 interface OneCmtProps {
   comment: CommentItem;
@@ -39,9 +39,10 @@ const OneCmt: React.FC<OneCmtProps> = ({ comment, showReportButton = true }) => 
         {/* Header: Avatar + Name + Time */}
         <View style={styles.commentHeader}>
           <View style={styles.userInfo}>
+            {/* ✅ Fix: Dùng avatar từ comment.account thay vì currentUser */}
             <Image 
-              source={{ uri: comment.account.avatar || 'https://via.placeholder.com/40' }} 
-              style={styles.avatar}
+              source={getAvatarSource(comment.account.avatar)}
+              style={styles.avatar} 
             />
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{comment.account.userName}</Text>
@@ -79,11 +80,11 @@ const OneCmt: React.FC<OneCmtProps> = ({ comment, showReportButton = true }) => 
       </View>
 
       {/* Report Modal */}
-      <ReportModal
+      {/* <ReportModal
         visible={reportModalVisible}
         onClose={() => setReportModalVisible(false)}
         userName={comment.account.userName}
-      />
+      /> */}
     </>
   );
 };

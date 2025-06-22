@@ -1,9 +1,10 @@
 import { AccountItem } from "@/services/types/AccountItem";
 import { CommentItem } from "@/services/types/CommentItem";
 import { getRecipeCountByUserAPI, getUserInfoAPI } from "@/services/types/UserInfo";
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
-import { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from "react";
+import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
+import { getAvatarSource } from '../services/types/UserInfo';
 
 const { width: ScreenWidth } = Dimensions.get("screen")
 
@@ -33,10 +34,9 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         const accountItem: AccountItem = {
           id: userInfo.id, 
           email: userEmail,
-          userName: `User_${userInfo.id.substring(0, 8)}`,
-          avatar: userInfo.avatar || 'https://via.placeholder.com/150',
+          userName: userEmail.split('@')[0] || `User_${userInfo.id.substring(0, 8)}`,
+          avatar: userInfo.avatar, 
           status: 'ACTIVE',
-          // ✅ ADD: Missing properties from UserInfo
           sex: userInfo.sex || 'Nam',
           age: userInfo.age || 25,
           height: userInfo.height || 170,
@@ -52,23 +52,21 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         
       } catch (error) {
         console.error("❌ Failed to fetch current user:", error);
-        // ✅ Fallback to email-based fake data
-        const fallbackUser: AccountItem = {
-          id: 'fallback-user',
-          email: await AsyncStorage.getItem('userEmail') || 'user@example.com',
-          userName: 'Current User',
-          avatar: 'https://via.placeholder.com/150',
-          status: 'ACTIVE',
-          // ✅ ADD: Missing properties
-          sex: 'Nam',
-          age: 25,
-          height: 170,
-          weight: 60,
-          diet: 'NORMAL',
-          userBirthday: '01/01/2000',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+       const fallbackUser: AccountItem = {
+        id: 'fallback-user',
+        email: await AsyncStorage.getItem('userEmail') || 'user@example.com',
+        userName: (await AsyncStorage.getItem('userEmail') || 'user@example.com').split('@')[0] || 'Current User', // ✅ Use email prefix
+        avatar: undefined, // ✅ Change to undefined để getAvatarSource xử lý
+        status: 'ACTIVE',
+        sex: 'Nam',
+        age: 25,
+        height: 170,
+        weight: 60,
+        diet: 'NORMAL',
+        userBirthday: '01/01/2000',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
         setCurrentUser(fallbackUser);
       } finally {
         setIsLoadingUser(false);
@@ -106,9 +104,15 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
   }, [currentUser]);
 
   // Tính toán số hoạt động (comments)
-  const activityCount = currentUser 
-    ? comments.filter(comment => comment.account.id === currentUser.id).length 
-    : 0;
+  // ✅ Safe comment filtering
+  // const activityCount = currentUser && currentUser.id
+  //   ? comments.filter(comment => {
+  //       // ✅ Handle different id types (string vs number)
+  //       const commentUserId = comment.account.id?.toString();
+  //       const currentUserId = currentUser.id?.toString();
+  //       return commentUserId === currentUserId;
+  //     }).length 
+  //   : 0;
 
   // Debug logs
   useEffect(() => {
@@ -135,7 +139,10 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         <Image source={require("@/assets/images/AccountBackground.png")} style={styles.background} resizeMode="cover" />
         <View style={styles.whiteOverlay} />
         <View style={styles.contentContainer}>
-          <View style={[styles.avatar, { backgroundColor: '#f0f0f0' }]} />
+          <Image 
+            source={{uri: 'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg'}}
+            style={[styles.avatar]}
+          />
           <Text style={styles.userName}>Loading...</Text>
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
@@ -158,8 +165,11 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
       <Image source={require("@/assets/images/AccountBackground.png")} style={styles.background} resizeMode="cover" />
       <View style={styles.whiteOverlay} />
       <View style={styles.contentContainer}>
+        <Image 
+          source={getAvatarSource(currentUser.avatar)}
+          style={styles.avatar} 
+        />
         <Text style={styles.userName}>{currentUser?.userName || 'Unknown User'}</Text>
-
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
@@ -171,7 +181,7 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
           <View style={styles.statDivider} />
 
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{activityCount}</Text>
+            {/* <Text style={styles.statNumber}>{activityCount}</Text> */}
             <Text style={styles.statLabel}>Hoạt động</Text>
           </View>
         </View>

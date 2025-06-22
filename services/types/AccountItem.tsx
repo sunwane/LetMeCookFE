@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../../constants/api';
 export interface AccountItem {
   id: string;
   userName: string;
-  avatar: string;
+  avatar?: string;
   sex: string;
   age: number;
   height: number;

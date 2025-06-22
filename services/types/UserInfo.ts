@@ -90,6 +90,19 @@ const getAccountId = async (): Promise<string> => {
   }
 };
 
+// Thêm helper function để xử lý avatar
+export const getAvatarSource = (avatar?: string) => {
+  console.log('Avatar value received:', avatar); // Debug log
+  
+  if (avatar && avatar.trim() !== '' && avatar !== 'null' && avatar !== 'undefined') {
+    console.log('Using user avatar:', avatar);
+    return { uri: avatar };
+  }
+  
+  console.log('Using default avatar');
+  return { uri: 'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg' };
+};
+
 // POST /user-info?accountId={accountId}
 export const createUserInfoAPI = async (
   data: UserInfoCreationRequest,
