@@ -34,7 +34,7 @@ export default function WeightSelection({
 
   const handleContinue = () => {
     router.push({
-      pathname: "/AvatarSelection",
+      pathname: "/DietSelection",
       params: {
         sex: params.sex,
         height: params.height,

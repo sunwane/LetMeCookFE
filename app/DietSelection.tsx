@@ -188,7 +188,7 @@ export default function DietSelection({
         />
 
         {/* Progress Bar */}
-        <ProgressBar progress={95} />
+        <ProgressBar progress={85} />
 
         {/* KeyboardAvoidingView bao bọc toàn bộ ScrollView */}
         <KeyboardAvoidingView
