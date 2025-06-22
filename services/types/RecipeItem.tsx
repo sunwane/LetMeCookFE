@@ -206,6 +206,24 @@ export const getRecipesBySubCategory = async ( subCategoryId: string, page: numb
 }
 
 
+export const getTop5Recipes = async (): Promise<ApiResponse<RecipeItem[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipe/getTop5Recipes`, {
+    method: 'GET',
+    headers,
+  });
+
+  const result: ApiResponse<RecipeItem[]> = await handleResponse(response);
+  return result;
+}
+
 
 
 //favorite recipe

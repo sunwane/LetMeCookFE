@@ -122,3 +122,20 @@ export const getAllSubCategories = async (): Promise<ApiResponse<SubCategoryItem
 
   return handleResponse(response);
 };
+
+export const getTop6subcategories = async (): Promise<ApiResponse<SubCategoryItem[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/subCategory/getTop6SubCategory`, {
+    method: 'GET',
+    headers,
+  });
+
+  return handleResponse(response);
+}
