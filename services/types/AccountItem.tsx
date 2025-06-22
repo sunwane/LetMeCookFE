@@ -95,6 +95,15 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+// ===== NEW INTERFACES =====
+export interface AccountBanStatusResponse {
+  status: 'ACTIVE' | 'BANNED' | 'INACTIVE';
+  isBanned: boolean;
+  banEndDate?: string;
+  daysRemaining: number;
+  message: string;
+}
+
 // POST /accounts/send-code
 export const sendCodeAPI = async (email: string): Promise<string> => {
   try {

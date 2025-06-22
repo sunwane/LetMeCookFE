@@ -172,12 +172,11 @@ export default function Index() {
     try {
       console.log('🔑 Attempting login...');
       
-      // ✅ DIRECT LOGIN - Không cần check status trước
+      // ✅ DIRECT LOGIN - Backend sẽ tự check ban status
       const result = await loginAPI({ email: email.trim(), password });
       
       console.log("✅ Login successful:", result);
       
-      // ✅ CRITICAL: Save token ngay sau khi login thành công
       await AsyncStorage.setItem('authToken', result.token);
       await AsyncStorage.setItem('userEmail', email.trim());
       
@@ -188,9 +187,10 @@ export default function Index() {
     } catch (error: any) {
       console.error("❌ Login error:", error);
       
-      // ✅ Parse specific backend error codes
-      if (error.message?.includes("1054")) {
-        // User authenticated but no UserInfo created yet
+      // ✅ Check for ban-related error codes từ backend
+      if (error.message?.includes("1013")) { // Assuming backend returns 1013 for banned accounts
+        Alert.alert('Tài khoản bị khóa', 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin.');
+      } else if (error.message?.includes("1054")) {
         Alert.alert(
           'Thiết lập tài khoản',
           'Tài khoản của bạn cần hoàn tất thông tin. Tiếp tục thiết lập?',
@@ -199,7 +199,6 @@ export default function Index() {
             { 
               text: 'Tiếp tục', 
               onPress: async () => {
-                // Save credentials for UserInfo creation flow
                 await AsyncStorage.setItem('userEmail', email.trim());
                 await AsyncStorage.setItem('userPassword', password);
                 router.push("/GenderSelection");
@@ -208,7 +207,6 @@ export default function Index() {
           ]
         );
       } else if (error.message?.includes("1012")) {
-        // Account registered but incomplete
         Alert.alert(
           'Hoàn tất đăng ký',
           'Tài khoản của bạn chưa được thiết lập hoàn tất. Tiếp tục thiết lập?',
