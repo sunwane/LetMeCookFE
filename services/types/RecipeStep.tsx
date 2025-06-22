@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "@/constants/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { foodData, RecipeItem } from "./RecipeItem";
 
 
@@ -357,3 +359,40 @@ export const sampleRecipeSteps: RecipeStep[] = [
         recipe: foodData[8],
     },
 ];
+
+
+const getAuthToken = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem('authToken');
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+    return null;
+  }
+};
+
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `API Error: ${response.status}`);
+  }
+  return response.json();
+};
+
+
+export const getStepByRecipeId = async (recipeId: string): Promise<ApiResponse<RecipeStepsResponse[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipeSteps/getAllRecipeSteps/${recipeId}`, {
+    method: 'GET',
+    headers,
+  });
+
+  return handleResponse(response);
+}
+

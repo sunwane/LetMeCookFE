@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// Thêm import cho RecipeStep API
+import { getStepByRecipeId, RecipeStepsResponse } from '@/services/types/RecipeStep';
 
 const RecipeScreen = () => {
   const { recipeData } = useLocalSearchParams();
@@ -25,6 +27,9 @@ const RecipeScreen = () => {
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
   const [isLikeLoading, setIsLikeLoading] = useState(false); // Thêm loading state cho like
+  // Thêm state cho recipe steps
+  const [recipeStepsData, setRecipeStepsData] = useState<RecipeStepsResponse[]>([]);
+  const [isLoadingSteps, setIsLoadingSteps] = useState(false);
 
   // Parse recipe data và tạo state để cập nhật realtime
   const [recipe, setRecipe] = useState<RecipeItem>(() => {
@@ -170,6 +175,30 @@ const toggleLike = async (recipeId: string) => {
     fetchIngredients();
   }, [recipe?.id]);
 
+  // Fetch recipe steps khi component mount
+  useEffect(() => {
+    const fetchRecipeSteps = async () => {
+      if (!recipe?.id) return;
+      
+      setIsLoadingSteps(true);
+      try {
+        const response = await getStepByRecipeId(recipe.id);
+        console.log('RecipeScreen - RecipeSteps response:', response);
+        
+        if (response?.result && Array.isArray(response.result)) {
+          setRecipeStepsData(response.result);
+        }
+      } catch (error) {
+        console.error('RecipeScreen - Error fetching recipe steps:', error);
+        setRecipeStepsData([]);
+      } finally {
+        setIsLoadingSteps(false);
+      }
+    };
+
+    fetchRecipeSteps();
+  }, [recipe?.id]);
+
   // Lấy ingredients cho recipe hiện tại từ API
   const recipeIngredients = useMemo(() => {
     if (!recipe || recipeIngredientsData.length === 0 || allIngredients.length === 0) {
@@ -195,6 +224,20 @@ const toggleLike = async (recipeId: string) => {
       };
     });
   }, [recipe, recipeIngredientsData, allIngredients]);
+
+  // Chuyển đổi RecipeStepsResponse thành RecipeStep format
+  const recipeSteps = useMemo(() => {
+    if (!recipe || recipeStepsData.length === 0) return [];
+    
+    return recipeStepsData.map(stepData => ({
+      id: stepData.id,
+      step: stepData.step,
+      description: stepData.description,
+      recipe: recipe,
+      waitTime: stepData.waitingTime ? parseInt(stepData.waitingTime) : undefined,
+      stepImg: stepData.recipeStepImage
+    }));
+  }, [recipe, recipeStepsData]);
 
   // Tính toán nutrition cho 1 khẩu phần
   const nutritionPerServing = useMemo(() => {
@@ -316,8 +359,9 @@ const toggleLike = async (recipeId: string) => {
     );
   }
 
+  
   // Lấy các bước làm món ăn
-  const recipeSteps = useMemo(() => {
+  const recipeStepsDisplay = useMemo(() => {
     if (!recipe) return [];
     return sampleRecipeSteps.filter(step => step.recipe.id === recipe.id);
   }, [recipe]);
@@ -490,7 +534,9 @@ const toggleLike = async (recipeId: string) => {
                         
             <View style={styles.statSection}>
               <Text style={styles.statLabel}>Số bước thực hiện:</Text>
-              <Text style={styles.statValue}>{recipeSteps.length} bước</Text>
+              <Text style={styles.statValue}>
+                {isLoadingSteps ? '...' : `${recipeSteps.length} bước`}
+              </Text>
             </View>
           </View>
 
@@ -498,16 +544,21 @@ const toggleLike = async (recipeId: string) => {
             style={styles.stepByCookingButton}
             onPress={navigateToStepByCooking}
             activeOpacity={0.8}
+            disabled={isLoadingSteps || recipeSteps.length === 0}
           >
             <View style={styles.buttonContent}>
               <Ionicons name="play-circle" size={24} color="#FF5D00" />
-              <Text style={styles.buttonText}>Nấu theo từng bước</Text>
+              <Text style={styles.buttonText}>
+                {isLoadingSteps ? 'Đang tải...' : 'Nấu theo từng bước'}
+              </Text>
               <Ionicons name="chevron-forward" size={20} color="#FF5D00" />
             </View>
           </TouchableOpacity>
           
           <View style={styles.instructionsList}>
-            {recipeSteps.length > 0 ? (
+            {isLoadingSteps ? (
+              <Text style={styles.loadingText}>Đang tải hướng dẫn nấu...</Text>
+            ) : recipeSteps.length > 0 ? (
               recipeSteps.map((step) => (
                 <CookingStep
                   key={step.id}
@@ -517,7 +568,7 @@ const toggleLike = async (recipeId: string) => {
                 />
               ))
             ) : (
-              <Text style={styles.noDataText}>Không lấy được dữ liệu</Text>
+              <Text style={styles.noDataText}>Không lấy được dữ liệu hướng dẫn nấu</Text>
             )}
           </View>
         </View>

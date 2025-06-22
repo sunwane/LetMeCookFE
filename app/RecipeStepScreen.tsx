@@ -9,7 +9,7 @@ interface RecipeStep {
   description: string;
   waitTime?: string;
   recipe: {
-    id: string;
+  id: string;
   };
 }
 
