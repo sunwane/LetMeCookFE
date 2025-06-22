@@ -14,6 +14,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -36,6 +37,10 @@ const SearchResults = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMorePages, setHasMorePages] = useState(true);
+
+  // Thêm state để quản lý pagination tốt hơn
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Keyboard listeners
   useEffect(() => {
@@ -90,20 +95,15 @@ const SearchResults = () => {
     fetchSubCategories();
   }, []);
 
-  // Fetch recipes khi selectedTags thay đổi
-  useEffect(() => {
-    if (selectedTags.length > 0 && subCategories.length > 0) {
-      fetchRecipesByTags();
+  // Cải thiện hàm fetchRecipesByTags để hỗ trợ pagination tốt hơn
+  const fetchRecipesByTags = async (page = 0, isLoadMore = false) => {
+    if (!isLoadMore) {
+      setIsLoading(true);
+      setError(null);
+      setCurrentPage(0);
     } else {
-      setRecipes([]);
+      setIsLoadingMore(true);
     }
-  }, [selectedTags, subCategories]);
-
-  // Hàm fetch recipes dựa trên selected tags
-  const fetchRecipesByTags = async () => {
-    setIsLoading(true);
-    setError(null);
-    setCurrentPage(0);
     
     try {
       // Tìm subcategories có tên trong selectedTags
@@ -117,79 +117,93 @@ const SearchResults = () => {
         return;
       }
 
-      // Fetch recipes từ tất cả subcategories được chọn
-      const allRecipes: RecipeItem[] = [];
-      
-      for (const subCategory of matchingSubCategories) {
-        try {
-          const response = await getRecipesBySubCategory(subCategory.id, 0, 5);
-          if (response?.result?.content) {
-            allRecipes.push(...response.result.content);
+      // Nếu chỉ có 1 subcategory - hỗ trợ pagination
+      if (matchingSubCategories.length === 1) {
+        const subCategory = matchingSubCategories[0];
+        const response = await getRecipesBySubCategory(subCategory.id, page, 10);
+        
+        if (response?.result) {
+          let newRecipes = response.result.content;
+          
+          // Filter theo query nếu có
+          if (query && typeof query === 'string' && query.trim()) {
+            newRecipes = newRecipes.filter(recipe => 
+              recipe.title.toLowerCase().includes(query.toLowerCase())
+            );
           }
-        } catch (error) {
-          console.error(`Error fetching recipes for subcategory ${subCategory.id}:`, error);
+
+          if (isLoadMore) {
+            setRecipes(prev => [...prev, ...newRecipes]);
+          } else {
+            setRecipes(newRecipes);
+          }
+
+          setCurrentPage(response.result.number);
+          setTotalPages(response.result.totalPages);
+          setHasMorePages(!response.result.last);
         }
-      }
+      } 
+      // Nếu có nhiều subcategories - fetch tất cả (không pagination)
+      else {
+        const allRecipes: RecipeItem[] = [];
+        
+        for (const subCategory of matchingSubCategories) {
+          try {
+            const response = await getRecipesBySubCategory(subCategory.id, 0, 10);
+            if (response?.result?.content) {
+              allRecipes.push(...response.result.content);
+            }
+          } catch (error) {
+            console.error(`Error fetching recipes for subcategory ${subCategory.id}:`, error);
+          }
+        }
 
-      // Filter theo query nếu có
-      let filteredRecipes = allRecipes;
-      if (query && typeof query === 'string' && query.trim()) {
-        filteredRecipes = allRecipes.filter(recipe => 
-          recipe.title.toLowerCase().includes(query.toLowerCase())
+        // Filter theo query nếu có
+        let filteredRecipes = allRecipes;
+        if (query && typeof query === 'string' && query.trim()) {
+          filteredRecipes = allRecipes.filter(recipe => 
+            recipe.title.toLowerCase().includes(query.toLowerCase())
+          );
+        }
+
+        // Remove duplicates based on recipe id
+        const uniqueRecipes = filteredRecipes.filter((recipe, index, self) => 
+          index === self.findIndex(r => r.id === recipe.id)
         );
-      }
 
-      setRecipes(filteredRecipes);
-      setHasMorePages(false); // Không hỗ trợ pagination cho multi-subcategory search
+        if (isLoadMore) {
+          setRecipes(prev => [...prev, ...uniqueRecipes]);
+        } else {
+          setRecipes(uniqueRecipes);
+        }
+        
+        setHasMorePages(false); // Không hỗ trợ pagination cho multi-subcategory search
+      }
       
     } catch (error) {
       console.error('Error fetching recipes:', error);
       setError('Không thể tải dữ liệu công thức. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
-  // Hàm load more recipes (cho single subcategory)
+  // Cải thiện hàm loadMoreRecipes
   const loadMoreRecipes = async () => {
-    if (isLoading || !hasMorePages || selectedTags.length !== 1) return;
+    if (isLoadingMore || !hasMorePages || selectedTags.length !== 1) return;
 
-    // Chỉ load more khi có đúng 1 tag được chọn
-    const matchingSubCategory = subCategories.find(sub => 
-      selectedTags.includes(sub.subCategoryName)
-    );
-
-    if (!matchingSubCategory) return;
-
-    setIsLoading(true);
-    
-    try {
-      const response = await getRecipesBySubCategory(
-        matchingSubCategory.id, 
-        currentPage + 1, 
-        20
-      );
-      
-      if (response?.result?.content) {
-        let newRecipes = response.result.content;
-        
-        // Filter theo query nếu có
-        if (query && typeof query === 'string' && query.trim()) {
-          newRecipes = newRecipes.filter(recipe => 
-            recipe.title.toLowerCase().includes(query.toLowerCase())
-          );
-        }
-        
-        setRecipes(prev => [...prev, ...newRecipes]);
-        setCurrentPage(prev => prev + 1);
-        setHasMorePages(!response.result.last);
-      }
-    } catch (error) {
-      console.error('Error loading more recipes:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    await fetchRecipesByTags(currentPage + 1, true);
   };
+
+  // Hàm fetch recipes khi selectedTags thay đổi
+  useEffect(() => {
+    if (selectedTags.length > 0 && subCategories.length > 0) {
+      fetchRecipesByTags(0, false);
+    } else {
+      setRecipes([]);
+    }
+  }, [selectedTags, subCategories, query]);
 
   // Hàm xử lý khi apply filter
   const handleApplyFilter = (tags: string[]) => {
@@ -256,14 +270,26 @@ const SearchResults = () => {
     <OneRecipe item={item} />
   );
 
+  // Cải thiện renderFooter
   const renderFooter = () => {
-    if (!isLoading) return null;
-    return (
-      <View style={styles.loadingFooter}>
-        <ActivityIndicator size="small" color="#FF5D00" />
-        <Text style={styles.loadingText}>Đang tải thêm...</Text>
-      </View>
-    );
+    if (isLoadingMore) {
+      return (
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator size="small" color="#FF5D00" />
+          <Text style={styles.loadingText}>Đang tải thêm...</Text>
+        </View>
+      );
+    }
+    
+    if (!hasMorePages && recipes.length > 0 && selectedTags.length === 1) {
+      return (
+        <View style={styles.endFooter}>
+          <Text style={styles.endText}>Đã tải hết tất cả công thức</Text>
+        </View>
+      );
+    }
+    
+    return null;
   };
 
   return (
@@ -306,7 +332,7 @@ const SearchResults = () => {
               style={styles.retryButton}
               onPress={() => {
                 if (selectedTags.length > 0) {
-                  fetchRecipesByTags();
+                  fetchRecipesByTags(0, false);
                 }
               }}
             >
@@ -321,8 +347,20 @@ const SearchResults = () => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             onEndReached={loadMoreRecipes}
-            onEndReachedThreshold={0.1}
+            onEndReachedThreshold={0.3}
             ListFooterComponent={renderFooter}
+            refreshControl={
+              <RefreshControl
+                refreshing={isLoading}
+                onRefresh={() => {
+                  if (selectedTags.length > 0) {
+                    fetchRecipesByTags(0, false);
+                  }
+                }}
+                colors={['#FF5D00']}
+                tintColor="#FF5D00"
+              />
+            }
           />
         ) : (
           <View style={styles.noResultsContainer}>
@@ -473,6 +511,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+  },
+  endFooter: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  endText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
   },
 });
 
