@@ -1,9 +1,9 @@
 import { AccountItem } from "@/services/types/AccountItem";
 import { CommentItem } from "@/services/types/CommentItem";
 import { getRecipeCountByUserAPI, getUserInfoAPI } from "@/services/types/UserInfo";
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
-import { useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from "react";
+import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
 
 const { width: ScreenWidth } = Dimensions.get("screen")
 
@@ -106,9 +106,15 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
   }, [currentUser]);
 
   // Tính toán số hoạt động (comments)
-  const activityCount = currentUser 
-    ? comments.filter(comment => comment.account.id === currentUser.id).length 
-    : 0;
+  // ✅ Safe comment filtering
+  // const activityCount = currentUser && currentUser.id
+  //   ? comments.filter(comment => {
+  //       // ✅ Handle different id types (string vs number)
+  //       const commentUserId = comment.account.id?.toString();
+  //       const currentUserId = currentUser.id?.toString();
+  //       return commentUserId === currentUserId;
+  //     }).length 
+  //   : 0;
 
   // Debug logs
   useEffect(() => {
@@ -172,7 +178,7 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
           <View style={styles.statDivider} />
 
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{activityCount}</Text>
+            {/* <Text style={styles.statNumber}>{activityCount}</Text> */}
             <Text style={styles.statLabel}>Hoạt động</Text>
           </View>
         </View>

@@ -1,4 +1,3 @@
-import ReportModal from '@/components/ReportModal';
 import '@/config/globalTextConfig';
 import { CommentItem } from '@/services/types/CommentItem';
 import { useNavigation } from '@react-navigation/native';
@@ -31,7 +30,7 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
     };
 
     const handleUserPress = () => {
-        if (item.account.id === currentUserId) {
+        if (item.account.id === currentUserId.toString()) {
             navigation.navigate('Tài khoản' as never);
         } else {
             router.push({
@@ -56,16 +55,16 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                 <View style={styles.top}>
                     <View style={styles.infor}>
                         <TouchableOpacity onPress={handleUserPress}>
-                            <Image
+                            {/* <Image
                                 source={{uri: item.account.avatar}}
                                 style={styles.avatar}
-                            />
+                            /> */}
                         </TouchableOpacity>
                         <View>
                             <View style={styles.row}>
                                 <TouchableOpacity onPress={handleUserPress}>
                                     <Text style={styles.nameDisplay}>
-                                        {item.account.userName}
+                                        {/* {item.account.userName} */}
                                     </Text> 
                                 </TouchableOpacity>
                                 <Text> đã nấu món</Text>
@@ -131,11 +130,11 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
             </View>
 
             {/* Report Modal */}
-            <ReportModal
+            {/* <ReportModal
                 visible={reportModalVisible}
                 onClose={() => setReportModalVisible(false)}
                 userName={item.account.userName}
-            />
+            /> */}
         </>
     )
 }
