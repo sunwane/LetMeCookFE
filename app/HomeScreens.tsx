@@ -3,12 +3,15 @@ import N2xRecipeGroup from "@/components/Nx2RecipeGroup";
 import RcmCategoryGroup from "@/components/rcmCategoryGroup";
 import SearchBar from "@/components/searchbar";
 import { foodData } from "@/services/types/RecipeItem";
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   Keyboard,
   Platform,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
   View
 } from 'react-native';
 
@@ -39,13 +42,17 @@ export default function HomeScreens() {
     };
   }, []);
 
+  // ✅ Handler cho button đề xuất món
+  const handleSuggestRecipe = () => {
+    router.push('/SuggestRecipeScreen');
+  };
+
   return (
     <View style={styles.background}>
-      {/* SearchBar wrapper - không dùng KeyboardAvoidingView */}
+      {/* SearchBar wrapper */}
       <View style={[
         styles.searchBarWrapper,
         isKeyboardVisible && {
-          // Chỉ điều chỉnh một chút khi keyboard hiện
           paddingTop: Math.max(40, 60 - keyboardHeight * 0.05),
         }
       ]}>
@@ -62,7 +69,6 @@ export default function HomeScreens() {
         contentContainerStyle={[
           styles.scrollContent,
           isKeyboardVisible && {
-            // Giảm padding bottom để tránh TabBar bị đẩy lên
             paddingBottom: Math.max(25, 25 - keyboardHeight * 0.1),
           }
         ]}
@@ -80,6 +86,20 @@ export default function HomeScreens() {
           foods={foodData}
         />
       </ScrollView>
+
+      {/* ✅ Floating Action Button - Đề xuất món */}
+      <TouchableOpacity 
+        style={[
+          styles.floatingButton,
+          isKeyboardVisible && {
+            bottom: 90 + keyboardHeight * 0.1, // Điều chỉnh vị trí khi keyboard hiện
+          }
+        ]}
+        onPress={handleSuggestRecipe}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
     </View>
   )
 }
@@ -94,13 +114,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 70,
     paddingBottom: 20,
-    zIndex: 100, // Đảm bảo SearchBar ở trên
+    zIndex: 100,
   },
   searchBarContainer: {
     marginHorizontal: 5,
   },
   searchBarWithKeyboard: {
-    // Có thể thêm style đặc biệt khi keyboard hiện
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -117,6 +136,27 @@ const styles = StyleSheet.create({
   scrollContent: {
     gap: 25,
     paddingHorizontal: 10,
-    paddingBottom: 100, // Thêm padding để tránh content bị che bởi TabBar
-  }
+    paddingBottom: 100,
+  },
+  // ✅ Floating Action Button Styles
+  floatingButton: {
+    position: 'absolute',
+    bottom: 20, // Trên TabBar (70px height + 20px margin)
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FF5D00',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8, // Android shadow
+    shadowColor: '#FF5D00', // iOS shadow
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    zIndex: 1000, // Đảm bảo nằm trên tất cả
+  },
 });

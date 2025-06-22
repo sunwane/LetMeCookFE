@@ -141,7 +141,10 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         <Image source={require("@/assets/images/AccountBackground.png")} style={styles.background} resizeMode="cover" />
         <View style={styles.whiteOverlay} />
         <View style={styles.contentContainer}>
-          <View style={[styles.avatar, { backgroundColor: '#f0f0f0' }]} />
+          <Image 
+            source={{uri: 'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg'}}
+            style={[styles.avatar]}
+          />
           <Text style={styles.userName}>Loading...</Text>
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>

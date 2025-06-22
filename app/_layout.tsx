@@ -39,6 +39,12 @@ export default function RootLayout() {
         }} 
       />
       <Stack.Screen 
+        name="SuggestRecipeScreen" 
+        options={{
+          headerShown: false, // Sử dụng custom header
+        }} 
+      />
+      <Stack.Screen 
         name="SettingScreen" 
         options={{
           headerShown: true,

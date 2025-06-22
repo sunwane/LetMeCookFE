@@ -55,10 +55,12 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                 <View style={styles.top}>
                     <View style={styles.infor}>
                         <TouchableOpacity onPress={handleUserPress}>
-                            {/* <Image
-                                source={{uri: item.account.avatar}}
+
+                            {/* đọc lại Avatar và username nha dũng */}
+                            <Image
+                                source={{uri: item.account.avatar || 'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg'}}
                                 style={styles.avatar}
-                            /> */}
+                            />
                         </TouchableOpacity>
                         <View>
                             <View style={styles.row}>
