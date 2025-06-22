@@ -1,9 +1,11 @@
 import { AccountItem } from "@/services/types/AccountItem";
 import { CommentItem } from "@/services/types/CommentItem";
-import { getRecipeCountByUserAPI, getUserInfoAPI } from "@/services/types/UserInfo";
+import { getRecipeCountByUserAPI, getUserInfoAPI, uploadAvatarAPI } from "@/services/types/UserInfo";
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from "react";
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
+import { Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getAvatarSource } from '../services/types/UserInfo';
 
 const { width: ScreenWidth } = Dimensions.get("screen")
@@ -17,7 +19,89 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
   const [isLoadingRecipes, setIsLoadingRecipes] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<AccountItem | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState<boolean>(true);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
   
+  // ✅ Chọn và upload avatar mới
+  const handleAvatarPress = async () => {
+    try {
+      // 📱 Yêu cầu quyền truy cập thư viện ảnh
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Lỗi', 'Cần cấp quyền truy cập thư viện ảnh để thay đổi avatar!');
+        return;
+      }
+
+      // 🖼️ Mở thư viện ảnh
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1], // Square aspect ratio cho avatar
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const selectedImageUri = result.assets[0].uri;
+        
+        // 💾 Cập nhật avatar ngay lập tức (optimistic update)
+        if (currentUser) {
+          setCurrentUser({
+            ...currentUser,
+            avatar: selectedImageUri
+          });
+        }
+
+        // 🚀 Upload avatar lên server
+        await uploadAvatar(selectedImageUri);
+      }
+    } catch (error) {
+      console.error("❌ Error selecting avatar:", error);
+      Alert.alert('Lỗi', 'Không thể chọn ảnh. Vui lòng thử lại!');
+    }
+  };
+
+  // 🚀 Upload avatar lên server
+  const uploadAvatar = async (imageUri: string) => {
+    try {
+      setIsUploadingAvatar(true);
+      
+      console.log("🔄 Uploading avatar...");
+      
+      // ✅ Call actual API
+      const updatedUserInfo = await uploadAvatarAPI(imageUri);
+      
+      // ✅ Update current user with new avatar from server response
+      if (currentUser) {
+        setCurrentUser({
+          ...currentUser,
+          avatar: updatedUserInfo.avatar
+        });
+      }
+      
+      console.log("✅ Avatar uploaded successfully:", updatedUserInfo);
+      Alert.alert('Thành công', 'Cập nhật avatar thành công!');
+      
+    } catch (error) {
+      console.error("❌ Avatar upload failed:", error);
+      Alert.alert('Lỗi', 'Không thể cập nhật avatar. Vui lòng thử lại!');
+      
+      // 🔄 Revert lại avatar cũ nếu upload thất bại
+      try {
+        const userInfo = await getUserInfoAPI();
+        if (currentUser) {
+          setCurrentUser({
+            ...currentUser,
+            avatar: userInfo.avatar
+          });
+        }
+      } catch (revertError) {
+        console.error("❌ Failed to revert avatar:", revertError);
+      }
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   // ✅ Fetch current user info
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -25,10 +109,7 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         setIsLoadingUser(true);
         console.log("👤 Fetching current user info...");
         
-        // ✅ Get user info from backend (contains real accountId)
         const userInfo = await getUserInfoAPI();
-        
-        // ✅ Create AccountItem from UserInfo
         const userEmail = await AsyncStorage.getItem('userEmail') || 'user@example.com';
         
         const accountItem: AccountItem = {
@@ -52,21 +133,21 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         
       } catch (error) {
         console.error("❌ Failed to fetch current user:", error);
-       const fallbackUser: AccountItem = {
-        id: 'fallback-user',
-        email: await AsyncStorage.getItem('userEmail') || 'user@example.com',
-        userName: (await AsyncStorage.getItem('userEmail') || 'user@example.com').split('@')[0] || 'Current User', // ✅ Use email prefix
-        avatar: undefined, // ✅ Change to undefined để getAvatarSource xử lý
-        status: 'ACTIVE',
-        sex: 'Nam',
-        age: 25,
-        height: 170,
-        weight: 60,
-        diet: 'NORMAL',
-        userBirthday: '01/01/2000',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+        const fallbackUser: AccountItem = {
+          id: 'fallback-user',
+          email: await AsyncStorage.getItem('userEmail') || 'user@example.com',
+          userName: (await AsyncStorage.getItem('userEmail') || 'user@example.com').split('@')[0] || 'Current User',
+          avatar: undefined,
+          status: 'ACTIVE',
+          sex: 'Nam',
+          age: 25,
+          height: 170,
+          weight: 60,
+          diet: 'NORMAL',
+          userBirthday: '01/01/2000',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
         setCurrentUser(fallbackUser);
       } finally {
         setIsLoadingUser(false);
@@ -85,7 +166,6 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         setIsLoadingRecipes(true);
         console.log("🔍 Fetching recipe count for current user...");
         
-        // ✅ Don't pass accountId - let backend get from token context
         const count = await getRecipeCountByUserAPI();
         setRecipeCount(count);
         
@@ -141,7 +221,7 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         <View style={styles.contentContainer}>
           <Image 
             source={{uri: 'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg'}}
-            style={[styles.avatar]}
+            style={styles.avatar}
           />
           <Text style={styles.userName}>Loading...</Text>
           <View style={styles.statsContainer}>
@@ -165,11 +245,38 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
       <Image source={require("@/assets/images/AccountBackground.png")} style={styles.background} resizeMode="cover" />
       <View style={styles.whiteOverlay} />
       <View style={styles.contentContainer}>
-        <Image 
-          source={getAvatarSource(currentUser.avatar)}
-          style={styles.avatar} 
-        />
+        
+        {/* ✅ Avatar có thể tap để thay đổi với camera overlay */}
+        <TouchableOpacity 
+          style={styles.avatarContainer}
+          onPress={handleAvatarPress}
+          activeOpacity={0.8}
+          disabled={isUploadingAvatar}
+        >
+          <Image 
+            source={getAvatarSource(currentUser.avatar)}
+            style={[styles.avatar, isUploadingAvatar && styles.avatarUploading]} 
+          />
+          
+          {/* 📷 Camera overlay mờ */}
+          <View style={styles.avatarOverlay}>
+            <Ionicons 
+              name={isUploadingAvatar ? "cloud-upload" : "camera"} 
+              size={24} 
+              color="rgba(255, 255, 255, 0.9)" 
+            />
+          </View>
+          
+          {/* 🔄 Loading text khi đang upload */}
+          {isUploadingAvatar && (
+            <View style={styles.uploadingIndicator}>
+              <Text style={styles.uploadingText}>Đang tải...</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
         <Text style={styles.userName}>{currentUser?.userName || 'Unknown User'}</Text>
+        
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
@@ -181,7 +288,7 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
           <View style={styles.statDivider} />
 
           <View style={styles.statItem}>
-            {/* <Text style={styles.statNumber}>{activityCount}</Text> */}
+            <Text style={styles.statNumber}>0</Text>
             <Text style={styles.statLabel}>Hoạt động</Text>
           </View>
         </View>
@@ -216,19 +323,55 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 10,
+  },
+  // ✅ Avatar container và overlay styles
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 5,
   },
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    marginBottom: 5,
+    width: 100,
+    height: 100,
+    borderRadius: 90,
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  avatarUploading: {
+    opacity: 0.7,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 90,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)', // Lớp mờ đen nhẹ
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadingIndicator: {
+    position: 'absolute',
+    bottom: -25,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  uploadingText: {
+    fontSize: 12,
+    color: '#FF5D00',
+    fontWeight: '600',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   userName: {
     fontSize: 20,
     fontWeight: "700",
     color: "#333",
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: "center",
   },
   statsContainer: {
