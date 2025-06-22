@@ -1,35 +1,92 @@
 import OneSubCategory from '@/components/oneSubCategory'
-import { SubCategoryItem, sampleSubCategories } from '@/services/types/SubCategoryItem'
+import { SubCategoryItem, getAllSubCategories } from '@/services/types/SubCategoryItem'
 import { router } from 'expo-router'
-import { useState } from 'react'
-import { Dimensions, FlatList, StyleSheet, Text, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, Text, View } from 'react-native'
 import CategoryNav from '../components/ui/navigation/CategoryNav'
-import { sampleCategories } from '../services/types/Category'
+import { Category, getAllCategories } from '../services/types/Category'
 
 const {width : ScreenWidth, height: ScreenHeight} = Dimensions.get('window')
 
 const CategoryScreen = () => {
-  const [selectedCategory, setSelectedCategory] = useState<number>(1);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>(""); 
+  const [loading, setLoading] = useState(true);
+  const [subCategoriesLoading, setSubCategoriesLoading] = useState(false);
 
-  const handleCategorySelect = (categoryId: number) => {
+  // Fetch categories từ API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const response = await getAllCategories();
+        console.log('CategoryScreen: Nhận được categories:', response);
+        const categoriesData = response.result;
+        if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+          setCategories(categoriesData);
+          setSelectedCategory(categoriesData[0].id);// Set category đầu tiên làm mặc định
+        }
+      } catch (error) {
+        console.error(' CategoryScreen: Lỗi khi fetch categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
   };
 
-  // Handle khi ấn vào subCategory
   const handleSubCategoryPress = (item: SubCategoryItem) => {
     router.push({
       pathname: '/SearchResults',
       params: { 
-        selectedTags: JSON.stringify([item.name]),
-        query: '' // Không có query search
+        selectedTags: JSON.stringify([item.subCategoryName]),
+        query: ''
       }
     });
   };
 
   // Lọc subcategories theo category được chọn
-  const filteredSubCategories = sampleSubCategories.filter(
-    item => item.category?.id === selectedCategory
+  useEffect(() => {
+    const fetchSubCategories = async () => {
+      try {
+        setSubCategoriesLoading(true);
+        const response = await getAllSubCategories();
+        console.log('CategoryScreen: Nhận được subcategories:', response);
+        const subCategoriesData = response.result;
+        if (Array.isArray(subCategoriesData) && subCategoriesData.length > 0) {
+          setSubCategories(subCategoriesData);
+        }
+      } catch (error) {
+        console.error('CategoryScreen: Lỗi khi fetch subcategories:', error);
+      } finally {
+        setSubCategoriesLoading(false);
+      }
+    }
+    fetchSubCategories();
+  },[])
+
+  const filteredSubCategories = subCategories.filter(
+    item => item.categoryId === selectedCategory
   );
+
+  console.log('Filtered subcategories:', filteredSubCategories);
+  console.log('Selected category:', selectedCategory);
+
+  // Hiển thị loading chỉ khi đang fetch categories (lần đầu)
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#7A2917" />
+        <Text style={{ marginTop: 10, color: '#7A2917' }}>Đang tải danh mục...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -39,7 +96,7 @@ const CategoryScreen = () => {
       <View style={styles.mainContent}>
         <View style={styles.leftNav}>
           <CategoryNav
-            categories={sampleCategories}
+            categories={categories} // Sử dụng dữ liệu từ API thay vì sampleCategories
             selectedCategory={selectedCategory}
             onSelectCategory={handleCategorySelect}
           />
@@ -57,7 +114,7 @@ const CategoryScreen = () => {
               ]}>
                 <OneSubCategory 
                   item={item} 
-                  onPress={handleSubCategoryPress} // Truyền custom handler
+                  onPress={handleSubCategoryPress}
                 />
               </View>
             )}

@@ -5,8 +5,8 @@ import CategoryItem from '../../categoryItem';
 
 interface CategoryNavProps {
   categories: Category[];
-  selectedCategory: number;
-  onSelectCategory: (categoryId: number) => void;
+  selectedCategory: string;
+  onSelectCategory: (categoryId: string) => void;
 }
 
 const CategoryNav = ({ categories, selectedCategory, onSelectCategory }: CategoryNavProps) => {

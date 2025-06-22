@@ -1,11 +1,48 @@
+import { API_BASE_URL } from "@/constants/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ingredients, sampleIngredients } from "./Ingredients";
 import { foodData, RecipeItem } from "./RecipeItem";
 
+
+export interface ApiResponse<T> {
+  code?: number
+  message?: string
+  result: T
+}
+
 export interface RecipeIngredients {
     id: string;
+    recipeName?: string; // Tên công thức nấu ăn, có thể lấy từ recipe.title
     ingredient: Ingredients;
-    recipe: RecipeItem;
+    recipe: RecipeItem; //gọi hàm getRecipeById từ bên RecipeItem.tsx
     quantity: number;
+}
+
+export interface RecipeIngredientsResponse {
+  id: string
+  recipeName: string
+  ingredientName: string
+  unit: string
+  ingredientId: string
+  quantity: number
+}
+
+export interface RecipeIngredientsCreationRequest {
+  recipeId: string
+  ingredientId: string
+  quantity: number
+}
+
+export interface RecipeIngredientsUpdateRequest {
+  ingredientId: string
+  quantity: number
+}
+
+
+export interface ApiResponse<T> {
+  code?: number
+  message?: string
+  result: T
 }
 
 export const sampleRecipeIngredients: RecipeIngredients[] = [
@@ -193,3 +230,40 @@ export const sampleRecipeIngredients: RecipeIngredients[] = [
         quantity: 100, // 100g
     },
 ];
+
+
+  const getAuthToken = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem('authToken');
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+    return null;
+  }
+};
+
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `API Error: ${response.status}`);
+  }
+  return response.json();
+};
+
+
+export const getAllRecipeIngredientsByRecipeId = async (recipeId: string): Promise<ApiResponse<RecipeIngredientsResponse[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipeIngredients/getAllRecipeIngredients/${recipeId}`, {
+    method: 'GET',
+    headers,
+  });
+
+  return handleResponse(response);
+};
+
