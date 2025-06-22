@@ -85,7 +85,7 @@ const SuggestRecipeScreen = () => {
     if (!searchTerm || !searchTerm.trim()) return [];
     
     return sampleIngredients.filter(ingredient =>
-      ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ingredient.ingredientName.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 5); // Limit to 5 results for better UX
   };
 
@@ -94,21 +94,21 @@ const SuggestRecipeScreen = () => {
     if (!searchTerm.trim()) return null;
     
     const filtered = sampleIngredients.filter(ingredient =>
-      ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ingredient.ingredientName.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
     if (filtered.length === 0) return null;
     
     // Tìm exact match trước
     const exactMatch = filtered.find(ingredient => 
-      ingredient.name.toLowerCase() === searchTerm.toLowerCase()
+      ingredient.ingredientName.toLowerCase() === searchTerm.toLowerCase()
     );
     
     if (exactMatch) return exactMatch;
     
     // Tìm match bắt đầu bằng search term
     const startsWith = filtered.find(ingredient =>
-      ingredient.name.toLowerCase().startsWith(searchTerm.toLowerCase())
+      ingredient.ingredientName.toLowerCase().startsWith(searchTerm.toLowerCase())
     );
     
     if (startsWith) return startsWith;
@@ -169,12 +169,12 @@ const SuggestRecipeScreen = () => {
   const selectIngredient = (ingredientId: string, selectedIngredient: Ingredients) => {
     setIngredients(ingredients.map(item => 
       item.id === ingredientId 
-        ? { ...item, name: selectedIngredient.name, selectedIngredient } 
+        ? { ...item, name: selectedIngredient.ingredientName, selectedIngredient } 
         : item
     ));
     
     // Update search và hide dropdown
-    setIngredientSearches(prev => ({ ...prev, [ingredientId]: selectedIngredient.name }));
+    setIngredientSearches(prev => ({ ...prev, [ingredientId]: selectedIngredient.ingredientName }));
     setShowDropdowns(prev => ({ ...prev, [ingredientId]: false }));
   };
 
@@ -459,7 +459,7 @@ const SuggestRecipeScreen = () => {
                           style={styles.dropdownItem}
                           onPress={() => selectIngredient(ingredient.id, item)}
                         >
-                          <Text style={styles.dropdownItemName}>{item.name}</Text>
+                          <Text style={styles.dropdownItemName}>{item.ingredientName}</Text>
                           <Text style={styles.dropdownItemUnit}>{item.measurementUnit}</Text>
                         </TouchableOpacity>
                       ))}
