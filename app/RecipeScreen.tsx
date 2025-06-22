@@ -3,12 +3,13 @@ import InfoItem from '@/components/InfoItem';
 import OneCmt from '@/components/OneCmt';
 import ServingAdjuster from '@/components/ServingAdjuster';
 import { sampleComments } from '@/services/types/CommentItem';
-import { sampleRecipeIngredients } from '@/services/types/RecipeIngredients';
-import { RecipeItem } from '@/services/types/RecipeItem';
+import { getAllIngredients, Ingredients } from '@/services/types/Ingredients';
+import { getAllRecipeIngredientsByRecipeId, RecipeIngredientsResponse } from '@/services/types/RecipeIngredients';
+import { ApiResponse, createFavoriteRecipe, deleteFavoriteRecipe, disLikeRecipe, getAllFavouriteRecipe, LikeRecipe, RecipeItem } from '@/services/types/RecipeItem';
 import { sampleRecipeSteps } from '@/services/types/RecipeStep';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import React, { useLayoutEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const RecipeScreen = () => {
@@ -16,31 +17,181 @@ const RecipeScreen = () => {
   const navigation = useNavigation();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(100);
-  const [servingSize, setServingSize] = useState(4);
+  const [servingSize, setServingSize] = useState(1); // Thay đổi từ 4 thành 1
+  
+  // State cho API data
+  const [recipeIngredientsData, setRecipeIngredientsData] = useState<RecipeIngredientsResponse[]>([]);
+  const [allIngredients, setAllIngredients] = useState<Ingredients[]>([]);
+  const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
+  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(false); // Thêm loading state cho like
 
-  // Parse recipe data từ params
-  const recipe: RecipeItem = recipeData ? JSON.parse(recipeData as string) : null;
+  // Parse recipe data và tạo state để cập nhật realtime
+  const [recipe, setRecipe] = useState<RecipeItem>(() => {
+    return recipeData ? JSON.parse(recipeData as string) : null;
+  });
 
-  // Lấy ingredients cho recipe hiện tại
+  // Kiểm tra bookmark status từ database
+  useEffect(() => {
+    const checkBookmarkStatus = async () => {
+      try {
+        const response = await getAllFavouriteRecipe();
+        if (response?.result && Array.isArray(response.result)) {
+          const isInFavorites = response.result.some(favorite => 
+            favorite.recipeId === recipe.id
+          );
+          setIsBookmarked(isInFavorites);
+        }
+      } catch (error) {
+        console.error('Error checking bookmark status:', error);
+        setIsBookmarked(false);
+      }
+    };
+
+    if (recipe?.id) {
+      checkBookmarkStatus();
+    }
+  }, [recipe?.id]);
+
+  const toggleBookmark = async (recipeId: string) => {
+    if (isBookmarkLoading || !recipe?.id) return; // Prevent multiple calls
+    
+    setIsBookmarkLoading(true);
+    
+    try {
+      if (isBookmarked) {
+        // Xử lý khi bỏ bookmark
+        await deleteFavoriteRecipe(recipe.id);
+        setIsBookmarked(false);
+      } else {
+        // Xử lý khi thêm bookmark
+        await createFavoriteRecipe(recipe.id);
+        setIsBookmarked(true);
+      }
+    } catch (error) {
+      console.error('Lỗi khi xử lý bookmark:', error);
+      
+      // Revert lại trạng thái nếu có lỗi
+      // setIsBookmarked(!isBookmarked); // Có thể bỏ comment nếu muốn revert
+    } finally {
+      setIsBookmarkLoading(false);
+    }
+  };
+
+  // Toggle like với real-time update
+  const toggleLike = async (recipeId: string) => {
+    if (isLikeLoading || !recipe?.id) return;
+    
+    setIsLikeLoading(true);
+    
+    try {
+      let response: ApiResponse<RecipeItem>;
+      
+      if (isLiked) {
+        // Dislike
+        response = await disLikeRecipe(recipeId);
+        setIsLiked(false);
+        console.log('Đã bỏ like công thức thành công');
+      } else {
+        // Like
+        response = await LikeRecipe(recipeId);
+        setIsLiked(true);
+        console.log('Đã like công thức thành công');
+      }
+
+      // Cập nhật recipe state với totalLikes mới từ API response
+      if (response?.result) {
+        setRecipe(prevRecipe => ({
+          ...prevRecipe,
+          totalLikes: response.result.totalLikes
+        }));
+      }
+      
+    } catch (error) {
+      console.error('Lỗi khi xử lý like:', error);
+      
+      // Revert lại trạng thái nếu có lỗi
+      setIsLiked(!isLiked);
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
+  // Fetch ingredients khi component mount
+  useEffect(() => {
+    const fetchIngredients = async () => {
+      if (!recipe?.id) return;
+      
+      setIsLoadingIngredients(true);
+      try {
+        // Gọi 2 API song song
+        const [recipeIngredientsResponse, allIngredientsResponse] = await Promise.all([
+          getAllRecipeIngredientsByRecipeId(recipe.id),
+          getAllIngredients()
+        ]);
+
+        console.log('RecipeScreen - RecipeIngredients response:', recipeIngredientsResponse);
+        console.log('RecipeScreen - AllIngredients response:', allIngredientsResponse);
+        
+        if (recipeIngredientsResponse?.result && Array.isArray(recipeIngredientsResponse.result)) {
+          setRecipeIngredientsData(recipeIngredientsResponse.result);
+        }
+        
+        if (allIngredientsResponse?.result && Array.isArray(allIngredientsResponse.result)) {
+          setAllIngredients(allIngredientsResponse.result);
+        }
+        
+      } catch (error) {
+        console.error('RecipeScreen - Error fetching ingredients:', error);
+        setRecipeIngredientsData([]);
+        setAllIngredients([]);
+      } finally {
+        setIsLoadingIngredients(false);
+      }
+    };
+
+    fetchIngredients();
+  }, [recipe?.id]);
+
+  // Lấy ingredients cho recipe hiện tại từ API
   const recipeIngredients = useMemo(() => {
-    if (!recipe) return [];
-    return sampleRecipeIngredients.filter(ri => ri.recipe.id === recipe.id);
-  }, [recipe]);
+    if (!recipe || recipeIngredientsData.length === 0 || allIngredients.length === 0) {
+      return [];
+    }
+
+    // Map RecipeIngredientsResponse với Ingredients để tạo ra format tương tự sampleRecipeIngredients
+    return recipeIngredientsData.map(recipeIng => {
+      const ingredient = allIngredients.find(ing => ing.id === recipeIng.ingredientId);
+      
+      return {
+        id: recipeIng.id,
+        ingredient: ingredient || {
+          id: recipeIng.ingredientId,
+          ingredientName: recipeIng.ingredientName,
+          measurementUnit: recipeIng.unit,
+          caloriesPerUnit: 0, // Default value
+          description: '',
+          ingredientImg: ''
+        },
+        recipe: recipe,
+        quantity: recipeIng.quantity
+      };
+    });
+  }, [recipe, recipeIngredientsData, allIngredients]);
 
   // Tính toán nutrition cho 1 khẩu phần
   const nutritionPerServing = useMemo(() => {
     if (recipeIngredients.length === 0) return [];
     
-    const baseServingSize = 4;
+    const baseServingSize = 1; // Thay đổi từ 4 thành 1
     const nutritionData: { name: string; calories: number; amount: number; unit: string }[] = [];
     
     recipeIngredients.forEach(ri => {
       const quantityPerServing = ri.quantity / baseServingSize;
-      const caloriesPerServing = quantityPerServing * ri.ingredient.caloriesPerUnit;
+      const caloriesPerServing = quantityPerServing * (ri.ingredient.caloriesPerUnit || 0);
       
       nutritionData.push({
-        name: ri.ingredient.name,
+        name: ri.ingredient.ingredientName,
         calories: caloriesPerServing,
         amount: quantityPerServing,
         unit: ri.ingredient.measurementUnit
@@ -68,20 +219,6 @@ const RecipeScreen = () => {
       .slice(0, 2);
   }, [recipeComments]);
 
-  // Toggle bookmark
-  const toggleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-  };
-
-  // Toggle like
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
-    if (isLiked) {
-      setLikeCount(prev => prev - 1);
-    } else {
-      setLikeCount(prev => prev + 1);
-    }
-  };
 
   // Handle serving size change
   const handleServingSizeChange = (newSize: number) => {
@@ -122,13 +259,27 @@ const RecipeScreen = () => {
             <Ionicons name="arrow-back" size={24} color="#FF5D00" />
           </TouchableOpacity>
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconButton} onPress={toggleLike}>
+            <TouchableOpacity 
+              style={[
+                styles.iconButton,
+                isLikeLoading && { opacity: 0.5 } // Giảm opacity khi loading
+              ]} 
+              onPress={() => toggleLike(recipe.id)}
+              disabled={isLikeLoading} // Disable khi loading
+            >
               <Image 
                 source={isLiked ? require("@/assets/images/icons/Like_Active.png") : require("@/assets/images/icons/Like.png")} 
                 style={styles.likeIcon}
               />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={toggleBookmark}>
+            <TouchableOpacity 
+              style={[
+                styles.iconButton,
+                isBookmarkLoading && { opacity: 0.5 }
+              ]} 
+              onPress={() => toggleBookmark(recipe.id)}
+              disabled={isBookmarkLoading}
+            >
               <Image 
                 source={isBookmarked ? require("@/assets/images/icons/Bookmark_Active.png") : require("@/assets/images/icons/Bookmark.png")} 
                 style={styles.markIcon} 
@@ -138,7 +289,7 @@ const RecipeScreen = () => {
         </View>
       ),
     });
-  }, [navigation, isBookmarked, isLiked]);
+  }, [navigation, isBookmarked, isLiked, isBookmarkLoading, isLikeLoading, recipe?.id]);
 
   if (!recipe) {
     return (
@@ -159,7 +310,7 @@ const RecipeScreen = () => {
       <View>
         {/* Hình ảnh, tiêu đề, mô tả, thông số */}
         <View style={styles.mainInfoContainer}>
-          <Text style={styles.recipeTitle}>{recipe.foodName}</Text>
+          <Text style={styles.recipeTitle}>{recipe.title}</Text>
           
           <Text style={styles.recipeDescription}>
             {recipe.description || 'Mì quảng nhưng mà người Quảng Ninh nấu, đặc biệt nước súp có vị than Quảng Ninh.'}
@@ -189,7 +340,14 @@ const RecipeScreen = () => {
                 <Text style={styles.statText}>{recipe.cookingTime}</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.rightStats} onPress={toggleLike}>
+            <TouchableOpacity 
+              style={[
+                styles.rightStats,
+                isLikeLoading && { opacity: 0.7 } // Visual feedback khi loading
+              ]} 
+              onPress={() => toggleLike(recipe.id)}
+              disabled={isLikeLoading}
+            >
               <View style={styles.statItem}>
                 <Image 
                   source={isLiked ? require('@/assets/images/icons/Like_Active.png') : require('@/assets/images/icons/Like.png')} 
@@ -199,7 +357,7 @@ const RecipeScreen = () => {
                   styles.statText,
                   isLiked && styles.statTextActive
                 ]}>
-                  {isLiked ? recipe.likes + 1 : recipe.likes} lượt thích
+                  {recipe.totalLikes} lượt thích {/* Hiển thị giá trị real-time từ API */}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -207,29 +365,31 @@ const RecipeScreen = () => {
         </View>
 
         {/* Hình ảnh chính */}
-        <Image source={{ uri: recipe.imageUrl }} style={styles.heroImage} />
+        <Image source={{ uri: recipe.image }} style={styles.heroImage} />
 
         {/* Nguyên liệu Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Nguyên liệu dùng cho công thức</Text>
           
           <ServingAdjuster
-            initialValue={4}
+            initialValue={1} // Thay đổi từ 4 thành 1
             onValueChange={handleServingSizeChange}
             containerStyle={styles.servingAdjusterContainer}
           />
 
           <View style={styles.listContainer}>
-            {recipeIngredients.length > 0 ? (
+            {isLoadingIngredients ? (
+              <Text style={styles.loadingText}>Đang tải nguyên liệu...</Text>
+            ) : recipeIngredients.length > 0 ? (
               recipeIngredients.map((ri, index) => (
                 <InfoItem
                   key={index}
-                  label={ri.ingredient.name}
-                  value={`${Math.round(ri.quantity * servingSize / 4)}${ri.ingredient.measurementUnit}`}
+                  label={ri.ingredient.ingredientName}
+                  value={`${Math.round(ri.quantity * servingSize / 1)} ${ri.ingredient.measurementUnit}`} // Thay đổi từ /4 thành /1
                 />
               ))
             ) : (
-              <Text style={styles.noDataText}>Không lấy được dữ liệu</Text>
+              <Text style={styles.noDataText}>Không lấy được dữ liệu nguyên liệu</Text>
             )}
           </View>
         </View>
@@ -238,7 +398,9 @@ const RecipeScreen = () => {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Dinh dưỡng có trong 1 khẩu phần</Text>
           <View style={styles.listContainer}>
-            {nutritionPerServing.length > 0 ? (
+            {isLoadingIngredients ? (
+              <Text style={styles.loadingText}>Đang tải thông tin dinh dưỡng...</Text>
+            ) : nutritionPerServing.length > 0 ? (
               <>
                 <InfoItem
                   label="Tổng năng lượng"
@@ -249,13 +411,13 @@ const RecipeScreen = () => {
                 {nutritionPerServing.map((item, index) => (
                   <InfoItem
                     key={index}
-                    label={`${item.name} (${Math.round(item.amount)}${item.unit})`}
+                    label={`${item.name} (${Math.round(item.amount)} ${item.unit})`}
                     value={`${Math.round(item.calories)} kcal`}
                   />
                 ))}
               </>
             ) : (
-              <Text style={styles.noDataText}>Không lấy được dữ liệu</Text>
+              <Text style={styles.noDataText}>Không lấy được dữ liệu dinh dưỡng</Text>
             )}
           </View>
         </View>
@@ -602,6 +764,13 @@ const styles = StyleSheet.create({
   instructionsList: {
   },
   noDataText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    paddingVertical: 20,
+  },
+  loadingText: {
     fontSize: 14,
     color: '#999',
     textAlign: 'center',

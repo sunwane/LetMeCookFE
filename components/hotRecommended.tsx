@@ -49,7 +49,7 @@ const HotRecommended: React.FC<HotRecommendedProps> = ({
           >
             <Image 
               style={styles.image} resizeMode='cover'
-              source={{uri: food.imageUrl}}
+              source={{uri: food.image}}
             />
             <View style={styles.overlayTop}>
               <View style={styles.overlayContent}>
@@ -58,7 +58,7 @@ const HotRecommended: React.FC<HotRecommendedProps> = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {food.foodName}
+                  {food.title}
                 </Text>
                 <View style={styles.hotContainer}>
                   <Text style={styles.hotText}>HOT</Text>
@@ -86,7 +86,7 @@ const HotRecommended: React.FC<HotRecommendedProps> = ({
                 <Image 
                   source={require('@/assets/images/icons/Like_Active.png')}
                   style={styles.smallIcon} />
-                <Text style={styles.smallText}>{food.likes}</Text>
+                <Text style={styles.smallText}>{food.totalLikes}</Text>
               </View>
             </View>
           </TouchableOpacity>
