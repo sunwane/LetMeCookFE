@@ -1,4 +1,3 @@
-import ReportModal from '@/components/ReportModal';
 import { CommentItem } from '@/services/types/CommentItem';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
@@ -39,12 +38,14 @@ const OneCmt: React.FC<OneCmtProps> = ({ comment, showReportButton = true }) => 
         {/* Header: Avatar + Name + Time */}
         <View style={styles.commentHeader}>
           <View style={styles.userInfo}>
+
+            {/* đọc lại Avatar và username nha dũng */}
             <Image 
-              source={{ uri: comment.account.avatar || 'https://via.placeholder.com/40' }} 
+              source={{uri: 'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg'}} 
               style={styles.avatar}
             />
             <View style={styles.userDetails}>
-              <Text style={styles.userName}>{comment.account.userName}</Text>
+              {/* <Text style={styles.userName}>{comment.account.userName}</Text> */}
               <Text style={styles.timeAgo}>{getTimeAgo()}</Text>
             </View>
           </View>
@@ -79,11 +80,11 @@ const OneCmt: React.FC<OneCmtProps> = ({ comment, showReportButton = true }) => 
       </View>
 
       {/* Report Modal */}
-      <ReportModal
+      {/* <ReportModal
         visible={reportModalVisible}
         onClose={() => setReportModalVisible(false)}
         userName={comment.account.userName}
-      />
+      /> */}
     </>
   );
 };
