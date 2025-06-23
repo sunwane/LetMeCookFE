@@ -225,6 +225,40 @@ export const getTop5Recipes = async (): Promise<ApiResponse<RecipeItem[]>> => {
 }
 
 
+export const getTrendingRecipes = async(): Promise<ApiResponse<RecipeItem[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipe/trendingRecipe`, {
+    method: 'GET',
+    headers,
+  });
+
+  const result: ApiResponse<RecipeItem[]> = await handleResponse(response);
+  return result;
+}
+
+export const getNewRecipesInMonth = async(): Promise<ApiResponse<RecipeItem[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const response = await fetch(`${API_BASE_URL}/recipe/newRecipeInMonth`, {
+    method: 'GET',
+    headers,
+  });
+
+  const result: ApiResponse<RecipeItem[]> = await handleResponse(response);
+  return result;
+}
 
 //favorite recipe
 export const createFavoriteRecipe = async (recipeId: string): Promise<ApiResponse<FavoritesRecipe>> => {
