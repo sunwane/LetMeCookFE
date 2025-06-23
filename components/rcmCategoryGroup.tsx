@@ -1,25 +1,47 @@
-import { sampleSubCategories } from '@/services/types/SubCategoryItem';
+import { SubCategoryItem } from '@/services/types/SubCategoryItem';
 import { router } from 'expo-router';
 import React from 'react';
-import { Dimensions, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, Text, View } from 'react-native';
 import OneSubCategory from './oneSubCategory';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const RcmCategoryGroup = () => {
+interface RcmCategoryGroupProps {
+  subCategories: SubCategoryItem[];
+  isLoading?: boolean;
+}
+
+const RcmCategoryGroup: React.FC<RcmCategoryGroupProps> = ({ subCategories, isLoading = false }) => {
   // Handle khi ấn vào subCategory từ HomeScreen
-  const handleSubCategoryPress = (item: any) => {
+  const handleSubCategoryPress = (item: SubCategoryItem) => {
     router.push({
       pathname: '/SearchResults',
       params: { 
-        selectedTags: JSON.stringify([item.name]),
-        query: '' // Không có query search
+        selectedTags: JSON.stringify([item.subCategoryName]),
+        query: ''
       }
     });
   };
 
-  // Lấy một số SubCategory phổ biến để hiển thị trên HomeScreen
-  const recommendedSubCategories = sampleSubCategories.slice(0, 8); // Lấy 8 item đầu
+  // ✅ UPDATED: Sử dụng tất cả 6 items từ getTop6subcategories thay vì slice(0, 8)
+  const recommendedSubCategories = subCategories; // Không cần slice vì API đã trả về đúng 6 items
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', minHeight: 120 }]}>
+        <ActivityIndicator size="large" color="#FF5D00" />
+        <Text style={styles.loadingText}>Đang tải danh mục phổ biến...</Text>
+      </View>
+    );
+  }
+
+  if (recommendedSubCategories.length === 0) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', minHeight: 120 }]}>
+        <Text style={styles.noDataText}>Không có dữ liệu danh mục</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -34,7 +56,7 @@ const RcmCategoryGroup = () => {
           <View style={styles.itemWrapper}>
             <OneSubCategory 
               item={item} 
-              onPress={handleSubCategoryPress} // Truyền handler giống CategoryScreen
+              onPress={handleSubCategoryPress}
             />
           </View>
         )}
@@ -66,7 +88,16 @@ const styles = StyleSheet.create({
   },
   itemWrapper: {
     marginHorizontal: 5,
-    width: 80, // Đặt width cố định cho mỗi item
+    width: 80,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+    fontSize: 14,
+  },
+  noDataText: {
+    color: '#666',
+    fontSize: 16,
   },
 });
 

@@ -1,10 +1,13 @@
 import TabNavigator from '@/components/ui/navigation/TabNavigator';
 import '@/config/globalTextConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as NavigationBar from 'expo-navigation-bar';
+import { router, useLocalSearchParams } from "expo-router";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Alert,
   Dimensions,
   Keyboard,
@@ -14,6 +17,7 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
   View,
+  View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +26,8 @@ import LoginForm from "../components/auth/LoginForm";
 import LoginHeader from "../components/auth/LoginHeader";
 import SocialLogin from "../components/auth/SocialLogin";
 import BackgroundDecorations from "../components/ui/BackgroundDecorations";
+import { API_BASE_URL } from '../constants/api';
+import { loginAPI } from "../services/types/auth";
 import { API_BASE_URL } from '../constants/api';
 import { loginAPI } from "../services/types/auth";
 
@@ -35,7 +41,16 @@ interface AccountStatusResponse {
   message: string;
 }
 
+// ✅ Interface for account status response
+interface AccountStatusResponse {
+  status: string; // COMPLETED, PENDING, NOT_EXISTS
+  canLogin: boolean;
+  canRegister: boolean;
+  message: string;
+}
+
 export default function Index() {
+  const params = useLocalSearchParams();
   const params = useLocalSearchParams();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
@@ -46,6 +61,15 @@ export default function Index() {
 
   // ✅ FIRST useEffect - Params check và keyboard listeners
   useEffect(() => {
+    // Kiểm tra nếu có parameter logged=true
+    if (params.logged === 'true') {
+      setIsLoggedIn(true);
+    }
+
+    // Ẩn navigation bar khi mở app (chỉ cho Android)
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync('hidden');
+    }
     // Kiểm tra nếu có parameter logged=true
     if (params.logged === 'true') {
       setIsLoggedIn(true);
@@ -163,6 +187,8 @@ export default function Index() {
   const handleLogin = async () => {
     if (!email || !password) {
       setError("Vui lòng nhập email và mật khẩu");
+    if (!email || !password) {
+      setError("Vui lòng nhập email và mật khẩu");
       return;
     }
 
@@ -228,6 +254,7 @@ export default function Index() {
     } finally {
       setIsLoading(false);
     }
+    }
   };
 
   const navigateToRegister = () => {
@@ -239,6 +266,7 @@ export default function Index() {
   };
 
   // Nếu đã đăng nhập, hiển thị TabNavigator
+  // Nếu đã đăng nhập, hiển thị TabNavigator
   if (isLoggedIn) {
     return (
       <SafeAreaProvider>
@@ -249,6 +277,7 @@ export default function Index() {
     );
   }
 
+  // Nếu chưa đăng nhập, hiển thị màn hình Login
   // Nếu chưa đăng nhập, hiển thị màn hình Login
   return (
     <SafeAreaProvider>
@@ -311,3 +340,73 @@ const styles = StyleSheet.create({
     minHeight: height - 100,
   },
 });
+
+// index.tsx - ensure proper flow order
+useEffect(() => {
+  const initializeApp = async () => {
+    try {
+      // ✅ 1. Check if user has auth token first
+      const existingToken = await AsyncStorage.getItem('authToken');
+      
+      if (existingToken) {
+        console.log("🔑 Found existing token, checking validity...");
+        
+        // ✅ 2. If has token, verify it works
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/introspect`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${existingToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: existingToken }),
+          });
+          
+          if (response.ok) {
+            console.log("✅ Token valid, user already logged in");
+            setIsLoggedIn(true);
+            return;
+          } else {
+            console.log("❌ Token invalid, clearing...");
+            await AsyncStorage.removeItem('authToken');
+          }
+        } catch (tokenError) {
+          console.log("❌ Token check failed, clearing...");
+          await AsyncStorage.removeItem('authToken');
+        }
+      }
+      
+      // ✅ 3. No valid token, check account status (PUBLIC call)
+      const userEmail = await AsyncStorage.getItem('userEmail');
+      if (userEmail) {
+        console.log("📧 Checking status for:", userEmail);
+        
+        const statusResponse = await fetch(`${API_BASE_URL}/accounts/check-status?email=${userEmail}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          // ✅ NO Authorization header for public endpoint
+        });
+        
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          console.log("📊 Account status:", statusData);
+          
+          if (statusData.result.hasUserInfo) {
+            console.log("✅ Account has UserInfo, can login normally");
+            // Proceed with normal login flow
+          } else {
+            console.log("⚠️ Account exists but no UserInfo, redirect to setup");
+            // Redirect to gender selection
+          }
+        } else {
+          console.log("❌ Status check failed:", statusResponse.status);
+        }
+      }
+      
+    } catch (error) {
+      console.error("❌ App initialization error:", error);
+    }
+  };
+  
+  initializeApp();
+}, []);
