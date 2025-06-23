@@ -1,26 +1,27 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import {
-    Alert,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface Step {
   id: string;
   content: string;
   stepImage?: string;
+  waitingTime?: string; // ✅ NEW: Add waiting time
 }
 
 interface AddStepProps {
   steps: Step[];
   onUpdateStep: (id: string, content: string) => void;
   onUpdateStepImage: (id: string, stepImage: string | undefined) => void;
+  onUpdateStepWaitingTime: (id: string, waitingTime: string) => void; // ✅ NEW: Add waiting time handler
   onMoveStepUp: (stepId: string) => void;
   onMoveStepDown: (stepId: string) => void;
   onMoveStepToPosition: (stepId: string, position: number) => void;
@@ -31,6 +32,7 @@ const AddStep: React.FC<AddStepProps> = ({
   steps,
   onUpdateStep,
   onUpdateStepImage,
+  onUpdateStepWaitingTime, // ✅ NEW: Add waiting time handler
   onMoveStepUp,
   onMoveStepDown,
   onMoveStepToPosition,
@@ -48,8 +50,7 @@ const AddStep: React.FC<AddStepProps> = ({
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3], // Aspect ratio cho step images
+      allowsEditing: false, // ✅ Không crop ảnh
       quality: 0.7,
     });
 
@@ -81,11 +82,12 @@ const AddStep: React.FC<AddStepProps> = ({
                 ]}
                 disabled={index === 0}
               >
-                <Ionicons 
-                  name="arrow-up" 
-                  size={16} 
-                  color={index === 0 ? '#ccc' : '#666'} 
-                />
+                <Text style={[
+                  styles.stepControlText,
+                  index === 0 && styles.stepControlTextDisabled
+                ]}>
+                  ↑
+                </Text>
               </TouchableOpacity>
               
               {/* Move Down Button */}
@@ -97,11 +99,12 @@ const AddStep: React.FC<AddStepProps> = ({
                 ]}
                 disabled={index === steps.length - 1}
               >
-                <Ionicons 
-                  name="arrow-down" 
-                  size={16} 
-                  color={index === steps.length - 1 ? '#ccc' : '#666'} 
-                />
+                <Text style={[
+                  styles.stepControlText,
+                  index === steps.length - 1 && styles.stepControlTextDisabled
+                ]}>
+                  ↓
+                </Text>
               </TouchableOpacity>
               
               {/* Delete Button */}
@@ -110,7 +113,7 @@ const AddStep: React.FC<AddStepProps> = ({
                   onPress={() => onRemoveStep(step.id)}
                   style={[styles.stepControlButton, styles.deleteStepButton]}
                 >
-                  <Ionicons name="trash" size={16} color="#ff4444" />
+                  <Text style={styles.deleteStepText}>✕</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -126,6 +129,21 @@ const AddStep: React.FC<AddStepProps> = ({
             numberOfLines={3}
           />
 
+          {/* ✅ NEW: Thời gian chờ */}
+          <View style={styles.waitingTimeSection}>
+            <Text style={styles.waitingTimeLabel}>Thời gian chờ (tùy chọn)</Text>
+            <TextInput
+              style={[styles.textInput, styles.waitingTimeInput]}
+              placeholder="VD: 5 phút, 30 giây, 2 giờ..."
+              value={step.waitingTime || ''}
+              onChangeText={(text) => onUpdateStepWaitingTime(step.id, text)}
+              maxLength={50}
+            />
+            <Text style={styles.waitingTimeHint}>
+              Thời gian cần chờ sau khi hoàn thành bước này
+            </Text>
+          </View>
+
           {/* ✅ Ảnh minh họa bước làm (tùy chọn) */}
           <View style={styles.stepImageSection}>
             <Text style={styles.stepImageLabel}>Ảnh minh họa (tùy chọn)</Text>
@@ -139,15 +157,13 @@ const AddStep: React.FC<AddStepProps> = ({
                     onPress={() => pickStepImage(step.id)}
                     style={styles.stepImageActionButton}
                   >
-                    <Ionicons name="camera" size={16} color="#FF5D00" />
-                    <Text style={styles.stepImageActionText}>Đổi ảnh</Text>
+                    <Text style={styles.stepImageActionText}>📷 Đổi ảnh</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={() => removeStepImage(step.id)}
                     style={[styles.stepImageActionButton, styles.removeImageButton]}
                   >
-                    <Ionicons name="trash" size={16} color="#ff4444" />
-                    <Text style={[styles.stepImageActionText, styles.removeImageText]}>Xóa</Text>
+                    <Text style={[styles.stepImageActionText, styles.removeImageText]}>🗑 Xóa</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -157,7 +173,7 @@ const AddStep: React.FC<AddStepProps> = ({
                 style={styles.stepImagePlaceholder}
                 onPress={() => pickStepImage(step.id)}
               >
-                <Ionicons name="image-outline" size={24} color="#ccc" />
+                <Text style={styles.stepImagePlaceholderIcon}>🖼</Text>
                 <Text style={styles.stepImagePlaceholderText}>Thêm ảnh minh họa</Text>
               </TouchableOpacity>
             )}
@@ -233,6 +249,25 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 15,
   },
+
+  // ✅ NEW: Waiting Time Styles
+  waitingTimeSection: {
+    marginBottom: 15,
+  },
+  waitingTimeLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 6,
+  },
+  waitingTimeInput: {
+    marginBottom: 4,
+  },
+  waitingTimeHint: {
+    fontSize: 12,
+    color: '#999',
+    fontStyle: 'italic',
+  },
   
   // Step Image Styles
   stepImageSection: {
@@ -261,7 +296,6 @@ const styles = StyleSheet.create({
   },
   stepImageActionButton: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
@@ -270,7 +304,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FF5D00',
     backgroundColor: '#fff',
-    gap: 5,
   },
   removeImageButton: {
     borderColor: '#ff4444',
@@ -293,13 +326,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f8f8f8',
   },
+  stepImagePlaceholderIcon: {
+    fontSize: 24,
+  },
   stepImagePlaceholderText: {
     fontSize: 12,
     color: '#999',
     marginTop: 5,
   },
   
-  // Step controls
+  // ✅ UPDATED: Step controls without icons
   stepControls: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -319,9 +355,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
     borderColor: '#f0f0f0',
   },
+  stepControlText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  stepControlTextDisabled: {
+    color: '#ccc',
+  },
   deleteStepButton: {
     backgroundColor: '#fff5f5',
     borderColor: '#fecaca',
+  },
+  deleteStepText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#ff4444',
   },
 
   // Quick position controls

@@ -22,10 +22,12 @@ import {
   View
 } from 'react-native';
 
+// ✅ UPDATED: Step interface với waiting time
 interface Step {
   id: string;
   content: string;
   stepImage?: string;
+  waitingTime?: string; // ✅ NEW: Add waiting time
 }
 
 interface Ingredient {
@@ -201,7 +203,7 @@ const SuggestRecipeScreen = () => {
   // ✅ Step functions
   const addStep = () => {
     const newId = (steps.length + 1).toString();
-    setSteps([...steps, { id: newId, content: '', stepImage: undefined }]);
+    setSteps([...steps, { id: newId, content: '', stepImage: undefined, waitingTime: undefined }]); // ✅ Add waitingTime
   };
 
   const removeStep = (id: string) => {
@@ -220,6 +222,17 @@ const SuggestRecipeScreen = () => {
     setSteps(steps.map(step => 
       step.id === id ? { ...step, stepImage } : step
     ));
+  };
+
+  // ✅ NEW: Update step waiting time
+  const updateStepWaitingTime = (stepId: string, waitingTime: string) => {
+    setSteps(prevSteps => 
+      prevSteps.map(step => 
+        step.id === stepId 
+          ? { ...step, waitingTime }
+          : step
+      )
+    );
   };
 
   const moveStepUp = (stepId: string) => {
@@ -304,7 +317,7 @@ const SuggestRecipeScreen = () => {
       // ✅ Step 1: Create Recipe
       console.log('🔄 Step 1: Creating recipe...');
       
-      // Convert image URI to File object
+      // Convert image URI to proper format for React Native
       const imageFile = await uriToFile(selectedImage!, `recipe-${Date.now()}.jpg`);
       
       const recipeData: RecipeCreationRequest = {
@@ -317,7 +330,7 @@ const SuggestRecipeScreen = () => {
       const recipeResponse = await createRecipe(
         selectedSubCategory!.id, 
         recipeData, 
-        imageFile
+        imageFile as any // Type assertion for React Native
       );
 
       if (!recipeResponse?.result?.id) {
@@ -334,7 +347,7 @@ const SuggestRecipeScreen = () => {
         ing.name.trim() && ing.amount.trim() && ing.selectedIngredient
       );
 
-      const ingredientPromises = validIngredients.map(async (ingredient) => {
+      for (const ingredient of validIngredients) {
         const ingredientData: RecipeIngredientsCreationRequest = {
           recipeId: recipeId,
           ingredientId: ingredient.selectedIngredient!.id,
@@ -343,15 +356,13 @@ const SuggestRecipeScreen = () => {
 
         try {
           const result = await createRecipeIngredient(ingredientData);
-          console.log(`✅ Ingredient created:`, result.ingredientName);
-          return result;
+          console.log(`✅ Ingredient created:`, result);
         } catch (error) {
           console.error(`❌ Failed to create ingredient ${ingredient.name}:`, error);
           throw error;
         }
-      });
+      }
 
-      await Promise.all(ingredientPromises);
       console.log('✅ All ingredients created successfully');
 
       // ✅ Step 3: Create Recipe Steps
@@ -359,11 +370,13 @@ const SuggestRecipeScreen = () => {
       
       const validSteps = steps.filter(step => step.content.trim());
 
-      const stepPromises = validSteps.map(async (step, index) => {
+      for (let index = 0; index < validSteps.length; index++) {
+        const step = validSteps[index];
+        
         try {
-          let stepImageFile: File | undefined;
+          let stepImageFile: any = undefined;
           
-          // Convert step image to File if exists
+          // Convert step image to proper format if exists
           if (step.stepImage) {
             stepImageFile = await uriToFile(step.stepImage, `step-${index + 1}-${Date.now()}.jpg`);
           }
@@ -371,24 +384,22 @@ const SuggestRecipeScreen = () => {
           const stepData: RecipeStepsCreationRequest = {
             step: index + 1,
             description: step.content.trim(),
-            waitingTime: undefined,
+            waitingTime: step.waitingTime?.trim() || undefined, // ✅ UPDATED: Include waiting time
           };
 
           const result = await createRecipeStep(recipeId, stepData, stepImageFile);
           console.log(`✅ Step ${index + 1} created successfully`);
-          return result;
         } catch (error) {
           console.error(`❌ Failed to create step ${index + 1}:`, error);
           throw error;
         }
-      });
+      }
 
-      await Promise.all(stepPromises);
       console.log('✅ All steps created successfully');
 
       // ✅ SUCCESS: Reset form và chuyển về HomeScreen
       resetForm();
-      router.replace('/HomeScreens');
+      router.back();
       
     } catch (error) {
       console.error('❌ Save recipe error:', error);
@@ -405,11 +416,14 @@ const SuggestRecipeScreen = () => {
     }
   };
 
-  // ✅ Helper function: Convert URI to File
-  const uriToFile = async (uri: string, filename: string): Promise<File> => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    return new File([blob], filename, { type: blob.type });
+  // ✅ UPDATED: Helper function để convert URI to File cho React Native
+  const uriToFile = async (uri: string, filename: string) => {
+    // Tạo FormData compatible object cho React Native
+    return {
+      uri: uri,
+      type: 'image/jpeg', // hoặc 'image/png'
+      name: filename,
+    };
   };
 
   // ✅ Helper function: Reset form
@@ -421,7 +435,7 @@ const SuggestRecipeScreen = () => {
     setSelectedSubCategory(null);
     setDifficulty('EASY');
     setIngredients([{ id: '1', name: '', amount: '' }]);
-    setSteps([{ id: '1', content: '', stepImage: undefined }]);
+    setSteps([{ id: '1', content: '', stepImage: undefined, waitingTime: undefined }]); // ✅ Add waitingTime
     setIngredientSearches({});
     setShowDropdowns({});
   };
@@ -760,6 +774,7 @@ const SuggestRecipeScreen = () => {
               steps={steps}
               onUpdateStep={updateStep}
               onUpdateStepImage={updateStepImage}
+              onUpdateStepWaitingTime={updateStepWaitingTime} // ✅ NEW: Add waiting time handler
               onMoveStepUp={moveStepUp}
               onMoveStepDown={moveStepDown}
               onMoveStepToPosition={moveStepToPosition}
