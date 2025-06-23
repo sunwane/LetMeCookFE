@@ -197,16 +197,15 @@ export const createRecipe = async (subCategoryId : string,data: RecipeCreationRe
     formdata.append("file", file);
 
     const token = await getAuthToken();
-    const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+    const headers: HeadersInit = {};
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
     const response =  await fetch(`${API_BASE_URL}/recipe/create/${subCategoryId}`, {
         method: "POST",
-        body: formdata
+        body: formdata,
+        headers,
     });
 
     const result: ApiResponse<RecipeItem> = await handleResponse(response);
@@ -225,9 +224,7 @@ const formData = new FormData()
   }
 
     const token = await getAuthToken();
-    const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+    const headers: HeadersInit = {};
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -236,6 +233,7 @@ const formData = new FormData()
   const response = await fetch(`${API_BASE_URL}/recipe/update/${recipeId}`, {
     method: "PUT",
     body: formData,
+    headers,
   })
 
   const result: ApiResponse<RecipeItem> = await handleResponse(response)

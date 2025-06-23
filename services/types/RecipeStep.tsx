@@ -396,3 +396,33 @@ export const getStepByRecipeId = async (recipeId: string): Promise<ApiResponse<R
   return handleResponse(response);
 }
 
+
+export const createRecipeStep = async (
+  recipeId: string,
+  data: RecipeStepsCreationRequest,
+  file?: File,
+): Promise<ApiResponse<RecipeStepsResponse>> => {
+  const formData = new FormData()
+  formData.append("step", data.step.toString())
+  formData.append("description", data.description)
+  formData.append("waitingTime", data.waitingTime || "")
+  if (file) {
+    formData.append("file", file)
+  }
+
+  const token = await getAuthToken();
+  const headers: HeadersInit = {}; // Bỏ 'Content-Type' để browser tự set cho FormData
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(`${API_BASE_URL}/recipeSteps/create/${recipeId}`, {
+    method: "POST",
+    body: formData,
+    headers,
+  })
+
+  const result: ApiResponse<RecipeStepsResponse> = await handleResponse(response)
+  return result; // Trả về toàn bộ ApiResponse thay vì chỉ result
+}

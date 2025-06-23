@@ -1,6 +1,9 @@
 import AddStep from '@/components/AddStep';
-import { Ingredients, sampleIngredients } from '@/services/types/Ingredients';
-import { Ionicons } from '@expo/vector-icons';
+import { getAllIngredients, Ingredients } from '@/services/types/Ingredients';
+import { createRecipeIngredient, RecipeIngredientsCreationRequest } from '@/services/types/RecipeIngredients';
+import { createRecipe, RecipeCreationRequest } from '@/services/types/RecipeItem';
+import { createRecipeStep, RecipeStepsCreationRequest } from '@/services/types/RecipeStep';
+import { getAllSubCategories, SubCategoryItem } from '@/services/types/SubCategoryItem';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -47,7 +50,17 @@ const SuggestRecipeScreen = () => {
   const [ingredientSearches, setIngredientSearches] = useState<{ [key: string]: string }>({});
   const [showDropdowns, setShowDropdowns] = useState<{ [key: string]: boolean }>({});
 
-  // ✅ Chọn ảnh từ thư viện cho main dish
+  // ✅ NEW: State để quản lý subcategories
+  const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategoryItem | null>(null);
+  const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
+  const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('EASY');
+
+  // ✅ NEW: State để quản lý ingredients từ API
+  const [allIngredients, setAllIngredients] = useState<Ingredients[]>([]);
+  const [isLoadingIngredients, setIsLoadingIngredients] = useState(true);
+
+  // ✅ Chọn ảnh từ thư viện cho main dish - UPDATED: Không cắt ảnh
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
@@ -58,8 +71,7 @@ const SuggestRecipeScreen = () => {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [16, 9],
+      allowsEditing: false, // ✅ UPDATED: Không cho phép cắt ảnh
       quality: 0.8,
     });
 
@@ -80,20 +92,20 @@ const SuggestRecipeScreen = () => {
     }
   };
 
-  // ✅ Filter ingredients based on search
+  // ✅ Filter ingredients based on search từ API data
   const getFilteredIngredients = (searchTerm: string) => {
     if (!searchTerm || !searchTerm.trim()) return [];
     
-    return sampleIngredients.filter(ingredient =>
+    return allIngredients.filter(ingredient =>
       ingredient.ingredientName.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 5); // Limit to 5 results for better UX
   };
 
-  // ✅ Tìm ingredient giống nhất
+  // ✅ Tìm ingredient giống nhất từ API data
   const findBestMatch = (searchTerm: string): Ingredients | null => {
     if (!searchTerm.trim()) return null;
     
-    const filtered = sampleIngredients.filter(ingredient =>
+    const filtered = allIngredients.filter(ingredient =>
       ingredient.ingredientName.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
@@ -260,10 +272,16 @@ const SuggestRecipeScreen = () => {
       Alert.alert('Lỗi', 'Vui lòng nhập thời gian nấu!');
       return false;
     }
+    if (!selectedSubCategory) {
+      Alert.alert('Lỗi', 'Vui lòng chọn danh mục món ăn!');
+      return false;
+    }
 
-    const validIngredients = ingredients.filter(ing => ing.name.trim() && ing.amount.trim());
+    const validIngredients = ingredients.filter(ing => 
+      ing.name.trim() && ing.amount.trim() && ing.selectedIngredient
+    );
     if (validIngredients.length === 0) {
-      Alert.alert('Lỗi', 'Vui lòng nhập ít nhất 1 nguyên liệu!');
+      Alert.alert('Lỗi', 'Vui lòng nhập ít nhất 1 nguyên liệu hợp lệ!');
       return false;
     }
 
@@ -276,48 +294,142 @@ const SuggestRecipeScreen = () => {
     return true;
   };
 
-  // ✅ Lưu công thức
+  // ✅ Lưu công thức và chuyển về HomeScreen
   const handleSave = async () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
     
     try {
-      const recipeData = {
+      // ✅ Step 1: Create Recipe
+      console.log('🔄 Step 1: Creating recipe...');
+      
+      // Convert image URI to File object
+      const imageFile = await uriToFile(selectedImage!, `recipe-${Date.now()}.jpg`);
+      
+      const recipeData: RecipeCreationRequest = {
         title: title.trim(),
         description: description.trim(),
+        difficulty: difficulty,
         cookingTime: cookingTime.trim(),
-        image: selectedImage,
-        ingredients: ingredients.filter(ing => ing.name.trim() && ing.amount.trim()),
-        steps: steps.filter(step => step.content.trim()).map(step => ({
-          content: step.content.trim(),
-          stepImage: step.stepImage || null,
-        })),
-        createdAt: new Date().toISOString(),
       };
 
-      console.log('📝 Recipe data to save:', recipeData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      Alert.alert(
-        'Thành công', 
-        'Công thức đã được đề xuất thành công!',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => router.back() 
-          }
-        ]
+      const recipeResponse = await createRecipe(
+        selectedSubCategory!.id, 
+        recipeData, 
+        imageFile
       );
+
+      if (!recipeResponse?.result?.id) {
+        throw new Error('Không thể tạo công thức. Vui lòng thử lại!');
+      }
+
+      const recipeId = recipeResponse.result.id;
+      console.log('✅ Recipe created with ID:', recipeId);
+
+      // ✅ Step 2: Create Recipe Ingredients
+      console.log('🔄 Step 2: Creating ingredients...');
+      
+      const validIngredients = ingredients.filter(ing => 
+        ing.name.trim() && ing.amount.trim() && ing.selectedIngredient
+      );
+
+      const ingredientPromises = validIngredients.map(async (ingredient) => {
+        const ingredientData: RecipeIngredientsCreationRequest = {
+          recipeId: recipeId,
+          ingredientId: ingredient.selectedIngredient!.id,
+          quantity: parseFloat(ingredient.amount) || 0,
+        };
+
+        try {
+          const result = await createRecipeIngredient(ingredientData);
+          console.log(`✅ Ingredient created:`, result.ingredientName);
+          return result;
+        } catch (error) {
+          console.error(`❌ Failed to create ingredient ${ingredient.name}:`, error);
+          throw error;
+        }
+      });
+
+      await Promise.all(ingredientPromises);
+      console.log('✅ All ingredients created successfully');
+
+      // ✅ Step 3: Create Recipe Steps
+      console.log('🔄 Step 3: Creating steps...');
+      
+      const validSteps = steps.filter(step => step.content.trim());
+
+      const stepPromises = validSteps.map(async (step, index) => {
+        try {
+          let stepImageFile: File | undefined;
+          
+          // Convert step image to File if exists
+          if (step.stepImage) {
+            stepImageFile = await uriToFile(step.stepImage, `step-${index + 1}-${Date.now()}.jpg`);
+          }
+
+          const stepData: RecipeStepsCreationRequest = {
+            step: index + 1,
+            description: step.content.trim(),
+            waitingTime: undefined,
+          };
+
+          const result = await createRecipeStep(recipeId, stepData, stepImageFile);
+          console.log(`✅ Step ${index + 1} created successfully`);
+          return result;
+        } catch (error) {
+          console.error(`❌ Failed to create step ${index + 1}:`, error);
+          throw error;
+        }
+      });
+
+      await Promise.all(stepPromises);
+      console.log('✅ All steps created successfully');
+
+      // ✅ SUCCESS: Reset form và chuyển về HomeScreen
+      resetForm();
+      router.replace('/HomeScreens');
       
     } catch (error) {
       console.error('❌ Save recipe error:', error);
-      Alert.alert('Lỗi', 'Không thể lưu công thức. Vui lòng thử lại!');
+      
+      let errorMessage = 'Không thể lưu công thức. Vui lòng thử lại!';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Lỗi', errorMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // ✅ Helper function: Convert URI to File
+  const uriToFile = async (uri: string, filename: string): Promise<File> => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    return new File([blob], filename, { type: blob.type });
+  };
+
+  // ✅ Helper function: Reset form
+  const resetForm = () => {
+    setSelectedImage(null);
+    setTitle('');
+    setDescription('');
+    setCookingTime('');
+    setSelectedSubCategory(null);
+    setDifficulty('EASY');
+    setIngredients([{ id: '1', name: '', amount: '' }]);
+    setSteps([{ id: '1', content: '', stepImage: undefined }]);
+    setIngredientSearches({});
+    setShowDropdowns({});
+  };
+
+  // ✅ SubCategory selection functions
+  const selectSubCategory = (subCategory: SubCategoryItem) => {
+    setSelectedSubCategory(subCategory);
+    setShowSubCategoryDropdown(false);
   };
 
   useEffect(() => {
@@ -326,19 +438,53 @@ const SuggestRecipeScreen = () => {
       closeAllDropdowns();
     };
     
-    return () => {
-      // Cleanup nếu cần
+    // ✅ Fetch ingredients khi component mount
+    const fetchIngredients = async () => {
+      setIsLoadingIngredients(true);
+      try {
+        const response = await getAllIngredients();
+        console.log('SuggestRecipeScreen - Ingredients response:', response);
+        
+        if (response?.result && Array.isArray(response.result)) {
+          setAllIngredients(response.result);
+        } else {
+          // Fallback to sample data if API fails
+          console.log('Using sample ingredients as fallback');
+          setAllIngredients([]);
+        }
+      } catch (error) {
+        console.error('Error fetching ingredients:', error);
+        // Fallback to sample data
+        setAllIngredients([]);
+      } finally {
+        setIsLoadingIngredients(false);
+      }
     };
+
+    // ✅ Fetch subcategories khi component mount
+    const fetchSubCategories = async () => {
+      try {
+        const response = await getAllSubCategories();
+        if (response?.result && Array.isArray(response.result)) {
+          setSubCategories(response.result);
+        }
+      } catch (error) {
+        console.error('Error fetching subcategories:', error);
+      }
+    };
+
+    fetchIngredients();
+    fetchSubCategories();
   }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       
-      {/* ✅ Custom Header */}
+      {/* ✅ Custom Header - Removed all icons */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FF5D00" />
+          <Text style={styles.backButtonText}>← Quay lại</Text>
         </TouchableOpacity>
         
         <Text style={styles.headerTitle}>Đề xuất món ăn</Text>
@@ -354,10 +500,7 @@ const SuggestRecipeScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView 
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView 
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -366,7 +509,7 @@ const SuggestRecipeScreen = () => {
           onScrollBeginDrag={closeAllDropdowns}
           onMomentumScrollBegin={closeAllDropdowns}
         >
-          {/* ✅ Ảnh món ăn */}
+          {/* ✅ Ảnh món ăn - Removed camera icon */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ảnh món ăn *</Text>
             <TouchableOpacity style={styles.imageContainer} onPress={pickImage}>
@@ -374,7 +517,6 @@ const SuggestRecipeScreen = () => {
                 <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
               ) : (
                 <View style={styles.imagePlaceholder}>
-                  <Ionicons name="camera" size={40} color="#ccc" />
                   <Text style={styles.imagePlaceholderText}>Chọn ảnh món ăn</Text>
                 </View>
               )}
@@ -419,13 +561,84 @@ const SuggestRecipeScreen = () => {
             />
           </View>
 
-          {/* ✅ Nguyên liệu với auto-select và unit display */}
+          {/* ✅ Danh mục món ăn - Removed chevron icons */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Danh mục món ăn *</Text>
+            <TouchableOpacity 
+              style={styles.dropdownButton}
+              onPress={() => setShowSubCategoryDropdown(!showSubCategoryDropdown)}
+            >
+              <Text style={[
+                styles.dropdownButtonText,
+                !selectedSubCategory && styles.placeholderText
+              ]}>
+                {selectedSubCategory?.subCategoryName || 'Chọn danh mục món ăn'}
+              </Text>
+              <Text style={styles.dropdownArrow}>
+                {showSubCategoryDropdown ? '▲' : '▼'}
+              </Text>
+            </TouchableOpacity>
+            
+            {showSubCategoryDropdown && (
+              <View style={styles.dropdown}>
+                {subCategories.map((subCategory) => (
+                  <TouchableOpacity
+                    key={subCategory.id}
+                    style={styles.dropdownItem}
+                    onPress={() => selectSubCategory(subCategory)}
+                  >
+                    <Text style={styles.dropdownItemName}>{subCategory.subCategoryName}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* ✅ Độ khó */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Độ khó *</Text>
+            <View style={styles.difficultyContainer}>
+              {[
+                { key: 'EASY', label: 'Dễ', color: '#4CAF50' },
+                { key: 'MEDIUM', label: 'Trung bình', color: '#FF9800' },
+                { key: 'HARD', label: 'Khó', color: '#F44336' }
+              ].map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[
+                    styles.difficultyButton,
+                    difficulty === item.key && { backgroundColor: item.color }
+                  ]}
+                  onPress={() => setDifficulty(item.key as 'EASY' | 'MEDIUM' | 'HARD')}
+                >
+                  <Text style={[
+                    styles.difficultyButtonText,
+                    difficulty === item.key && { color: '#fff' }
+                  ]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* ✅ Nguyên liệu - Removed add icon */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Nguyên liệu *</Text>
-              <TouchableOpacity onPress={addIngredient} style={styles.addButton}>
-                <Ionicons name="add" size={20} color="#FF5D00" />
-                <Text style={styles.addButtonText}>Thêm</Text>
+              <Text style={styles.sectionTitle}>
+                Nguyên liệu * 
+                {isLoadingIngredients && (
+                  <Text style={styles.loadingText}> (Đang tải...)</Text>
+                )}
+              </Text>
+              <TouchableOpacity 
+                onPress={addIngredient} 
+                style={[styles.addButton, isLoadingIngredients && styles.addButtonDisabled]}
+                disabled={isLoadingIngredients}
+              >
+                <Text style={[styles.addButtonText, isLoadingIngredients && styles.addButtonTextDisabled]}>
+                  + Thêm
+                </Text>
               </TouchableOpacity>
             </View>
             
@@ -435,23 +648,29 @@ const SuggestRecipeScreen = () => {
                   <Text style={styles.ingredientNumberText}>{index + 1}</Text>
                 </View>
                 
-                {/* ✅ Ingredient Name Input với auto-select */}
+                {/* ✅ Ingredient Name Input */}
                 <View style={[styles.ingredientInputContainer, styles.ingredientName]}>
                   <TextInput
-                    style={styles.ingredientInput}
-                    placeholder="Tên nguyên liệu"
+                    style={[
+                      styles.ingredientInput,
+                      isLoadingIngredients && styles.ingredientInputDisabled
+                    ]}
+                    placeholder={isLoadingIngredients ? "Đang tải nguyên liệu..." : "Tên nguyên liệu"}
                     value={ingredientSearches[ingredient.id] || ingredient.name}
                     onChangeText={(text) => updateIngredient(ingredient.id, 'name', text)}
                     onFocus={() => {
-                      if ((ingredientSearches[ingredient.id] || ingredient.name).trim()) {
+                      if ((ingredientSearches[ingredient.id] || ingredient.name).trim() && !isLoadingIngredients) {
                         setShowDropdowns(prev => ({ ...prev, [ingredient.id]: true }));
                       }
                     }}
                     onBlur={() => handleIngredientBlur(ingredient.id)}
+                    editable={!isLoadingIngredients}
                   />
                   
-                  {/* ✅ Dropdown with search results */}
-                  {showDropdowns[ingredient.id] && (ingredientSearches[ingredient.id] || ingredient.name) && (
+                  {/* ✅ Dropdown */}
+                  {showDropdowns[ingredient.id] && 
+                   (ingredientSearches[ingredient.id] || ingredient.name) && 
+                   !isLoadingIngredients && (
                     <View style={styles.dropdown}>
                       {getFilteredIngredients(ingredientSearches[ingredient.id] || ingredient.name).map((item) => (
                         <TouchableOpacity
@@ -465,25 +684,32 @@ const SuggestRecipeScreen = () => {
                       ))}
                       {getFilteredIngredients(ingredientSearches[ingredient.id] || ingredient.name).length === 0 && (
                         <View style={styles.dropdownItem}>
-                          <Text style={styles.dropdownNoResult}>Không tìm thấy nguyên liệu</Text>
+                          <Text style={styles.dropdownNoResult}>
+                            {allIngredients.length === 0 
+                              ? "Chưa có dữ liệu nguyên liệu" 
+                              : "Không tìm thấy nguyên liệu"
+                            }
+                          </Text>
                         </View>
                       )}
                     </View>
                   )}
                 </View>
                 
-                {/* ✅ Amount Input với unit display */}
+                {/* ✅ Amount Input */}
                 <View style={[styles.ingredientInputContainer, styles.ingredientAmount]}>
                   <TextInput
                     style={[
                       styles.ingredientInput, 
-                      ingredient.selectedIngredient && styles.amountInputWithUnit
+                      ingredient.selectedIngredient && styles.amountInputWithUnit,
+                      isLoadingIngredients && styles.ingredientInputDisabled
                     ]}
                     placeholder="Số lượng"
                     value={ingredient.amount}
                     onChangeText={(text) => updateIngredient(ingredient.id, 'amount', text)}
                     keyboardType="numeric"
                     onFocus={closeAllDropdowns}
+                    editable={!isLoadingIngredients}
                   />
                   {/* ✅ Unit display bên phải */}
                   {ingredient.selectedIngredient && (
@@ -493,25 +719,40 @@ const SuggestRecipeScreen = () => {
                   )}
                 </View>
                 
+                {/* ✅ Remove Button - Removed trash icon */}
                 {ingredients.length > 1 && (
                   <TouchableOpacity 
                     onPress={() => removeIngredient(ingredient.id)}
-                    style={styles.removeButton}
+                    style={[styles.removeButton, isLoadingIngredients && styles.removeButtonDisabled]}
+                    disabled={isLoadingIngredients}
                   >
-                    <Ionicons name="trash" size={18} color="#ff4444" />
+                    <Text style={[
+                      styles.removeButtonText, 
+                      isLoadingIngredients && { color: '#ccc' }
+                    ]}>
+                      Xóa
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
             ))}
+
+            {/* ✅ No ingredients message */}
+            {allIngredients.length === 0 && !isLoadingIngredients && (
+              <View style={styles.noIngredientsContainer}>
+                <Text style={styles.noIngredientsText}>
+                  Không thể tải dữ liệu nguyên liệu. Vui lòng thử lại sau.
+                </Text>
+              </View>
+            )}
           </View>
 
-          {/* ✅ Bước làm với component riêng */}
+          {/* ✅ Bước làm - Removed add icon */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Bước làm *</Text>
               <TouchableOpacity onPress={addStep} style={styles.addButton}>
-                <Ionicons name="add" size={20} color="#FF5D00" />
-                <Text style={styles.addButtonText}>Thêm</Text>
+                <Text style={styles.addButtonText}>+ Thêm</Text>
               </TouchableOpacity>
             </View>
             
@@ -545,12 +786,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    paddingTop: 50,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
   },
   backButton: {
     padding: 5,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#FF5D00',
+    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 18,
@@ -629,9 +876,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
   },
   imagePlaceholderText: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
   },
   // Input styles
   textInput: {
@@ -676,7 +923,14 @@ const styles = StyleSheet.create({
     maxHeight: 200,
   },
   removeButton: {
-    padding: 6,
+    padding: 8,
+    backgroundColor: '#ff4444',
+    borderRadius: 6,
+  },
+  removeButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   // Step styles
   stepContainer: {
@@ -804,6 +1058,79 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  // SubCategory styles
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownButtonText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  dropdownArrow: {
+    fontSize: 14,
+    color: '#666',
+  },
+  placeholderText: {
+    color: '#999',
+  },
+  difficultyContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  difficultyButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  difficultyButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  // Loading styles
+  loadingText: {
+    fontSize: 12,
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  addButtonDisabled: {
+    opacity: 0.5,
+  },
+  addButtonTextDisabled: {
+    color: '#ccc',
+  },
+  ingredientInputDisabled: {
+    backgroundColor: '#f5f5f5',
+    color: '#999',
+  },
+  removeButtonDisabled: {
+    opacity: 0.5,
+  },
+  noIngredientsContainer: {
+    backgroundColor: '#fff3cd',
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+    marginTop: 10,
+  },
+  noIngredientsText: {
+    color: '#856404',
+    fontSize: 14,
     textAlign: 'center',
   },
 });

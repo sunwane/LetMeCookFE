@@ -250,6 +250,24 @@ const handleResponse = async (response: Response) => {
 };
 
 
+export const createRecipeIngredient = async ( data: RecipeIngredientsCreationRequest,): Promise<RecipeIngredientsResponse> => {
+   const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const response = await fetch(`${API_BASE_URL}/recipeIngredients/create`, {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers
+  })
+
+  const result: ApiResponse<RecipeIngredientsResponse> = await handleResponse(response)
+  return result.result
+}
+
 export const getAllRecipeIngredientsByRecipeId = async (recipeId: string): Promise<ApiResponse<RecipeIngredientsResponse[]>> => {
   const token = await getAuthToken();
   const headers: HeadersInit = {

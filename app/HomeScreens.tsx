@@ -158,7 +158,7 @@ export default function HomeScreens() {
   // ✅ Handle suggest recipe - Navigate to SuggestRecipeScreen
   const handleSuggestRecipe = () => {
     console.log('🍳 Navigating to SuggestRecipeScreen...');
-    router.push('/SuggestRecipeScreen');
+    router.push('/SuggestRecipeScreen'); // ✅ Sử dụng router để điều hướng
   };
 
   return (
