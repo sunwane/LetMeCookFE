@@ -4,8 +4,10 @@ import RcmCategoryGroup from "@/components/rcmCategoryGroup";
 import SearchBar from "@/components/searchbar";
 import { getTop5Recipes, RecipeItem } from "@/services/types/RecipeItem";
 import { getTop6subcategories, SubCategoryItem } from "@/services/types/SubCategoryItem"; // Thay đổi import
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from 'react';
 import {
+  GestureResponderEvent,
   Keyboard,
   Platform,
   ScrollView,
@@ -96,6 +98,10 @@ export default function HomeScreens() {
 
     fetchTop6SubCategories();
   }, []);
+
+  function handleSuggestRecipe(event: GestureResponderEvent): void {
+    throw new Error("Function not implemented.");
+  }
 
   return (
     <View style={styles.background}>

@@ -34,14 +34,15 @@ const EditInforScreen = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ FIX: Map diet options to backend enum values
+  // ✅ FIX: Map diet options correctly - swap label and value
   const dietOptions = [
-    { label: 'Ăn chay', value: 'Ăn chay' },
-    { label: 'Ăn kiêng giảm cân', value: 'Ăn kiêng giảm cân' },
-    { label: 'Ăn kiêng Keto', value: 'Ăn kiêng Keto' },
-    { label: 'Ăn kiêng Địa Trung Hải', value: 'Ăn kiêng Địa Trung Hải' },
-    { label: 'Ăn uống bình thường', value: 'Ăn uống bình thường' },
-    { label: 'Ăn kiêng ít carb', value: 'Ăn kiêng ít carb' },
+    { label: 'Ăn chay', value: 'VEGETARIAN' },
+    { label: 'Ăn kiêng Keto', value: 'KETO' },
+    { label: 'Ăn kiêng Địa Trung Hải', value: 'MEDITERRANEAN' },
+    { label: 'Ăn uống bình thường', value: 'NORMAL' },
+    { label: 'Ăn kiêng ít carb', value: 'LOW_CARB' },
+    { label: 'Ăn kiêng', value: 'DIET' },
+
   ];
 
   // ✅ ADD: Handle input changes
@@ -171,8 +172,13 @@ const EditInforScreen = () => {
             label='Chế độ ăn' 
             defaultValue={formData.dietTypes?.[0] || ''} 
             type='select' 
-            options={dietOptions.map(opt => opt.value)}
-            onChangeText={(value) => handleInputChange('dietTypes', [value])}
+            options={dietOptions.map(opt => opt.label)} // ✅ Show Vietnamese labels
+            onChangeText={(selectedLabel) => {
+              // ✅ Convert Vietnamese label back to enum value
+              const selectedOption = dietOptions.find(opt => opt.label === selectedLabel);
+              const enumValue = selectedOption?.value || 'NORMAL';
+              handleInputChange('dietTypes', [enumValue]);
+            }}
             editable={!isLoading}
           />
         </View>
