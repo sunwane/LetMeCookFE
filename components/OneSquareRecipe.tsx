@@ -29,7 +29,7 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
   return (
     <TouchableOpacity style={styles.main} onPress={handleRecipePress} activeOpacity={0.8}>
       <Image 
-        source={{ uri: food.imageUrl }} 
+        source={{ uri: food.image }} 
         style={styles.foodImage} 
         resizeMode='cover'
       />
@@ -39,7 +39,7 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
           numberOfLines={1}
           ellipsizeMode="tail"
         >
-          {food.foodName}
+          {food.title}
         </Text>
       </View>
       <View style={styles.horizontalContainer}>
@@ -61,7 +61,7 @@ const SquareRecipe: React.FC<SquareRecipeProps> = ({ food }) => {
             <Image 
               source={require('@/assets/images/icons/Like_Active.png')} 
               style={styles.icon} />
-            <Text style={styles.smallText}>{food.likes}</Text>
+            <Text style={styles.smallText}>{food.totalLikes}</Text>
         </View>
       </View>
     </TouchableOpacity>

@@ -2,9 +2,9 @@ import HotRecommended from "@/components/hotRecommended";
 import N2xRecipeGroup from "@/components/Nx2RecipeGroup";
 import RcmCategoryGroup from "@/components/rcmCategoryGroup";
 import SearchBar from "@/components/searchbar";
-import { getTop5Recipes, RecipeItem } from "@/services/types/RecipeItem";
+import { getNewRecipesInMonth, getTop5Recipes, getTrendingRecipes, RecipeItem } from "@/services/types/RecipeItem";
 import { getTop6subcategories, SubCategoryItem } from "@/services/types/SubCategoryItem";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'; // ✅ Thêm import Ionicons
 import { router } from 'expo-router'; // ✅ Thêm import router
 import React, { useEffect, useState } from 'react';
 import {
@@ -27,6 +27,14 @@ export default function HomeScreens() {
   // State để quản lý Top 6 SubCategories
   const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
   const [isLoadingSubCategories, setIsLoadingSubCategories] = useState(true);
+
+  // State để quản lý Trending Recipes
+  const [trendingRecipes, setTrendingRecipes] = useState<RecipeItem[]>([]);
+  const [isLoadingTrending, setIsLoadingTrending] = useState(true);
+
+  // State để quản lý New Recipes In Month
+  const [newRecipes, setNewRecipes] = useState<RecipeItem[]>([]);
+  const [isLoadingNewRecipes, setIsLoadingNewRecipes] = useState(true);
   
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -75,7 +83,7 @@ export default function HomeScreens() {
     fetchTop5Recipes();
   }, []);
 
-  // ✅ UPDATED: Fetch Top 6 SubCategories thay vì getAllSubCategories
+  // Fetch Top 6 SubCategories
   useEffect(() => {
     const fetchTop6SubCategories = async () => {
       setIsLoadingSubCategories(true);
@@ -97,6 +105,54 @@ export default function HomeScreens() {
     };
 
     fetchTop6SubCategories();
+  }, []);
+
+  // Fetch Trending Recipes
+  useEffect(() => {
+    const fetchTrendingRecipes = async () => {
+      setIsLoadingTrending(true);
+      try {
+        const response = await getTrendingRecipes();
+        console.log('HomeScreens - TrendingRecipes response:', response);
+        
+        if (response?.result && Array.isArray(response.result)) {
+          setTrendingRecipes(response.result);
+        } else {
+          setTrendingRecipes([]);
+        }
+      } catch (error) {
+        console.error('HomeScreens - Error fetching trending recipes:', error);
+        setTrendingRecipes([]);
+      } finally {
+        setIsLoadingTrending(false);
+      }
+    };
+
+    fetchTrendingRecipes();
+  }, []);
+
+  // Fetch New Recipes In Month
+  useEffect(() => {
+    const fetchNewRecipes = async () => {
+      setIsLoadingNewRecipes(true);
+      try {
+        const response = await getNewRecipesInMonth();
+        console.log('HomeScreens - NewRecipesInMonth response:', response);
+        
+        if (response?.result && Array.isArray(response.result)) {
+          setNewRecipes(response.result);
+        } else {
+          setNewRecipes([]);
+        }
+      } catch (error) {
+        console.error('HomeScreens - Error fetching new recipes:', error);
+        setNewRecipes([]);
+      } finally {
+        setIsLoadingNewRecipes(false);
+      }
+    };
+
+    fetchNewRecipes();
   }, []);
 
   // ✅ Handle suggest recipe - Navigate to SuggestRecipeScreen
@@ -137,19 +193,21 @@ export default function HomeScreens() {
           foods={top5Recipes} 
         />
         
-        {/* ✅ UPDATED: Sử dụng Top 6 SubCategories từ API */}
         <RcmCategoryGroup 
           subCategories={subCategories}
           isLoading={isLoadingSubCategories}
         />
         
+        {/* Sử dụng Trending Recipes từ API */}
         <N2xRecipeGroup 
-          title="Món ăn nổi bật"
-          foods={top5Recipes}
+          title="Món ăn nổi bật gần đây"
+          foods={trendingRecipes}
         />
+        
+        {/* Sử dụng New Recipes In Month từ API */}
         <N2xRecipeGroup 
-          title="Món ngọt hấp dẫn"
-          foods={top5Recipes}
+          title="Công thức mới được đăng tải gần đây"
+          foods={newRecipes}
         />
       </ScrollView>
 

@@ -187,6 +187,61 @@ const handleResponse = async (response: Response) => {
 };
 
 
+
+export const createRecipe = async (subCategoryId : string,data: RecipeCreationRequest,file: File): Promise<ApiResponse<RecipeItem>> => {
+    const formdata = new FormData();
+    formdata.append("title", data.title);
+    formdata.append("description", data.description);
+    formdata.append("difficulty", data.difficulty);
+    formdata.append("cookingTime", data.cookingTime);
+    formdata.append("file", file);
+
+    const token = await getAuthToken();
+    const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+    const response =  await fetch(`${API_BASE_URL}/recipe/create/${subCategoryId}`, {
+        method: "POST",
+        body: formdata
+    });
+
+    const result: ApiResponse<RecipeItem> = await handleResponse(response);
+    return result;
+}
+
+export const updateRecipe = async (recipeId: string, data: RecipeUpdateRequest,file: File): Promise<ApiResponse<RecipeItem>> => {
+const formData = new FormData()
+  formData.append("title", data.title)
+  formData.append("description", data.description)
+  formData.append("difficulty", data.difficulty)
+  formData.append("cookingTime", data.cookingTime)
+  formData.append("subCategoryId", data.subCategoryId)
+  if (file) {
+    formData.append("file", file)
+  }
+
+    const token = await getAuthToken();
+    const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipe/update/${recipeId}`, {
+    method: "PUT",
+    body: formData,
+  })
+
+  const result: ApiResponse<RecipeItem> = await handleResponse(response)
+  return result
+}
+
 export const getRecipesBySubCategory = async ( subCategoryId: string, page: number = 0, size: number = 5): Promise<ApiResponse<Page<RecipeItem>>> => {
   const token = await getAuthToken();
   const headers: HeadersInit = {
@@ -216,6 +271,42 @@ export const getTop5Recipes = async (): Promise<ApiResponse<RecipeItem[]>> => {
   }
 
   const response = await fetch(`${API_BASE_URL}/recipe/getTop5Recipes`, {
+    method: 'GET',
+    headers,
+  });
+
+  const result: ApiResponse<RecipeItem[]> = await handleResponse(response);
+  return result;
+}
+
+
+export const getTrendingRecipes = async(): Promise<ApiResponse<RecipeItem[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipe/trendingRecipe`, {
+    method: 'GET',
+    headers,
+  });
+
+  const result: ApiResponse<RecipeItem[]> = await handleResponse(response);
+  return result;
+}
+
+export const getNewRecipesInMonth = async(): Promise<ApiResponse<RecipeItem[]>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const response = await fetch(`${API_BASE_URL}/recipe/newRecipeInMonth`, {
     method: 'GET',
     headers,
   });
