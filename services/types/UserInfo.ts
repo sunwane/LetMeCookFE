@@ -263,8 +263,8 @@ export const getAllUserInfoAPI = async (page = 0, size = 3): Promise<Page<UserIn
   }
 };
 
-// POST /user-info/avatar
-export const uploadAvatarAPI = async (avatar: File): Promise<UserInfoResponse> => {
+// POST /user-info/avatar - React Native version
+export const uploadAvatarAPI = async (imageUri: string): Promise<UserInfoResponse> => {
   try {
     const token = await getAuthToken();
     
@@ -273,12 +273,17 @@ export const uploadAvatarAPI = async (avatar: File): Promise<UserInfoResponse> =
     }
 
     const formData = new FormData();
-    formData.append('avatar', avatar);
+    formData.append('avatar', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'avatar.jpg',
+    } as any);
 
     const response = await fetch(`${API_BASE_URL}/user-info/avatar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
       },
       body: formData,
     });

@@ -1,6 +1,6 @@
 import { AccountItem } from "@/services/types/AccountItem";
 import { CommentItem } from "@/services/types/CommentItem";
-import { getRecipeCountByUserAPI, getUserInfoAPI } from "@/services/types/UserInfo";
+import { getRecipeCountByUserAPI, getUserInfoAPI, uploadAvatarAPI } from "@/services/types/UserInfo";
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -65,32 +65,20 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
     try {
       setIsUploadingAvatar(true);
       
-      // TODO: Implement actual API call
-      const formData = new FormData();
-      formData.append('avatar', {
-        uri: imageUri,
-        type: 'image/jpeg',
-        name: 'avatar.jpg',
-      } as any);
-
-      const token = await AsyncStorage.getItem('authToken');
-      
       console.log("🔄 Uploading avatar...");
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // ✅ Call actual API
+      const updatedUserInfo = await uploadAvatarAPI(imageUri);
       
-      // TODO: Replace with actual API endpoint
-      // const response = await fetch(`${API_BASE_URL}/user-infos/upload-avatar`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'multipart/form-data',
-      //   },
-      //   body: formData,
-      // });
-
-      console.log("✅ Avatar uploaded successfully");
+      // ✅ Update current user with new avatar from server response
+      if (currentUser) {
+        setCurrentUser({
+          ...currentUser,
+          avatar: updatedUserInfo.avatar
+        });
+      }
+      
+      console.log("✅ Avatar uploaded successfully:", updatedUserInfo);
       Alert.alert('Thành công', 'Cập nhật avatar thành công!');
       
     } catch (error) {

@@ -36,12 +36,12 @@ const EditInforScreen = () => {
 
   // ✅ FIX: Map diet options to backend enum values
   const dietOptions = [
-    { label: 'Ăn chay', value: 'VEGETARIAN' },
-    { label: 'Ăn kiêng giảm cân', value: 'WEIGHT_LOSS' },
-    { label: 'Ăn kiêng Keto', value: 'KETO' },
-    { label: 'Ăn kiêng Địa Trung Hải', value: 'MEDITERRANEAN' },
-    { label: 'Ăn uống bình thường', value: 'NORMAL' },
-    { label: 'Ăn kiêng ít carb', value: 'LOW_CARB' },
+    { label: 'Ăn chay', value: 'Ăn chay' },
+    { label: 'Ăn kiêng giảm cân', value: 'Ăn kiêng giảm cân' },
+    { label: 'Ăn kiêng Keto', value: 'Ăn kiêng Keto' },
+    { label: 'Ăn kiêng Địa Trung Hải', value: 'Ăn kiêng Địa Trung Hải' },
+    { label: 'Ăn uống bình thường', value: 'Ăn uống bình thường' },
+    { label: 'Ăn kiêng ít carb', value: 'Ăn kiêng ít carb' },
   ];
 
   // ✅ ADD: Handle input changes
@@ -136,7 +136,7 @@ const EditInforScreen = () => {
             label='Giới tính' 
             defaultValue={formData.sex} 
             type='select'
-            options={['MALE', 'FEMALE']}
+            options={['Nam', 'Nữ']}
             onChangeText={(value) => handleInputChange('sex', value)}
             editable={!isLoading}
           />
