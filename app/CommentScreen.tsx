@@ -6,11 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const CommentScreen = () => {
@@ -43,7 +43,7 @@ const CommentScreen = () => {
     <View style={styles.container}>
       {/* Header món ăn */}
       <View style={styles.recipeHeader}>
-        <Text style={styles.recipeTitle}>{recipe.foodName}</Text>
+        <Text style={styles.recipeTitle}>{recipe.title}</Text>
         <Text style={styles.commentStats}>
           {comments.length} bình luận • Đăng ngày {recipe.createAt} 
         </Text>
@@ -81,7 +81,7 @@ const CommentScreen = () => {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSubmit={handleAddComment}
-        recipeName={recipe.foodName}
+        recipeName={recipe.title}
       />
     </View>
   );

@@ -5,7 +5,7 @@ import { Category } from '../services/types/Category';
 interface CategoryItemProps {
   category: Category;
   isSelected: boolean;
-  onSelect: (categoryId: number) => void;
+  onSelect: (categoryId: string) => void;
 }
 
 const CategoryItem = ({ category, isSelected, onSelect }: CategoryItemProps) => {
@@ -18,9 +18,9 @@ const CategoryItem = ({ category, isSelected, onSelect }: CategoryItemProps) => 
       onPress={() => onSelect(category.id)}
     >
       <View style={styles.contentContainer}>
-        {category.icon && (
+        {category.categoryImg && (
           <Image
-            source={require('@/assets/images/icons/Fire.png') || category.icon}
+            source={{ uri: category.categoryImg }}
             style={[
               styles.icon,
               isSelected && styles.selectedIcon,
@@ -33,7 +33,7 @@ const CategoryItem = ({ category, isSelected, onSelect }: CategoryItemProps) => 
             isSelected && styles.selectedCategoryText,
           ]}
         >
-          {category.name}
+          {category.categoryName}
         </Text>
       </View>
     </TouchableOpacity>
@@ -49,13 +49,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    tintColor: '#333',
+    // tintColor: '#333',
     marginBottom: 3,
     width: 20,
     height: 20,
   },
   selectedIcon: {
-    tintColor: '#fff',
+    // tintColor: '#fff',
   },
   selectedCategory: {
     backgroundColor: '#FF5D00',

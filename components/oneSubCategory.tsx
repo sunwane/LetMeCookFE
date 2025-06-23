@@ -17,7 +17,7 @@ const OneSubCategory: React.FC<SubCategory> = ({ item, onPress }) => {
       router.push({
         pathname: '/SearchResults',
         params: { 
-          selectedTags: JSON.stringify([item.name]), // Truyền subCategory name làm selectedTag
+          selectedTags: JSON.stringify([item.subCategoryName]), // Truyền subCategory name làm selectedTag
           query: '' // Không có query search
         }
       });
@@ -31,11 +31,12 @@ const OneSubCategory: React.FC<SubCategory> = ({ item, onPress }) => {
       activeOpacity={0.7}
     >
       <Image
-        source={{ uri: item.imageUrl }}
+        source={{ uri: item.subCategoryImg }} // SỬA Ở ĐÂY
         style={styles.imagestyle}
+        onError={(e) => console.log('Image Error:', e.nativeEvent.error)}
       />
       <Text style={styles.textstyle}>
-        {item.name}
+        {item.subCategoryName} {/* SỬA Ở ĐÂY */}
       </Text>
     </TouchableOpacity>
   );

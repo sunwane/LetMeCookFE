@@ -2,9 +2,10 @@ import HotRecommended from "@/components/hotRecommended";
 import N2xRecipeGroup from "@/components/Nx2RecipeGroup";
 import RcmCategoryGroup from "@/components/rcmCategoryGroup";
 import SearchBar from "@/components/searchbar";
-import { foodData } from "@/services/types/RecipeItem";
+import { getTop5Recipes, RecipeItem } from "@/services/types/RecipeItem";
+import { getTop6subcategories, SubCategoryItem } from "@/services/types/SubCategoryItem";
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router } from 'expo-router'; // ✅ Thêm import router
 import React, { useEffect, useState } from 'react';
 import {
   Keyboard,
@@ -18,7 +19,15 @@ import {
 export default function HomeScreens() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  
+  // State để quản lý top 5 recipes
+  const [top5Recipes, setTop5Recipes] = useState<RecipeItem[]>([]);
+  const [isLoadingTop5, setIsLoadingTop5] = useState(true);
 
+  // State để quản lý Top 6 SubCategories
+  const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
+  const [isLoadingSubCategories, setIsLoadingSubCategories] = useState(true);
+  
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -42,8 +51,57 @@ export default function HomeScreens() {
     };
   }, []);
 
-  // ✅ Handler cho button đề xuất món
+  // Fetch top 5 recipes khi component mount
+  useEffect(() => {
+    const fetchTop5Recipes = async () => {
+      setIsLoadingTop5(true);
+      try {
+        const response = await getTop5Recipes();
+        console.log('HomeScreens - Top5Recipes response:', response);
+        
+        if (response?.result && Array.isArray(response.result)) {
+          setTop5Recipes(response.result);
+        } else {
+          setTop5Recipes([]);
+        }
+      } catch (error) {
+        console.error('HomeScreens - Error fetching top 5 recipes:', error);
+        setTop5Recipes([]);
+      } finally {
+        setIsLoadingTop5(false);
+      }
+    };
+
+    fetchTop5Recipes();
+  }, []);
+
+  // ✅ UPDATED: Fetch Top 6 SubCategories thay vì getAllSubCategories
+  useEffect(() => {
+    const fetchTop6SubCategories = async () => {
+      setIsLoadingSubCategories(true);
+      try {
+        const response = await getTop6subcategories();
+        console.log('HomeScreens - Top6SubCategories response:', response);
+        
+        if (response?.result && Array.isArray(response.result)) {
+          setSubCategories(response.result);
+        } else {
+          setSubCategories([]);
+        }
+      } catch (error) {
+        console.error('HomeScreens - Error fetching top 6 subcategories:', error);
+        setSubCategories([]);
+      } finally {
+        setIsLoadingSubCategories(false);
+      }
+    };
+
+    fetchTop6SubCategories();
+  }, []);
+
+  // ✅ Handle suggest recipe - Navigate to SuggestRecipeScreen
   const handleSuggestRecipe = () => {
+    console.log('🍳 Navigating to SuggestRecipeScreen...');
     router.push('/SuggestRecipeScreen');
   };
 
@@ -75,15 +133,23 @@ export default function HomeScreens() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <HotRecommended foods={foodData} />
-        <RcmCategoryGroup />
+        <HotRecommended 
+          foods={top5Recipes} 
+        />
+        
+        {/* ✅ UPDATED: Sử dụng Top 6 SubCategories từ API */}
+        <RcmCategoryGroup 
+          subCategories={subCategories}
+          isLoading={isLoadingSubCategories}
+        />
+        
         <N2xRecipeGroup 
           title="Món ăn nổi bật"
-          foods={foodData}
+          foods={top5Recipes}
         />
         <N2xRecipeGroup 
           title="Món ngọt hấp dẫn"
-          foods={foodData}
+          foods={top5Recipes}
         />
       </ScrollView>
 
@@ -95,7 +161,7 @@ export default function HomeScreens() {
             bottom: 90 + keyboardHeight * 0.1, // Điều chỉnh vị trí khi keyboard hiện
           }
         ]}
-        onPress={handleSuggestRecipe}
+        onPress={handleSuggestRecipe} // ✅ Gọi function navigate
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={28} color="#fff" />
