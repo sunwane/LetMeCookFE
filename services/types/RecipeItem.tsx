@@ -32,13 +32,6 @@ export interface RecipeUpdateRequest {
   subCategoryId: string
 }
 
-export interface FavoritesRecipe {
-  id: string;
-  recipeId: string; // ID của công thức nấu ăn
-  recipeName: string; // Tên công thức nấu ăn
-  accountId: string; // ID của người dùng đã lưu công thức
-  accountName: string; // Tên người dùng đã lưu công thức
-}
 
 export interface LikesRecipe {
   id: string;
@@ -314,10 +307,7 @@ export const getNewRecipesInMonth = async(): Promise<ApiResponse<RecipeItem[]>> 
 }
 
 
-
-//favorite recipe
-export const createFavoriteRecipe = async (recipeId: string): Promise<ApiResponse<FavoritesRecipe>> => {
- 
+export const getFavouriteRecipeByAccount = async(): Promise<ApiResponse<RecipeItem[]>> => {
   const token = await getAuthToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -326,52 +316,15 @@ export const createFavoriteRecipe = async (recipeId: string): Promise<ApiRespons
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/favourite/create/${recipeId}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({}), // Gửi object rỗng cho FavouriteRecipeRequest
-  });
-
-  const result: ApiResponse<FavoritesRecipe> = await handleResponse(response);
-  return result;
-}
-
-
-export const getAllFavouriteRecipe =async(): Promise<ApiResponse<FavoritesRecipe[]>> => {
-  const token = await getAuthToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}/favourite/getAllFavourite`, {
+  const response = await fetch(`${API_BASE_URL}/recipe/getFavouriteRecipeByAccount`, {
     method: 'GET',
     headers,
   });
 
-  const result: ApiResponse<FavoritesRecipe[]> = await handleResponse(response);
+  const result: ApiResponse<RecipeItem[]> = await handleResponse(response);
   return result;
 }
 
-export const deleteFavoriteRecipe = async (recipeId: string): Promise<ApiResponse<FavoritesRecipe>> => {
-  const token = await getAuthToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}/favourite/deleteFavourite/${recipeId}`, {
-    method: 'DELETE',
-    headers,
-  });
-
-  const result: ApiResponse<FavoritesRecipe> = await handleResponse(response);
-  return result;
-}
 
 //Like recipe
 export const getAllRecipeAccoountLike = async (recipeId: string): Promise<ApiResponse<LikesRecipe[]>> => {

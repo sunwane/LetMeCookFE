@@ -1,7 +1,7 @@
-import { FavoritesRecipe } from '@/services/types/FavoritesRecipe';
+import { createFavoriteRecipe, deleteFavoriteRecipe, FavoritesRecipe, getAllFavouriteRecipe } from '@/services/types/FavoritesRecipe';
 import { getAllIngredients, Ingredients } from '@/services/types/Ingredients';
 import { getAllRecipeIngredientsByRecipeId, RecipeIngredientsResponse } from '@/services/types/RecipeIngredients';
-import { createFavoriteRecipe, deleteFavoriteRecipe, getAllFavouriteRecipe, RecipeItem } from '@/services/types/RecipeItem';
+import { RecipeItem } from '@/services/types/RecipeItem';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -22,9 +22,9 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
 
   const getRecipeData = (): RecipeItem => {
     if ('food' in item) {
-      return item.food;
+      return (item as FavoritesRecipe).food;
     }
-    return item;
+    return item as RecipeItem;
   };
 
   const recipe = getRecipeData();

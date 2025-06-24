@@ -3,7 +3,7 @@ import AccountNav from '@/components/ui/navigation/AccountNav';
 import '@/config/globalTextConfig';
 import { sampleAccounts } from '@/services/types/AccountItem';
 import { sampleComments } from '@/services/types/CommentItem';
-import { sampleFavorites } from '@/services/types/FavoritesRecipe';
+// import { sampleFavorites } from '@/services/types/FavoritesRecipe';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
