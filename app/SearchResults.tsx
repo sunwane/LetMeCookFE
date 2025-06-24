@@ -3,7 +3,14 @@ import OneRecipe from '@/components/OneRecipe';
 import SearchBar from '@/components/searchbar';
 import SelectedTags from '@/components/SelectedTags';
 import '@/config/globalTextConfig';
-import { getRecipesBySubCategory, RecipeItem } from '@/services/types/RecipeItem';
+import {
+  findRecipebyKeyWord // ✅ NEW: Import findRecipebyKeyWord function
+  ,
+
+
+  getRecipesBySubCategory,
+  RecipeItem
+} from '@/services/types/RecipeItem';
 import { getAllSubCategories, SubCategoryItem } from '@/services/types/SubCategoryItem';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
@@ -41,6 +48,9 @@ const SearchResults = () => {
   // Thêm state để quản lý pagination tốt hơn
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
+
+  // ✅ NEW: State để phân biệt search mode
+  const [searchMode, setSearchMode] = useState<'keyword' | 'tags' | 'mixed'>('tags');
 
   // Keyboard listeners
   useEffect(() => {
@@ -95,7 +105,32 @@ const SearchResults = () => {
     fetchSubCategories();
   }, []);
 
-  // Cải thiện hàm fetchRecipesByTags để hỗ trợ pagination tốt hơn
+  // ✅ NEW: Fetch recipes by keyword
+  const fetchRecipesByKeyword = async (keyword: string) => {
+    setIsLoading(true);
+    setError(null);
+    setSearchMode('keyword');
+    
+    try {
+      const response = await findRecipebyKeyWord(keyword);
+      console.log('SearchResults - Keyword search response:', response);
+      
+      if (response?.result && Array.isArray(response.result)) {
+        setRecipes(response.result);
+        setHasMorePages(false); // Keyword search không hỗ trợ pagination
+      } else {
+        setRecipes([]);
+      }
+    } catch (error) {
+      console.error('Error searching recipes by keyword:', error);
+      setError('Không thể tìm kiếm công thức. Vui lòng thử lại.');
+      setRecipes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ✅ UPDATED: Enhanced fetchRecipesByTags với mixed search
   const fetchRecipesByTags = async (page = 0, isLoadMore = false) => {
     if (!isLoadMore) {
       setIsLoading(true);
@@ -106,78 +141,121 @@ const SearchResults = () => {
     }
     
     try {
-      // Tìm subcategories có tên trong selectedTags
-      const matchingSubCategories = subCategories.filter(sub => 
-        selectedTags.includes(sub.subCategoryName)
-      );
-
-      if (matchingSubCategories.length === 0) {
-        setRecipes([]);
-        setHasMorePages(false);
-        return;
-      }
-
-      // Nếu chỉ có 1 subcategory - hỗ trợ pagination
-      if (matchingSubCategories.length === 1) {
-        const subCategory = matchingSubCategories[0];
-        const response = await getRecipesBySubCategory(subCategory.id, page, 10);
+      let allRecipes: RecipeItem[] = [];
+      
+      // ✅ NEW: Mixed search - both keyword and tags
+      if (query && typeof query === 'string' && query.trim() && selectedTags.length > 0) {
+        setSearchMode('mixed');
         
-        if (response?.result) {
-          let newRecipes = response.result.content;
+        // First search by keyword
+        const keywordResponse = await findRecipebyKeyWord(query);
+        if (keywordResponse?.result) {
+          allRecipes = [...keywordResponse.result];
+        }
+        
+        // Then filter by tags
+        const matchingSubCategories = subCategories.filter(sub => 
+          selectedTags.includes(sub.subCategoryName)
+        );
+        
+        if (matchingSubCategories.length > 0) {
+          const tagRecipes: RecipeItem[] = [];
           
-          // Filter theo query nếu có
-          if (query && typeof query === 'string' && query.trim()) {
-            newRecipes = newRecipes.filter(recipe => 
-              recipe.title.toLowerCase().includes(query.toLowerCase())
-            );
-          }
-
-          if (isLoadMore) {
-            setRecipes(prev => [...prev, ...newRecipes]);
-          } else {
-            setRecipes(newRecipes);
-          }
-
-          setCurrentPage(response.result.number);
-          setTotalPages(response.result.totalPages);
-          setHasMorePages(!response.result.last);
-        }
-      } 
-      // Nếu có nhiều subcategories - fetch tất cả (không pagination)
-      else {
-        const allRecipes: RecipeItem[] = [];
-        
-        for (const subCategory of matchingSubCategories) {
-          try {
-            const response = await getRecipesBySubCategory(subCategory.id, 0, 10);
-            if (response?.result?.content) {
-              allRecipes.push(...response.result.content);
+          for (const subCategory of matchingSubCategories) {
+            try {
+              const response = await getRecipesBySubCategory(subCategory.id, 0, 10);
+              if (response?.result?.content) {
+                tagRecipes.push(...response.result.content);
+              }
+            } catch (error) {
+              console.error(`Error fetching recipes for subcategory ${subCategory.id}:`, error);
             }
-          } catch (error) {
-            console.error(`Error fetching recipes for subcategory ${subCategory.id}:`, error);
           }
+          
+          // Merge and prioritize keyword results, then add tag results
+          const keywordIds = allRecipes.map(r => r.id);
+          const additionalTagRecipes = tagRecipes.filter(r => !keywordIds.includes(r.id));
+          allRecipes = [...allRecipes, ...additionalTagRecipes];
         }
-
-        // Filter theo query nếu có
-        let filteredRecipes = allRecipes;
-        if (query && typeof query === 'string' && query.trim()) {
-          filteredRecipes = allRecipes.filter(recipe => 
-            recipe.title.toLowerCase().includes(query.toLowerCase())
-          );
-        }
-
-        // Remove duplicates based on recipe id
-        const uniqueRecipes = filteredRecipes.filter((recipe, index, self) => 
+        
+        // Remove duplicates
+        const uniqueRecipes = allRecipes.filter((recipe, index, self) => 
           index === self.findIndex(r => r.id === recipe.id)
         );
-
-        if (isLoadMore) {
-          setRecipes(prev => [...prev, ...uniqueRecipes]);
-        } else {
-          setRecipes(uniqueRecipes);
-        }
         
-        setHasMorePages(false); // Không hỗ trợ pagination cho multi-subcategory search
+        setRecipes(uniqueRecipes);
+        setHasMorePages(false);
+      }
+      // ✅ Keyword only search
+      else if (query && typeof query === 'string' && query.trim() && selectedTags.length === 0) {
+        await fetchRecipesByKeyword(query);
+        return;
+      }
+      // ✅ Tags only search (existing logic)
+      else if (selectedTags.length > 0) {
+        setSearchMode('tags');
+        
+        // Tìm subcategories có tên trong selectedTags
+        const matchingSubCategories = subCategories.filter(sub => 
+          selectedTags.includes(sub.subCategoryName)
+        );
+
+        if (matchingSubCategories.length === 0) {
+          setRecipes([]);
+          setHasMorePages(false);
+          return;
+        }
+
+        // Nếu chỉ có 1 subcategory - hỗ trợ pagination
+        if (matchingSubCategories.length === 1) {
+          const subCategory = matchingSubCategories[0];
+          const response = await getRecipesBySubCategory(subCategory.id, page, 10);
+          
+          if (response?.result) {
+            const newRecipes = response.result.content;
+
+            if (isLoadMore) {
+              setRecipes(prev => [...prev, ...newRecipes]);
+            } else {
+              setRecipes(newRecipes);
+            }
+
+            setCurrentPage(response.result.number);
+            setTotalPages(response.result.totalPages);
+            setHasMorePages(!response.result.last);
+          }
+        } 
+        // Nếu có nhiều subcategories - fetch tất cả (không pagination)
+        else {
+          for (const subCategory of matchingSubCategories) {
+            try {
+              const response = await getRecipesBySubCategory(subCategory.id, 0, 10);
+              if (response?.result?.content) {
+                allRecipes.push(...response.result.content);
+              }
+            } catch (error) {
+              console.error(`Error fetching recipes for subcategory ${subCategory.id}:`, error);
+            }
+          }
+
+          // Remove duplicates based on recipe id
+          const uniqueRecipes = allRecipes.filter((recipe, index, self) => 
+            index === self.findIndex(r => r.id === recipe.id)
+          );
+
+          if (isLoadMore) {
+            setRecipes(prev => [...prev, ...uniqueRecipes]);
+          } else {
+            setRecipes(uniqueRecipes);
+          }
+          
+          setHasMorePages(false);
+        }
+      }
+      else {
+        // No search criteria
+        setRecipes([]);
+        setHasMorePages(false);
       }
       
     } catch (error) {
@@ -189,16 +267,20 @@ const SearchResults = () => {
     }
   };
 
-  // Cải thiện hàm loadMoreRecipes
+  // ✅ UPDATED: Enhanced loadMoreRecipes
   const loadMoreRecipes = async () => {
-    if (isLoadingMore || !hasMorePages || selectedTags.length !== 1) return;
-
+    if (isLoadingMore || !hasMorePages || searchMode !== 'tags' || selectedTags.length !== 1) return;
     await fetchRecipesByTags(currentPage + 1, true);
   };
 
-  // Hàm fetch recipes khi selectedTags thay đổi
+  // ✅ UPDATED: Main search effect
   useEffect(() => {
-    if (selectedTags.length > 0 && subCategories.length > 0) {
+    if (subCategories.length === 0) return;
+    
+    const hasQuery = query && typeof query === 'string' && query.trim();
+    const hasTags = selectedTags.length > 0;
+    
+    if (hasQuery || hasTags) {
       fetchRecipesByTags(0, false);
     } else {
       setRecipes([]);
@@ -249,6 +331,7 @@ const SearchResults = () => {
                   ]}
                   searchMode="FindRecipe"
                   onSearch={(newQuery) => {
+                    // ✅ NEW: Enhanced search with keyword support
                     router.push({
                       pathname: '/SearchResults',
                       params: { 
@@ -270,7 +353,7 @@ const SearchResults = () => {
     <OneRecipe item={item} />
   );
 
-  // Cải thiện renderFooter
+  // ✅ UPDATED: Enhanced render footer
   const renderFooter = () => {
     if (isLoadingMore) {
       return (
@@ -281,10 +364,15 @@ const SearchResults = () => {
       );
     }
     
-    if (!hasMorePages && recipes.length > 0 && selectedTags.length === 1) {
+    if (!hasMorePages && recipes.length > 0) {
       return (
         <View style={styles.endFooter}>
-          <Text style={styles.endText}>Đã tải hết tất cả công thức</Text>
+          <Text style={styles.endText}>
+            {searchMode === 'keyword' || searchMode === 'mixed' 
+              ? 'Đã hiển thị tất cả kết quả tìm kiếm'
+              : 'Đã tải hết tất cả công thức'
+            }
+          </Text>
         </View>
       );
     }
@@ -323,7 +411,12 @@ const SearchResults = () => {
         {isLoading && recipes.length === 0 ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FF5D00" />
-            <Text style={styles.loadingText}>Đang tải công thức...</Text>
+            <Text style={styles.loadingText}>
+              {searchMode === 'keyword' 
+                ? 'Đang tìm kiếm công thức...'
+                : 'Đang tải công thức...'
+              }
+            </Text>
           </View>
         ) : error ? (
           <View style={styles.noResultsContainer}>
@@ -331,7 +424,9 @@ const SearchResults = () => {
             <TouchableOpacity 
               style={styles.retryButton}
               onPress={() => {
-                if (selectedTags.length > 0) {
+                const hasQuery = query && typeof query === 'string' && query.trim();
+                const hasTags = selectedTags.length > 0;
+                if (hasQuery || hasTags) {
                   fetchRecipesByTags(0, false);
                 }
               }}
@@ -353,7 +448,9 @@ const SearchResults = () => {
               <RefreshControl
                 refreshing={isLoading}
                 onRefresh={() => {
-                  if (selectedTags.length > 0) {
+                  const hasQuery = query && typeof query === 'string' && query.trim();
+                  const hasTags = selectedTags.length > 0;
+                  if (hasQuery || hasTags) {
                     fetchRecipesByTags(0, false);
                   }
                 }}
@@ -365,15 +462,17 @@ const SearchResults = () => {
         ) : (
           <View style={styles.noResultsContainer}>
             <Text style={styles.noResultsText}>
-              {selectedTags.length > 0 
-                ? `Không tìm thấy công thức nào trong thể loại "${selectedTags.join(', ')}"`
-                : query 
-                  ? `Không tìm thấy công thức nào phù hợp với "${query}"`
-                  : 'Chọn thể loại để xem công thức'
+              {selectedTags.length > 0 && query
+                ? `Không tìm thấy công thức nào phù hợp với "${query}" trong thể loại "${selectedTags.join(', ')}"`
+                : selectedTags.length > 0 
+                  ? `Không tìm thấy công thức nào trong thể loại "${selectedTags.join(', ')}"`
+                  : query 
+                    ? `Không tìm thấy công thức nào phù hợp với "${query}"`
+                    : 'Nhập từ khóa hoặc chọn thể loại để tìm kiếm công thức'
               }
-              {selectedTags.length > 0 && (
+              {(selectedTags.length > 0 || query) && (
                 <Text style={styles.noResultsSubText}>
-                  {'\n'}Thử chọn thể loại khác để xem thêm kết quả
+                  {'\n'}Thử tìm kiếm với từ khóa khác hoặc chọn thể loại khác
                 </Text>
               )}
             </Text>

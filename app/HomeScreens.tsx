@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   searchBarWrapper: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 10,
-    paddingTop: 70,
+    paddingTop: 40,
     paddingBottom: 20,
     zIndex: 100,
   },
