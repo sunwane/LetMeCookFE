@@ -2,18 +2,17 @@ import CookingStep from '@/components/CookingStep';
 import InfoItem from '@/components/InfoItem';
 import OneCmt from '@/components/OneCmt';
 import ServingAdjuster from '@/components/ServingAdjuster';
-import { sampleComments } from '@/services/types/CommentItem';
+import { CommentItem, getCommentsByRecipeId } from '@/services/types/CommentItem';
 import { createFavoriteRecipe, deleteFavoriteRecipe, getAllFavouriteRecipe } from '@/services/types/FavoritesRecipe';
 import { getAllIngredients, Ingredients } from '@/services/types/Ingredients';
 import { getAllRecipeIngredientsByRecipeId, RecipeIngredientsResponse } from '@/services/types/RecipeIngredients';
 import { createLikeRecipe, deleteLikeRecipe, getAllRecipeAccoountLike, RecipeItem } from '@/services/types/RecipeItem';
-import { sampleRecipeSteps } from '@/services/types/RecipeStep';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 // Thêm import cho RecipeStep API
-import { getStepByRecipeId, RecipeStepsResponse } from '@/services/types/RecipeStep';
+import { getStepByRecipeId, RecipeStepsResponse, sampleRecipeSteps } from '@/services/types/RecipeStep';
 
 const RecipeScreen = () => {
   const { recipeData } = useLocalSearchParams();
@@ -31,6 +30,8 @@ const RecipeScreen = () => {
   // Thêm state cho recipe steps
   const [recipeStepsData, setRecipeStepsData] = useState<RecipeStepsResponse[]>([]);
   const [isLoadingSteps, setIsLoadingSteps] = useState(false);
+  // ✅ NEW: State cho comments
+  const [recipeComments, setRecipeComments] = useState<CommentItem[]>([]);
 
   // Parse recipe data và tạo state để cập nhật realtime
   const [recipe, setRecipe] = useState<RecipeItem>(() => {
@@ -264,14 +265,28 @@ const toggleLike = async (recipeId: string) => {
   }, [nutritionPerServing]);
 
   // ✅ NEW: Lấy comments cho recipe hiện tại
-  const recipeComments = useMemo(() => {
-    if (!recipe) return [];
-    return sampleComments.filter(comment => comment.recipe.id === recipe.id);
-  }, [recipe]);
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!recipe?.id) return;
+      try {
+        const response = await getCommentsByRecipeId(recipe.id, 0, 100); // lấy tối đa 100 bình luận, bạn có thể điều chỉnh size
+        if (response?.content && Array.isArray(response.content)) {
+          setRecipeComments(response.content);
+        } else {
+          setRecipeComments([]);
+        }
+      } catch (error) {
+        setRecipeComments([]);
+        console.error('Error fetching comments:', error);
+      }
+    };
+    fetchComments();
+  }, [recipe?.id]);
 
-  // ✅ NEW: Lấy 2 comments nổi bật (theo số like)
+  // Lấy 2 comments nổi bật (theo số like)
   const featuredComments = useMemo(() => {
     return recipeComments
+      .slice() // copy mảng để không sort trực tiếp trên state
       .sort((a, b) => b.likes - a.likes)
       .slice(0, 2);
   }, [recipeComments]);
