@@ -1,10 +1,10 @@
 import AddCommentModal from '@/components/AddCommentModal';
 import OneCmt from '@/components/OneCmt';
-import { CommentItem } from '@/services/types/CommentItem';
+import { CommentItem, getCommentsByRecipeId } from '@/services/types/CommentItem';
 import { RecipeItem } from '@/services/types/RecipeItem';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -18,17 +18,41 @@ const CommentScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const recipe: RecipeItem = params.recipeData ? JSON.parse(params.recipeData as string) : null;
-  const comments: CommentItem[] = params.comments ? JSON.parse(params.comments as string) : [];
 
-  const sortedComments = comments.sort((a, b) => parseInt(b.like) - parseInt(a.like));
+  // ✅ State cho comments
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // ✅ Lấy comment từ API khi có recipe
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!recipe?.id) return;
+      setLoading(true);
+      try {
+        const res = await getCommentsByRecipeId(recipe.id.toString());
+        setComments(res.content || []);
+      } catch (error) {
+        setComments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchComments();
+  }, [recipe?.id, modalVisible]); // modalVisible để reload khi thêm bình luận
+
+  const sortedComments = comments.sort((a, b) => b.likes - a.likes);
 
   const handleAddComment = (comment: string) => {
-    console.log('Adding comment:', comment);
-    // TODO: Implement add comment logic
+    // Sau khi thêm bình luận thành công, modalVisible sẽ thay đổi và useEffect sẽ tự reload comments
+    // Có thể show toast hoặc thông báo thành công ở đây nếu muốn
   };
 
   const renderComment = ({ item }: { item: CommentItem }) => (
-    <OneCmt comment={item} showReportButton={true} />
+    <OneCmt
+      comment={item}
+      onDeleted={(id) => setComments(prev => prev.filter(c => c.id !== id))} // ✅ loại bỏ khỏi danh sách
+      showReportButton={true}
+    />
   );
 
   if (!recipe) {
@@ -51,12 +75,27 @@ const CommentScreen = () => {
 
       {/* Danh sách bình luận */}
       <FlatList
-        data={sortedComments}
-        renderItem={renderComment}
-        keyExtractor={(item) => item.id.toString()}
+        data={comments}
+        renderItem={({ item }) => (
+          <OneCmt
+            comment={item}
+            onDeleted={id => setComments(prev => prev.filter(c => c.id !== id))}
+          />
+        )}
+        keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.commentsList}
         showsVerticalScrollIndicator={false}
         style={styles.flatList}
+        refreshing={loading}
+        onRefresh={() => {
+          if (recipe?.id) {
+            setLoading(true);
+            getCommentsByRecipeId(recipe.id.toString()).then(res => {
+              setComments(res.content || []);
+              setLoading(false);
+            });
+          }
+        }}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="chatbubble-outline" size={48} color="#ccc" />
@@ -82,6 +121,7 @@ const CommentScreen = () => {
         onClose={() => setModalVisible(false)}
         onSubmit={handleAddComment}
         recipeName={recipe.title}
+        recipeId={recipe.id.toString()}
       />
     </View>
   );

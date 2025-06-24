@@ -152,9 +152,6 @@ const toggleLike = async (recipeId: string) => {
           getAllRecipeIngredientsByRecipeId(recipe.id),
           getAllIngredients()
         ]);
-
-        console.log('RecipeScreen - RecipeIngredients response:', recipeIngredientsResponse);
-        console.log('RecipeScreen - AllIngredients response:', allIngredientsResponse);
         
         if (recipeIngredientsResponse?.result && Array.isArray(recipeIngredientsResponse.result)) {
           setRecipeIngredientsData(recipeIngredientsResponse.result);
@@ -184,8 +181,7 @@ const toggleLike = async (recipeId: string) => {
       setIsLoadingSteps(true);
       try {
         const response = await getStepByRecipeId(recipe.id);
-        console.log('RecipeScreen - RecipeSteps response:', response);
-        
+      
         if (response?.result && Array.isArray(response.result)) {
           setRecipeStepsData(response.result);
         }
@@ -276,7 +272,7 @@ const toggleLike = async (recipeId: string) => {
   // ✅ NEW: Lấy 2 comments nổi bật (theo số like)
   const featuredComments = useMemo(() => {
     return recipeComments
-      .sort((a, b) => parseInt(b.like) - parseInt(a.like))
+      .sort((a, b) => b.likes - a.likes)
       .slice(0, 2);
   }, [recipeComments]);
 

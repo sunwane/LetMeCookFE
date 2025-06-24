@@ -1,118 +1,234 @@
-import { AccountItem, sampleAccounts } from "./AccountItem";
-import { foodData, RecipeItem } from "./RecipeItem";
+import { API_BASE_URL } from "@/constants/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AccountItem } from "./AccountItem";
+import { RecipeItem } from "./RecipeItem";
 
 export interface CommentItem {
-    id: number;
-    content: string;
-    like: string;
+    id: string;
+    commentText: string;
+    accountId: String;
+    username: string;
+    recipeId: String;
+    userAvatar: string;
+    likes: number;
+    recipeTitle: string;
+    createdAt: string;
     account: AccountItem;
     recipe: RecipeItem;
   }
 
+export interface CommentRequest{
+    commentText: string;
+  } 
+
+
+ export interface likeComment {
+   id: string;
+   commentId: string;
+   accountId: string;
+   accountName: string;
+  
+ }
+
+  interface Page<T> {
+  content: T[];
+  totalElements: number; // Tổng số bình luận
+  totalPages: number; // Tổng số trang
+  size: number; // Số lượng phần tử trên mỗi trang
+  number: number; // Số trang hiện tại (bắt đầu từ 0)
+  first: boolean; // Có phải trang đầu tiên không
+  last: boolean; // Có phải trang cuối cùng không
+}
+
 export const sampleComments: CommentItem[] = [
-  {
-    id: 1,
-    content: "Mình đã thử làm món này, rất ngon và dễ làm! Các bạn nên thử nhé 😊",
-    like: "15",
-    account: sampleAccounts[0],
-    recipe: foodData[0]
-  },
-  {
-    id: 2,
-    content: "Công thức rất chi tiết, làm theo không khó. Cảm ơn đã chia sẻ 👍",
-    like: "8",
-    account: sampleAccounts[1],
-    recipe: foodData[1]
-  },
-  {
-    id: 3,
-    content: "Món mì tuổi thơ tuyệt vời, cảm ơn người đã chia sẻ công thức!",
-    like: "15",
-    account: sampleAccounts[0],
-    recipe: foodData[2]
-  },
-  {
-    id: 4,
-    content: "Bánh mì ram ram này nhìn hấp dẫn quá! Mình sẽ thử làm cuối tuần này 🤤",
-    like: "23",
-    account: sampleAccounts[2],
-    recipe: foodData[0]
-  },
-  {
-    id: 5,
-    content: "Phở bò là món ăn yêu thích của gia đình mình. Công thức này hay lắm!",
-    like: "12",
-    account: sampleAccounts[1],
-    recipe: foodData[1]
-  },
-  {
-    id: 6,
-    content: "Làm theo công thức này mà vị như ngoài hàng luôn. Tuyệt vời! 👏",
-    like: "31",
-    account: sampleAccounts[0],
-    recipe: foodData[2]
-  },
-  {
-    id: 7,
-    content: "Mì xào giòn trông ngon ghê, cho mình hỏi có thể thay thế rau gì không ạ?",
-    like: "7",
-    account: sampleAccounts[2],
-    recipe: foodData[3]
-  },
-  {
-    id: 8,
-    content: "Bò né đúng gu mình rồi! Cảm ơn bạn đã chia sẻ công thức này 🥩",
-    like: "18",
-    account: sampleAccounts[1],
-    recipe: foodData[4]
-  },
-  {
-    id: 9,
-    content: "Lần đầu làm mì bò Đài Loan mà thành công luôn. Recipe này 10 điểm!",
-    like: "25",
-    account: sampleAccounts[0],
-    recipe: foodData[5]
-  },
-  {
-    id: 10,
-    content: "Cơm chiên hải sản nhìn tươi ngon quá. Mình sẽ thử làm cho gia đình",
-    like: "14",
-    account: sampleAccounts[2],
-    recipe: foodData[6]
-  },
-  {
-    id: 11,
-    content: "Lẩu chay này perfect cho những ngày ăn chay. Thanks bạn! 🌱",
-    like: "20",
-    account: sampleAccounts[1],
-    recipe: foodData[7]
-  },
-  {
-    id: 12,
-    content: "Cơm tấm sườn bì chả đúng vị miền Nam luôn. Nhớ quê hương ghê!",
-    like: "33",
-    account: sampleAccounts[0],
-    recipe: foodData[8]
-  },
-  {
-    id: 13,
-    content: "Làm bánh mì này mà con nhỏ nhà mình khen ngon hơn ngoài hàng nữa 😄",
-    like: "28",
-    account: sampleAccounts[2],
-    recipe: foodData[0]
-  },
-  {
-    id: 14,
-    content: "Nước dùng phở có vị đậm đà, bí quyết ở chỗ nào vậy bạn?",
-    like: "9",
-    account: sampleAccounts[1],
-    recipe: foodData[1]
-  },
-  {
-    id: 15,
-    content: "Mì Ý Jollibee này ngon không thua gì hàng thật. Siêu đỉnh! 🍝",
-    like: "42",
-    account: sampleAccounts[0],
-    recipe: foodData[2]
-  }
+
 ];
+
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || `API Error: ${response.status}`)
+  }
+  return response.json()
+}
+
+
+const getAuthToken = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem('authToken');
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+    return null;
+  }
+};
+
+export const getAccountIdFromToken = async (): Promise<string | null> => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      return null;
+    }
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    // accountId có thể là 'accountId' hoặc 'sub' tùy backend
+    return decoded.id || decoded.sub || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const createComment = async (recipeId: string, commentText: string): Promise<CommentItem> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/comments/${recipeId}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ commentText }),
+  });
+
+  return handleResponse(response);
+}
+
+
+export const getCommentsByRecipeId = async (recipeId: string, page: number = 0, size: number = 10): Promise<Page<CommentItem>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/comments/recipe/${recipeId}?page=${page}&size=${size}`, {
+    method: 'GET',
+    headers,
+  });
+
+  return handleResponse(response);
+};
+
+
+export const deleteComment = async (commentId: string): Promise<void> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/comments/${commentId}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  // Chỉ cần kiểm tra response.ok, KHÔNG parse body
+  if (!response.ok) {
+    let errorText = '';
+    try {
+      errorText = await response.text();
+    } catch {}
+    throw new Error(errorText || 'Xóa bình luận thất bại!');
+  }
+  // Nếu thành công thì không cần return gì cả
+};
+
+export const getAllComments = async (page: number = 0, size: number = 10): Promise<Page<CommentItem>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/comments/all?page=${page}&size=${size}`, {
+    method: 'GET',
+    headers,
+  });
+
+  return handleResponse(response);
+}
+
+export const updateComment = async(commentId: string, RecipId: string, data: CommentRequest): Promise<CommentItem> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/comments/${RecipId}/${commentId}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data),
+  });
+
+  return handleResponse(response);
+}
+
+//like comment
+export const likeComment = async (commentId: string): Promise<likeComment> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/likeComment/create/${commentId}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({}),
+  });
+
+  return handleResponse(response);
+};
+
+export const unlikeComment = async (commentId: string): Promise<void> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/likeComment/dislike/${commentId}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (!response.ok) {
+    let errorText = '';
+    try {
+      errorText = await response.text();
+    } catch {}
+    throw new Error(errorText || 'Hủy thích bình luận thất bại!');
+  }
+}
+
+export const getAllAccountLikeComment = async (): Promise<likeComment[]> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/likeComment/getAll`, {
+    method: 'GET',
+    headers,
+  });
+
+  return handleResponse(response);
+}

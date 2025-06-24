@@ -1,14 +1,16 @@
+import { createComment } from '@/services/types/CommentItem'; // ✅ NEW: Import createComment function
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface AddCommentModalProps {
@@ -16,25 +18,58 @@ interface AddCommentModalProps {
   onClose: () => void;
   onSubmit: (comment: string) => void;
   recipeName: string;
+  recipeId: string; // ✅ NEW: Add recipeId prop
 }
 
 const AddCommentModal: React.FC<AddCommentModalProps> = ({
   visible,
   onClose,
   onSubmit,
-  recipeName
+  recipeName,
+  recipeId // ✅ NEW: Add recipeId prop
 }) => {
   const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ NEW: Loading state
 
-  const handleSubmit = () => {
-    if (comment.trim()) {
-      onSubmit(comment);
+  // ✅ UPDATED: Handle submit with API call
+  const handleSubmit = async () => {
+    if (!comment.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    
+    try {
+      // ✅ Call createComment API
+      console.log(recipeId)
+      const newComment = await createComment(recipeId, comment.trim());
+      console.log('Comment created successfully:', newComment);
+      
+      // Call the onSubmit prop (for parent component to handle)
+      onSubmit(comment.trim());
+      
+      // Reset and close
       setComment('');
       onClose();
+      
+      // Optional: Show success message
+      // Alert.alert('Thành công', 'Bình luận đã được đăng!');
+      
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      
+      let errorMessage = 'Không thể đăng bình luận. Vui lòng thử lại!';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Lỗi', errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
+    if (isSubmitting) return; // Prevent closing while submitting
     setComment('');
     onClose();
   };
@@ -54,23 +89,32 @@ const AddCommentModal: React.FC<AddCommentModalProps> = ({
           <View style={styles.modal}>
             {/* Header */}
             <View style={styles.header}>
-              <TouchableOpacity onPress={handleClose}>
-                <Ionicons name="close" size={24} color="#666" />
+              <TouchableOpacity 
+                onPress={handleClose}
+                disabled={isSubmitting} // ✅ Disable when submitting
+              >
+                <Ionicons 
+                  name="close" 
+                  size={24} 
+                  color={isSubmitting ? "#ccc" : "#666"} 
+                />
               </TouchableOpacity>
+              
               <Text style={styles.title}>Viết bình luận</Text>
+              
               <TouchableOpacity
                 onPress={handleSubmit}
-                disabled={!comment.trim()}
+                disabled={!comment.trim() || isSubmitting} // ✅ Updated disabled logic
                 style={[
                   styles.submitButton,
-                  comment.trim() ? styles.submitButtonActive : styles.submitButtonDisabled
+                  (comment.trim() && !isSubmitting) ? styles.submitButtonActive : styles.submitButtonDisabled
                 ]}
               >
                 <Text style={[
                   styles.submitText,
-                  comment.trim() ? styles.submitTextActive : styles.submitTextDisabled
+                  (comment.trim() && !isSubmitting) ? styles.submitTextActive : styles.submitTextDisabled
                 ]}>
-                  Đăng
+                  {isSubmitting ? 'Đang đăng...' : 'Đăng'} {/* ✅ Show loading text */}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -84,7 +128,10 @@ const AddCommentModal: React.FC<AddCommentModalProps> = ({
             {/* Comment input */}
             <View style={styles.inputContainer}>
               <TextInput
-                style={styles.textInput}
+                style={[
+                  styles.textInput,
+                  isSubmitting && styles.textInputDisabled // ✅ Style when disabled
+                ]}
                 placeholder="Chia sẻ cảm nghĩ của bạn về món ăn này..."
                 value={comment}
                 onChangeText={setComment}
@@ -92,11 +139,19 @@ const AddCommentModal: React.FC<AddCommentModalProps> = ({
                 maxLength={500}
                 textAlignVertical="top"
                 autoFocus
+                editable={!isSubmitting} // ✅ Disable input when submitting
               />
               <Text style={styles.characterCount}>
                 {comment.length}/500
               </Text>
             </View>
+
+            {/* ✅ NEW: Loading indicator (optional) */}
+            {isSubmitting && (
+              <View style={styles.loadingOverlay}>
+                <Text style={styles.loadingText}>Đang đăng bình luận...</Text>
+              </View>
+            )}
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -121,6 +176,7 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
     minHeight: 340,
     paddingBottom: 40,
+    position: 'relative', // ✅ For loading overlay
   },
   header: {
     flexDirection: 'row',
@@ -184,11 +240,34 @@ const styles = StyleSheet.create({
     minHeight: 120,
     textAlignVertical: 'top',
   },
+  // ✅ NEW: Disabled input style
+  textInputDisabled: {
+    backgroundColor: '#f8f8f8',
+    color: '#999',
+  },
   characterCount: {
     fontSize: 12,
     color: '#999',
     textAlign: 'right',
     marginTop: 8,
+  },
+  // ✅ NEW: Loading overlay styles
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
   },
 });
 
