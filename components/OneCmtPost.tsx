@@ -1,9 +1,12 @@
 import '@/config/globalTextConfig';
-import { CommentItem } from '@/services/types/CommentItem';
+import { CommentItem, getAllAccountLikeComment, likeComment, unlikeComment } from '@/services/types/CommentItem';
+import { createFavoriteRecipe, deleteFavoriteRecipe, getAllFavouriteRecipe } from '@/services/types/FavoritesRecipe';
+import { getAllRecipeAccoountLike, getRecipeById } from '@/services/types/RecipeItem';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ReportModal from './ReportModal';
 
 interface CommentPost {
   item: CommentItem;
@@ -14,15 +17,121 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
     const navigation = useNavigation();
     const [isLiked, setIsLiked] = useState(false);
     const [isBookmarked, setIsBookmarked] = useState(false);
+    const [isLikeLoading, setIsLikeLoading] = useState(false);
+    const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
     const [reportModalVisible, setReportModalVisible] = useState(false); // State cho report modal
-    
-    const toggleLike = () => {
-        setIsLiked(!isLiked);
+    const [likeCount, setLikeCount] = useState(item.likes ?? 0);
+    const [isCommentLiked, setIsCommentLiked] = useState(false);
+
+
+ React.useEffect(() => {
+    const checkLikeStatus = async () => {
+        try {
+            const response = await getAllRecipeAccoountLike(item.recipeId.toString());
+            if (response?.result && Array.isArray(response.result)) {
+                const isInLikes = response.result.some(like =>
+                    like.recipeId === item.recipeId
+                );
+                setIsLiked(isInLikes);
+            }
+        } catch (error) {
+            console.error('Error checking like status:', error);
+            setIsLiked(false);
+        }
     };
 
-    const toggleBookmark = () => {
-        setIsBookmarked(!isBookmarked);
-        console.log(`Recipe ${isBookmarked ? 'removed from' : 'saved to'} bookmarks`);
+    if (item?.recipeId) {
+        checkLikeStatus();
+    }
+}, [item?.recipeId]);
+
+    // Kiểm tra bookmark status từ database
+    React.useEffect(() => {
+        const checkBookmarkStatus = async () => {
+            try {
+                const response = await getAllFavouriteRecipe();
+                if (response?.result && Array.isArray(response.result)) {
+                    const isInFavorites = response.result.some(favorite =>
+                        favorite.recipeId?.toString() === item.recipeId
+                    );
+                    setIsBookmarked(isInFavorites);
+                }
+            } catch (error) {
+                console.error('Error checking bookmark status:', error);
+                setIsBookmarked(false);
+            }
+        };
+
+        if (item?.recipeId) {
+            checkBookmarkStatus();
+        }
+    }, [item?.recipeId]);
+    
+    React.useEffect(() => {
+        const checkLikeStatus = async () => {
+            try {
+                const response = await getAllAccountLikeComment();
+                if (response?.result && Array.isArray(response.result)) {
+                    const isInLikes = response.result.some(like =>
+                        like.commentId?.toString() === item.id?.toString()
+                    );
+                    setIsCommentLiked(isInLikes);
+                } else {
+                    setIsCommentLiked(false);
+                }
+            } catch (error) {
+                console.error('Error checking comment like status:', error);
+                setIsCommentLiked(false);
+            }
+        };
+
+        if (item?.id) {
+            checkLikeStatus();
+        }
+    }, [item?.id]);
+
+
+    const toggleBookmark = async () => {
+        if (isBookmarkLoading || !item.recipeId) return; // Ngăn double click
+        setIsBookmarkLoading(true);
+
+        try {
+            if (isBookmarked) {
+                await deleteFavoriteRecipe(item.recipeId.toString());
+                setIsBookmarked(false);
+                console.log(`Recipe removed from bookmarks`);
+            } else {
+                await createFavoriteRecipe(item.recipeId.toString());
+                setIsBookmarked(true);
+                console.log(`Recipe saved to bookmarks`);
+            }
+        } catch (error) {
+            console.error('Lỗi khi xử lý bookmark:', error);
+            // Có thể revert lại trạng thái nếu muốn
+            // setIsBookmarked(!isBookmarked);
+        } finally {
+            setIsBookmarkLoading(false);
+        }
+    };
+
+    const toggleLike = async () => {
+        if (isLikeLoading) return;
+        setIsLikeLoading(true);
+        try {
+            if (isCommentLiked) {
+                await unlikeComment(item.id.toString());
+                setIsCommentLiked(false);
+                setLikeCount(prev => Math.max(0, prev - 1));
+            } else {
+                await likeComment(item.id.toString());
+                setIsCommentLiked(true);
+                setLikeCount(prev => prev + 1);
+            }
+        } catch {
+            Alert.alert('Lỗi', 'Không thể thực hiện thao tác!');
+        } finally {
+            setIsLikeLoading(false);
+        }
     };
 
     const handleReport = () => {
@@ -35,20 +144,42 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
         } else {
             router.push({
                 pathname: '/UserProfile',
-                params: { userId: item.account.id.toString() }
+                params: { userId: item.accountId.toString() }
             });
         }
     };
 
-    const handleRecipePress = () => {
-        router.push({
-            pathname: '/RecipeScreen',
-            params: {
-                recipeData: JSON.stringify(item.recipe)
+    const handleRecipePress = async () => {
+        try {
+            const response = await getRecipeById(item.recipeId.toString());
+            if (response && response.result) {
+                console.log('Recipe data fetched successfully:', response.result);
+                router.push({
+                    pathname: '/RecipeScreen',
+                    params: {
+                        recipeData: JSON.stringify(response.result)
+                    }
+                });
+            } else {
+                // fallback nếu không lấy được recipe
+                router.push({
+                    pathname: '/RecipeScreen',
+                    params: {
+                        recipeData: JSON.stringify(item.recipe)
+                    }
+                });
             }
-        });
+        } catch (error) {
+            // fallback nếu lỗi
+            router.push({
+                pathname: '/RecipeScreen',
+                params: {
+                    recipeData: JSON.stringify(item.recipe)
+                }
+            });
+        }
     };
-    
+
     return (
         <>
             <View style={styles.postContent}>
@@ -58,7 +189,7 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
 
                             {/* đọc lại Avatar và username nha dũng */}
                             <Image
-                                source={{uri: 'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg'}}
+                                source={{uri: item.userAvatar}}
                                 style={styles.avatar}
                             />
                         </TouchableOpacity>
@@ -66,25 +197,25 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                             <View style={styles.row}>
                                 <TouchableOpacity onPress={handleUserPress}>
                                     <Text style={styles.nameDisplay}>
-                                        {/* {item.account.userName} */}
+                                        {item.username}
                                     </Text> 
                                 </TouchableOpacity>
                                 <Text> đã nấu món</Text>
                             </View>
                             <TouchableOpacity onPress={handleRecipePress}>
-                                <Text style={styles.foodTitle}>{item.recipe.foodName}</Text>
+                                <Text style={styles.foodTitle}>{item.recipeTitle}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
                 <View style={styles.des}>
                     <Text style={styles.description}>
-                        {item.content}
+                        {item.commentText}
                     </Text>
                 </View>
                 <TouchableOpacity style={styles.mid} onPress={handleRecipePress}>
                     <Image
-                        source={{uri: item.recipe.imageUrl}}
+                        source={{uri: item.recipeImage}}
                         style={styles.foodImage}
                     />
                     {/* Bookmark button overlay */}
@@ -109,13 +240,13 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                         <View style={styles.bot}>
                             <Image
                                 source={
-                                    isLiked 
+                                    isCommentLiked 
                                     ? require('@/assets/images/icons/Like_Active.png')
                                     : require('@/assets/images/icons/Like.png')
                                 }
                                 style={styles.icon}
                             />
-                            <Text style={styles.iconText}>{item.like} người đã thích</Text>
+                            <Text style={styles.iconText}>{likeCount} người đã thích</Text>
                         </View>
                     </TouchableOpacity>
                     {/* Report Button với Modal */}
@@ -132,11 +263,11 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
             </View>
 
             {/* Report Modal */}
-            {/* <ReportModal
+            <ReportModal
                 visible={reportModalVisible}
                 onClose={() => setReportModalVisible(false)}
-                userName={item.account.userName}
-            /> */}
+                userName={item.username}
+            />
         </>
     )
 }

@@ -343,6 +343,26 @@ export const findRecipebyKeyWord = async(keyWord: string): Promise<ApiResponse<R
   return result;
 }
 
+export const getRecipeById = async (recipeId: string): Promise<ApiResponse<RecipeItem>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipe/getRecipeById/${recipeId}`, {
+    method: 'GET',
+    headers,
+  });
+
+  const result: ApiResponse<RecipeItem> = await handleResponse(response);
+  return result;
+}
+
+
+
 
 //Like recipe
 export const getAllRecipeAccoountLike = async (recipeId: string): Promise<ApiResponse<LikesRecipe[]>> => {

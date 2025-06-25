@@ -10,6 +10,7 @@ export interface CommentItem {
     username: string;
     recipeId: String;
     userAvatar: string;
+    recipeImage: string;
     likes: number;
     recipeTitle: string;
     createdAt: string;
