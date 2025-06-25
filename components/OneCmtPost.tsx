@@ -189,7 +189,7 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
 
                             {/* đọc lại Avatar và username nha dũng */}
                             <Image
-                                source={{uri: item.userAvatar}}
+                                source={{uri: item.userAvatar ||'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg'}}
                                 style={styles.avatar}
                             />
                         </TouchableOpacity>
@@ -200,7 +200,7 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                                         {item.username}
                                     </Text> 
                                 </TouchableOpacity>
-                                <Text> đã nấu món</Text>
+                                <Text> đã bình luận món</Text>
                             </View>
                             <TouchableOpacity onPress={handleRecipePress}>
                                 <Text style={styles.foodTitle}>{item.recipeTitle}</Text>
