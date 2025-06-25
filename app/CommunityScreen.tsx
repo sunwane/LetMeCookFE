@@ -1,47 +1,67 @@
 import OneCmtPost from '@/components/OneCmtPost';
 import { CommentItem, getAllComments } from '@/services/types/CommentItem';
-import React, { useEffect, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, Text, View } from 'react-native';
 
 const { width: ScreenWidth } = Dimensions.get('screen');
 
+const PAGE_SIZE = 10;
+
 const CommunityScreen = () => {
   const [comments, setComments] = useState<CommentItem[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-useEffect(() => {
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async (pageToLoad = 0) => {
+    if (loading || (pageToLoad >= totalPages)) return;
+    setLoading(true);
     try {
-      const response = await getAllComments();
-      // Đảm bảo response.content là mảng, nếu không thì set []
-      console.log("lấy comment", response);
-      if (response?.result?.content && Array.isArray(response.result.content)) {
-        setComments(response.result.content);
-      } else {
-        setComments([]);
+      const response = await getAllComments(pageToLoad, PAGE_SIZE);
+      const content = response?.result?.content ?? [];
+      const total = response?.result?.totalPages ?? 1;
+      if (Array.isArray(content)) {
+        if (pageToLoad === 0) {
+          setComments(content);
+        } else {
+          setComments(prev => [...prev, ...content]);
+        }
+        setTotalPages(total);
+        setPage(pageToLoad);
       }
     } catch (error) {
-      setComments([]);
+      if (pageToLoad === 0) setComments([]);
       console.error('Error fetching comments:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, totalPages]);
+
+  useEffect(() => {
+    fetchComments(0);
+  }, []);
+
+  const handleLoadMore = () => {
+    if (!loading && page + 1 < totalPages) {
+      fetchComments(page + 1);
     }
   };
-  fetchComments();
-}, []);
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container}>
       <View style={styles.headerContain}>
         <Text style={styles.headerTitle}>Cùng xem chia sẻ của những "đồng bếp" khác</Text>
       </View>
-
-      <View style={styles.postContainer}>
-        {comments.map((item) => (
-          <OneCmtPost key={item.id} item={item} />
-        ))}
-      </View>
-    </ScrollView>
+      <FlatList
+        data={comments}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <OneCmtPost item={item} />}
+        contentContainerStyle={styles.postContainer}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={loading ? <ActivityIndicator size="small" /> : null}
+      />
+    </View>
   );
 };
 
@@ -67,60 +87,8 @@ const styles = StyleSheet.create({
   },
   postContainer: {
     marginTop: 10,
+    paddingBottom: 20,
   }
 });
 
-export default CommunityScreen
-
-
-// nếu các bạn muốn header đứng lại và kéo phần post
-// const CommunityScreen = () => {
-//   return (
-//     <ScrollView 
-//       contentContainerStyle={styles.container}
-//       showsVerticalScrollIndicator={false} // Ẩn thanh scroll
-//     >
-//       <View style={styles.headerContain}>
-//         <Text style={styles.headerTitle}>Cùng xem chia sẻ của những "đồng bếp" khác</Text>
-//       </View>
-//       <View style={styles.postContainer}>
-//         <FlatList
-//             data={sampleComments}
-//             keyExtractor={(item) => item.id.toString()}
-//             renderItem={({ item }) => <OneCmtPost item={item} />}
-//             contentContainerStyle={styles.listContent}
-//           />
-//       </View>
-//     </ScrollView>
-//   )
-// }
-
-// export default CommunityScreen
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#FFFAF5',
-//   },
-//   headerContain: {
-//     backgroundColor: '#fff',
-//     paddingTop: 70,
-//     paddingBottom: 20,
-//     alignItems: 'center',
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#cecece',
-//     paddingHorizontal: ScreenWidth / 6,
-//   },
-//   headerTitle: {
-//     fontSize: 22,
-//     fontWeight: 700,
-//     color: '#FF5D00',
-//     textAlign: 'center'
-//   },
-//   postContainer: {
-//     flex: 1, // Thêm flex: 1 để container có thể mở rộng
-//   },
-//   listContent: {
-//     marginTop: 10,
-//   }
-// });
+export default CommunityScreen;

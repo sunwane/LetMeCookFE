@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -22,6 +23,8 @@ const CommentScreen = () => {
   // ✅ State cho comments
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // ✅ Lấy comment từ API khi có recipe
   useEffect(() => {
@@ -29,16 +32,19 @@ const CommentScreen = () => {
       if (!recipe?.id) return;
       setLoading(true);
       try {
-        const res = await getCommentsByRecipeId(recipe.id.toString());
-        setComments(res.content || []);
+        const res = await getCommentsByRecipeId(recipe.id.toString(), page, 10); // truyền page và size
+        setComments(prev =>
+          page === 0 ? (res.content || []) : [...prev, ...(res.content || [])]
+        );
+        setTotalPages(res.totalPages || 1);
       } catch (error) {
-        setComments([]);
+        if (page === 0) setComments([]);
       } finally {
         setLoading(false);
       }
     };
     fetchComments();
-  }, [recipe?.id, modalVisible]); // modalVisible để reload khi thêm bình luận
+  }, [recipe?.id, modalVisible, page]); // modalVisible để reload khi thêm bình luận
 
   const sortedComments = comments.sort((a, b) => b.likes - a.likes);
 
@@ -54,6 +60,12 @@ const CommentScreen = () => {
       showReportButton={true}
     />
   );
+
+  const handleLoadMore = () => {
+    if (!loading && page + 1 < totalPages) {
+      setPage(prev => prev + 1);
+    }
+  };
 
   if (!recipe) {
     return (
@@ -76,12 +88,7 @@ const CommentScreen = () => {
       {/* Danh sách bình luận */}
       <FlatList
         data={comments}
-        renderItem={({ item }) => (
-          <OneCmt
-            comment={item}
-            onDeleted={id => setComments(prev => prev.filter(c => c.id !== id))}
-          />
-        )}
+        renderItem={renderComment}
         keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.commentsList}
         showsVerticalScrollIndicator={false}
@@ -89,13 +96,12 @@ const CommentScreen = () => {
         refreshing={loading}
         onRefresh={() => {
           if (recipe?.id) {
-            setLoading(true);
-            getCommentsByRecipeId(recipe.id.toString()).then(res => {
-              setComments(res.content || []);
-              setLoading(false);
-            });
+            setPage(0);
           }
         }}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={loading ? <ActivityIndicator size="small" /> : null}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="chatbubble-outline" size={48} color="#ccc" />
