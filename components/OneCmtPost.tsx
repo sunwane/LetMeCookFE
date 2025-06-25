@@ -138,16 +138,16 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
         setReportModalVisible(true);
     };
 
-    const handleUserPress = () => {
-        if (item.account.id === currentUserId.toString()) {
-            navigation.navigate('Tài khoản' as never);
-        } else {
-            router.push({
-                pathname: '/UserProfile',
-                params: { userId: item.accountId.toString() }
-            });
-        }
-    };
+    // const handleUserPress = () => {
+    //     if (item.account.id === currentUserId.toString()) {
+    //         navigation.navigate('Tài khoản' as never);
+    //     } else {
+    //         router.push({
+    //             pathname: '/UserProfile',
+    //             params: { userId: item.accountId.toString() }
+    //         });
+    //     }
+    // };
 
     const handleRecipePress = async () => {
         try {
@@ -185,7 +185,7 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
             <View style={styles.postContent}>
                 <View style={styles.top}>
                     <View style={styles.infor}>
-                        <TouchableOpacity onPress={handleUserPress}>
+                        <TouchableOpacity >
 
                             {/* đọc lại Avatar và username nha dũng */}
                             <Image
@@ -195,7 +195,7 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                         </TouchableOpacity>
                         <View>
                             <View style={styles.row}>
-                                <TouchableOpacity onPress={handleUserPress}>
+                                <TouchableOpacity >
                                     <Text style={styles.nameDisplay}>
                                         {item.username}
                                     </Text> 

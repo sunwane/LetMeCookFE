@@ -1,19 +1,57 @@
 import OneCmtPost from '@/components/OneCmtPost';
-import '@/config/globalTextConfig';
-import { CommentItem } from '@/services/types/CommentItem';
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { CommentItem, getCommentByAccountId } from '@/services/types/CommentItem';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+
+const PAGE_SIZE = 10;
 
 interface ActivitiesTabProps {
-  comments: CommentItem[];
-  currentUserId?: number; // Thêm prop để biết user hiện tại
+  currentUserId?: number;
 }
 
-const ActivitiesTab = ({ comments, currentUserId }: ActivitiesTabProps) => {
-  // Sử dụng trực tiếp comments được truyền vào (đã được filter ở UserProfile)
-  const filteredComments = comments;
+const ActivitiesTab = ({ currentUserId }: ActivitiesTabProps) => {
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  if (filteredComments.length === 0) {
+  const fetchComments = useCallback(async (pageToLoad = 0) => {
+    if (loading || (pageToLoad >= totalPages)) return;
+    setLoading(true);
+    try {
+      const response = await getCommentByAccountId();
+
+      const content = response?.result?.content ?? [];
+      const total = response?.result?.totalPages ?? 1;
+
+      if (Array.isArray(content)) {
+        if (pageToLoad === 0) {
+          setComments(content);
+        } else {
+          setComments(prev => [...prev, ...content]);
+        }
+        setTotalPages(total);
+        setPage(pageToLoad);
+      }
+    } catch (error) {
+      if (pageToLoad === 0) setComments([]);
+      console.error('Error fetching user comments:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, totalPages]);
+
+  useEffect(() => {
+    fetchComments(0);
+  }, []);
+
+  const handleLoadMore = () => {
+    if (!loading && page + 1 < totalPages) {
+      fetchComments(page + 1);
+    }
+  };
+
+  if (comments.length === 0 && !loading) {
     return (
       <View style={[styles.postContainer, styles.emptyContainer]}>
         <Text style={styles.emptyText}>Chưa có hoạt động nào</Text>
@@ -24,17 +62,20 @@ const ActivitiesTab = ({ comments, currentUserId }: ActivitiesTabProps) => {
   return (
     <View style={styles.postContainer}>
       <FlatList
-        data={filteredComments}
+        data={comments}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <OneCmtPost item={item} currentUserId={currentUserId} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={loading ? <ActivityIndicator size="small" /> : null}
       />
     </View>
-  )
-}
+  );
+};
 
-export default ActivitiesTab
+export default ActivitiesTab;
 
 const styles = StyleSheet.create({
   postContainer: {

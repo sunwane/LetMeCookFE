@@ -175,6 +175,24 @@ export const updateComment = async(commentId: string, RecipId: string, data: Com
   return handleResponse(response);
 }
 
+export const getCommentByAccountId = async (page: number = 0, size: number = 10): Promise<Page<CommentItem>> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/comments/getCommentByAccount?page=${page}&size=${size}`, {
+    method: 'GET',
+    headers,
+  });
+
+  return handleResponse(response);
+}
+
+
 //like comment
 export const likeComment = async (commentId: string): Promise<likeComment> => {
   const token = await getAuthToken();
