@@ -27,6 +27,7 @@ export interface ReportRequest {
   reportedItemId: string;
   reason: string;
   description?: string;
+  evidenceImageUrl?: string;
 }
 
 // Report response interface

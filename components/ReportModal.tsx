@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -257,8 +256,8 @@ const ReportModal: React.FC<ReportModalProps> = ({
               value={customReason}
               onChangeText={setCustomReason}
             />
-            {/* Phần tải lên bằng chứng */}
-            <View style={styles.section}>
+
+            {/* <View style={styles.section}>
               <Text style={styles.sectionTitle}>
                 Ảnh bằng chứng (không bắt buộc)
               </Text>
@@ -287,7 +286,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
+            </View> */}
             {/* Thông tin debug - Chỉ hiển thị khi cần debug
             <View style={styles.debugInfoContainer}>
               <Text style={styles.debugInfoText}>
