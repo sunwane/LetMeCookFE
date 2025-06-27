@@ -226,8 +226,9 @@ const toggleLike = async (recipeId: string) => {
   // Chuyển đổi RecipeStepsResponse thành RecipeStep format
   const recipeSteps = useMemo(() => {
     if (!recipe || recipeStepsData.length === 0) return [];
-    
-    return recipeStepsData.map(stepData => ({
+    // Sắp xếp theo step tăng dần (hoặc trường thứ tự bạn muốn)
+    const sortedSteps = [...recipeStepsData].sort((a, b) => Number(a.step) - Number(b.step));
+    return sortedSteps.map(stepData => ({
       id: stepData.id,
       step: stepData.step,
       description: stepData.description,
