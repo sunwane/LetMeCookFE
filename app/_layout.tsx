@@ -1,4 +1,4 @@
-import '@/config/globalTextConfig'; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
+import "@/config/globalTextConfig"; // Import để áp dụng cấu hình toàn cục cho Text và TextInput
 import { Stack } from "expo-router";
 
 export default function RootLayout() {
@@ -12,84 +12,84 @@ export default function RootLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="RegisterScreen" />
       <Stack.Screen name="ForgotPasswordScreen" />
-      <Stack.Screen 
-        name="EditInforScreen" 
+      <Stack.Screen
+        name="EditInforScreen"
         options={{
           headerShown: true,
-          title: 'Chỉnh sửa thông tin',
-          headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#FF5D00',
-          headerTitleAlign: 'center',
-        }} 
+          title: "Chỉnh sửa thông tin",
+          headerStyle: { backgroundColor: "#fff" },
+          headerTintColor: "#FF5D00",
+          headerTitleAlign: "center",
+        }}
       />
-      <Stack.Screen 
-        name="EditAccountScreen" 
+      <Stack.Screen
+        name="EditAccountScreen"
         options={{
           headerShown: true,
-          title: 'Thay đổi mật khẩu',
-          headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#FF5D00',
-          headerTitleAlign: 'center',
-        }} 
+          title: "Thay đổi mật khẩu",
+          headerStyle: { backgroundColor: "#fff" },
+          headerTintColor: "#FF5D00",
+          headerTitleAlign: "center",
+        }}
       />
-      <Stack.Screen 
-        name="NotificationScreen" 
+      <Stack.Screen
+        name="NotificationScreen"
         options={{
           headerShown: false, // Sử dụng custom header
-        }} 
+        }}
       />
-      <Stack.Screen 
-        name="SuggestRecipeScreen" 
+      <Stack.Screen
+        name="SuggestRecipeScreen"
         options={{
           headerShown: false, // Sử dụng custom header
-        }} 
-      />
-      <Stack.Screen 
-        name="SettingScreen" 
-        options={{
-          headerShown: true,
-          title: 'Cài đặt',
-          headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#FF5D00',
-          headerTitleAlign: 'center',
-        }} 
-      />
-      <Stack.Screen 
-        name="SearchResults" 
-        options={{
-          headerShown: true,
-          headerStyle: { backgroundColor: '#fff' },
         }}
       />
-      <Stack.Screen 
-        name="RecipeScreen" 
+      <Stack.Screen
+        name="SettingScreen"
         options={{
           headerShown: true,
-          headerStyle: { backgroundColor: '#fff' },
+          title: "Cài đặt",
+          headerStyle: { backgroundColor: "#fff" },
+          headerTintColor: "#FF5D00",
+          headerTitleAlign: "center",
         }}
       />
-      <Stack.Screen 
-        name="RecipeStepScreen" 
+      <Stack.Screen
+        name="SearchResults"
         options={{
           headerShown: true,
-          title: 'Hướng dẫn từng bước',
-          headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#FF5D00',
-          headerTitleAlign: 'center',
+          headerStyle: { backgroundColor: "#fff" },
         }}
       />
-      <Stack.Screen 
-        name="CommentScreen" 
+      <Stack.Screen
+        name="RecipeScreen"
         options={{
           headerShown: true,
-          title: 'Bình luận',
-          headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#FF5D00',
-          headerTitleAlign: 'center',
+          headerStyle: { backgroundColor: "#fff" },
         }}
       />
-      <Stack.Screen 
-        name="UserProfile" 
+      <Stack.Screen
+        name="RecipeStepScreen"
+        options={{
+          headerShown: true,
+          title: "Hướng dẫn từng bước",
+          headerStyle: { backgroundColor: "#fff" },
+          headerTintColor: "#FF5D00",
+          headerTitleAlign: "center",
+        }}
+      />
+      <Stack.Screen
+        name="CommentScreen"
+        options={{
+          headerShown: true,
+          title: "Bình luận",
+          headerStyle: { backgroundColor: "#fff" },
+          headerTintColor: "#FF5D00",
+          headerTitleAlign: "center",
+        }}
+      />
+      <Stack.Screen
+        name="UserProfile"
         options={{
           headerShown: false, // Vì đã có custom header
         }}
