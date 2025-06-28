@@ -1,5 +1,5 @@
 import { AccountItem } from "@/services/types/AccountItem";
-import { CommentItem } from "@/services/types/CommentItem";
+import { CommentItem, countCommentByAccountId } from "@/services/types/CommentItem";
 import { getRecipeCountByUserAPI, getUserInfoAPI, uploadAvatarAPI } from "@/services/types/UserInfo";
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +20,7 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
   const [currentUser, setCurrentUser] = useState<AccountItem | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState<boolean>(true);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
+  const [activityCount, setActivityCount] = useState<number>(0);
   
   // ✅ Chọn và upload avatar mới
   const handleAvatarPress = async () => {
@@ -129,7 +130,6 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         };
         
         setCurrentUser(accountItem);
-        console.log("✅ Current user fetched:", accountItem);
         
       } catch (error) {
         console.error("❌ Failed to fetch current user:", error);
@@ -183,8 +183,29 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
     }
   }, [currentUser]);
 
+  // ✅ Fetch số hoạt động (bình luận) khi đã có currentUser
+  useEffect(() => {
+    const fetchActivityCount = async () => {
+      if (!currentUser) return;
+      try {
+        const response = await countCommentByAccountId();
+        const count = response.result ?? 0; // Lấy số lượng từ trường result
+        console.log("Fetched activity count:", count);
+        setActivityCount(count);
+      } catch (error) {
+        setActivityCount(0);
+        console.error("❌ Failed to fetch activity count:", error);
+      }
+    };
+
+    if (currentUser) {
+      fetchActivityCount();
+    }
+  }, [currentUser]);
+
   // Tính toán số hoạt động (comments)
   // ✅ Safe comment filtering
+  
   // const activityCount = currentUser && currentUser.id
   //   ? comments.filter(comment => {
   //       // ✅ Handle different id types (string vs number)
@@ -201,8 +222,8 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         const token = await AsyncStorage.getItem('authToken');
         if (token) {
           const payload = JSON.parse(atob(token.split('.')[1]));
-          console.log("🔍 Token payload:", payload);
-          console.log("📧 Token subject (email):", payload.sub);
+          // console.log("🔍 Token payload:", payload);
+          // console.log("📧 Token subject (email):", payload.sub);
           console.log("📧 Stored email:", await AsyncStorage.getItem('userEmail'));
         }
       } catch (error) {
@@ -288,7 +309,9 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
           <View style={styles.statDivider} />
 
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>
+              {activityCount}
+            </Text>
             <Text style={styles.statLabel}>Hoạt động</Text>
           </View>
         </View>

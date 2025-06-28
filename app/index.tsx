@@ -90,7 +90,7 @@ export default function Index() {
         const existingToken = await AsyncStorage.getItem("authToken");
 
         if (existingToken) {
-          console.log("🔑 Found existing token, verifying...");
+      
 
           try {
             const response = await fetch(`${API_BASE_URL}/user-info`, {
@@ -102,17 +102,10 @@ export default function Index() {
             });
 
             if (response.ok) {
-              console.log("✅ Token valid, auto-login");
-
-              // ✅ Thêm đoạn này để khởi tạo WebSocket khi token hợp lệ
-              console.log("[checkAuthStatus] Initializing WebSocket...");
+  
               const wsSuccess = await initializeWebSocket((notification) => {
-                console.log("[checkAuthStatus] WS Notification:", notification);
               });
-              console.log(
-                "[checkAuthStatus] WebSocket initialization:",
-                wsSuccess ? "successful" : "failed"
-              );
+
 
               setIsLoggedIn(true);
               return;
@@ -138,7 +131,6 @@ export default function Index() {
     email: string
   ): Promise<AccountStatusResponse | null> => {
     try {
-      console.log(`🔍 Checking status for email: ${email}`);
 
       const response = await fetch(
         `${API_BASE_URL}/accounts/check-status?email=${email.trim()}`,
@@ -150,7 +142,6 @@ export default function Index() {
         }
       );
 
-      console.log(`📥 Status check response: ${response.status}`);
 
       if (!response.ok) {
         console.error(`❌ Status check failed: ${response.status}`);
@@ -158,7 +149,6 @@ export default function Index() {
       }
 
       const result = await response.json();
-      console.log(`✅ Account status result:`, result.result);
 
       return result.result;
     } catch (error) {
@@ -191,8 +181,6 @@ export default function Index() {
       await AsyncStorage.setItem("authToken", result.token);
       await AsyncStorage.setItem("userEmail", email.trim());
 
-      console.log("💾 Token saved successfully");
-      console.log("[handleLogin] Initializing WebSocket...");
       const wsSuccess = await initializeWebSocket((notification) => {
         console.log(
           "[handleLogin] Received WebSocket notification:",

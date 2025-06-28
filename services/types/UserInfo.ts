@@ -92,10 +92,8 @@ const getAccountId = async (): Promise<string> => {
 
 // Thêm helper function để xử lý avatar
 export const getAvatarSource = (avatar?: string) => {
-  console.log('Avatar value received:', avatar); // Debug log
   
   if (avatar && avatar.trim() !== '' && avatar !== 'null' && avatar !== 'undefined') {
-    console.log('Using user avatar:', avatar);
     return { uri: avatar };
   }
   

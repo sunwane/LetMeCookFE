@@ -192,6 +192,22 @@ export const getCommentByAccountId = async (page: number = 0, size: number = 10)
   return handleResponse(response);
 }
 
+export const countCommentByAccountId = async(): Promise<number> => {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/comments/countCommentByAccount`, {
+    method: 'GET',
+    headers,
+  });
+  return  handleResponse(response);
+};
+
 
 //like comment
 export const likeComment = async (commentId: string): Promise<likeComment> => {
