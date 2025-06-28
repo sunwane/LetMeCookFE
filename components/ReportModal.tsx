@@ -1,153 +1,309 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
-} from 'react-native';
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  createReport,
+  ReportRequest,
+  ReportType,
+} from "../services/types/Report";
 
+// Define report reasons
+const reportReasons = [
+  "Spam hoặc quảng cáo",
+  "Ngôn từ thù địch hoặc quấy rối",
+  "Nội dung không phù hợp",
+  "Thông tin sai lệch",
+  "Vi phạm bản quyền",
+  "Nội dung bạo lực",
+  "Lừa đảo hoặc gian lận",
+  "Khác",
+];
+
+// Props interface definition
 interface ReportModalProps {
   visible: boolean;
   onClose: () => void;
   userName: string;
+  reportType: ReportType;
+  reportedItemId: string;
 }
 
-const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, userName }) => {
+const ReportModal: React.FC<ReportModalProps> = ({
+  visible,
+  onClose,
+  userName,
+  reportType,
+  reportedItemId,
+}) => {
+  // Kiểm tra props ngay đầu component
+  // Trong ReportModal.tsx
+  useEffect(() => {
+    // Chỉ kiểm tra khi modal đang hiển thị
+    if (visible) {
+      if (!reportType) {
+        console.error("ReportModal: Missing reportType prop");
+      }
+      if (!reportedItemId) {
+        console.error("ReportModal: Missing reportedItemId prop");
+      }
+    }
+  }, [reportType, reportedItemId, visible]); // Thêm visible vào dependencies
+
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
-  const [customReason, setCustomReason] = useState('');
+  const [customReason, setCustomReason] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [evidenceImage, setEvidenceImage] = useState<any>(null);
 
-  const reportReasons = [
-    'Spam hoặc quảng cáo',
-    'Ngôn từ thù địch hoặc quấy rối',
-    'Nội dung không phù hợp',
-    'Thông tin sai lệch',
-    'Vi phạm bản quyền',
-    'Nội dung bạo lực',
-    'Lừa đảo hoặc gian lận'
-  ];
-
+  // Thêm hàm toggleReason để xử lý việc chọn/bỏ chọn lý do báo cáo
   const toggleReason = (reason: string) => {
-    if (selectedReasons.includes(reason)) {
-      setSelectedReasons(prev => prev.filter(r => r !== reason));
-    } else {
-      setSelectedReasons(prev => [...prev, reason]);
+    setSelectedReasons((prev) => {
+      if (prev.includes(reason)) {
+        // Nếu lý do đã được chọn thì bỏ chọn
+        return prev.filter((item) => item !== reason);
+      } else {
+        // Nếu lý do chưa được chọn thì thêm vào
+        return [...prev, reason];
+      }
+    });
+  };
+
+  // Hàm chọn hình từ thư viện
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Cần quyền truy cập",
+        "Vui lòng cấp quyền truy cập thư viện ảnh để tiếp tục."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      // Chuẩn bị dữ liệu cho FormData
+      const imageUri = result.assets[0].uri;
+      const imageName = imageUri.split("/").pop() || "evidence.jpg";
+
+      // Tạo dữ liệu ảnh cho FormData
+      const imageData = {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: imageName,
+      };
+
+      setEvidenceImage(imageData);
     }
   };
 
-  const handleSubmit = () => {
+  // Hàm xóa ảnh đã chọn
+  const removeImage = () => {
+    setEvidenceImage(null);
+  };
+
+  // Trong handleReport, cập nhật để gửi ảnh
+  const handleReport = async () => {
     if (selectedReasons.length === 0 && !customReason.trim()) {
-      Alert.alert('Thông báo', 'Vui lòng chọn ít nhất một lý do báo cáo.');
+      Alert.alert("Lỗi", "Vui lòng chọn ít nhất một lý do báo cáo");
+      return;
+    }
+
+    // Kiểm tra lại reportType và reportedItemId trước khi gửi
+    if (!reportType || !reportedItemId) {
+      Alert.alert(
+        "Thiếu thông tin báo cáo",
+        "Không thể xác định đối tượng báo cáo. Vui lòng thử lại hoặc liên hệ hỗ trợ."
+      );
       return;
     }
 
     Alert.alert(
-      'Báo cáo đã gửi',
-      'Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét và xử lý trong thời gian sớm nhất.',
+      "Xác nhận báo cáo",
+      `Bạn có chắc chắn muốn báo cáo ${userName}?`,
       [
+        { text: "Hủy", style: "cancel" },
         {
-          text: 'OK',
-          onPress: () => {
-            // Reset form
-            setSelectedReasons([]);
-            setCustomReason('');
-            onClose();
-          }
-        }
+          text: "Báo cáo",
+          style: "destructive",
+          onPress: async () => {
+            setIsLoading(true);
+            try {
+              // Tạo dữ liệu báo cáo với đầy đủ các trường bắt buộc
+              const reportData: ReportRequest = {
+                reportType: reportType,
+                reportedItemId: reportedItemId,
+                reason:
+                  selectedReasons.length > 0
+                    ? selectedReasons.join(", ")
+                    : customReason,
+                description: customReason.trim() || undefined,
+              };
+
+              // Log dữ liệu trước khi gửi để debug
+              console.log("Dữ liệu báo cáo:", reportData);
+
+              // Gọi API để gửi báo cáo
+              await createReport(reportData, evidenceImage);
+
+              // Reset form và đóng modal
+              setSelectedReasons([]);
+              setCustomReason("");
+              setEvidenceImage(null);
+
+              Alert.alert("Thành công", "Báo cáo đã được gửi thành công");
+              onClose();
+            } catch (error) {
+              console.error("Lỗi gửi báo cáo:", error);
+
+              // Hiển thị thông báo lỗi chi tiết
+              let errorMessage = "Không thể gửi báo cáo. ";
+              if (error instanceof Error) {
+                errorMessage += error.message;
+              }
+
+              Alert.alert("Lỗi", errorMessage);
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
       ]
     );
   };
 
-  const handleCancel = () => {
-    setSelectedReasons([]);
-    setCustomReason('');
-    onClose();
-  };
+  // Nếu đang loading, hiển thị indicator
+  if (isLoading) {
+    return (
+      <Modal visible={visible} transparent={true}>
+        <View
+          style={[
+            styles.overlay,
+            { justifyContent: "center", alignItems: "center" },
+          ]}
+        >
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>Đang gửi báo cáo...</Text>
+        </View>
+      </Modal>
+    );
+  }
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={handleCancel}
-    >
+    <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#666" />
+            <Text style={styles.title}>Báo cáo {userName}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color="#000" />
             </TouchableOpacity>
-            <Text style={styles.title}>Báo cáo bình luận</Text>
-            <View style={styles.placeholder} />
           </View>
 
           {/* Content */}
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            <Text style={styles.subtitle}>
-              Báo cáo bình luận của <Text style={styles.userName}>{userName}</Text>
-            </Text>
-            <Text style={styles.description}>
-              Vui lòng chọn lý do báo cáo và cung cấp thêm thông tin chi tiết.
-            </Text>
-
-            {/* Reasons */}
-            <Text style={styles.sectionTitle}>
-              Lý do báo cáo <Text style={styles.required}>*</Text>
-            </Text>
-
-            <View style={styles.reasonsList}>
-              {reportReasons.map((reason, index) => (
+          <ScrollView style={styles.content}>
+            {/* Lý do báo cáo */}
+            <Text style={styles.sectionTitle}>Chọn lý do báo cáo:</Text>
+            <View style={styles.reasonsContainer}>
+              {reportReasons.map((reason) => (
                 <TouchableOpacity
-                  key={index}
-                  style={styles.reasonItem}
+                  key={reason}
+                  style={[
+                    styles.reasonItem,
+                    selectedReasons.includes(reason) && styles.selectedReason,
+                  ]}
                   onPress={() => toggleReason(reason)}
                 >
-                  <View style={styles.checkbox}>
-                    {selectedReasons.includes(reason) && (
-                      <Ionicons name="checkmark" size={16} color="#FF5D00" />
-                    )}
-                  </View>
-                  <Text style={styles.reasonText}>{reason}</Text>
+                  <Text
+                    style={[
+                      styles.reasonText,
+                      selectedReasons.includes(reason) &&
+                        styles.selectedReasonText,
+                    ]}
+                  >
+                    {reason}
+                  </Text>
+                  {selectedReasons.includes(reason) && (
+                    <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
-
-            {/* Custom reason */}
-            <Text style={styles.sectionTitle}>Chi tiết bổ sung (tùy chọn)</Text>
+            {/* Ô nhập lý do khác */}
+            <Text style={styles.sectionTitle}>Chi tiết khác (nếu có):</Text>
             <TextInput
-              style={styles.textInput}
-              placeholder="Mô tả chi tiết về vấn đề bạn gặp phải..."
-              value={customReason}
-              onChangeText={setCustomReason}
+              style={styles.customReasonInput}
+              placeholder="Mô tả chi tiết vấn đề..."
               multiline
               numberOfLines={4}
-              textAlignVertical="top"
-              maxLength={500}
+              value={customReason}
+              onChangeText={setCustomReason}
             />
 
-            {/* Warning */}
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningLabel}>Lưu ý:</Text>
-              <Text style={styles.warningText}>
-                Báo cáo sai lệch có thể dẫn đến việc tài khoản của bạn bị hạn chế.
+            {/* <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                Ảnh bằng chứng (không bắt buộc)
               </Text>
-            </View>
-          </ScrollView>
 
-          {/* Footer */}
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-              <Text style={styles.cancelText}>Hủy</Text>
+              {evidenceImage ? (
+                <View style={styles.imagePreviewContainer}>
+                  <Image
+                    source={{ uri: evidenceImage.uri }}
+                    style={styles.imagePreview}
+                  />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={removeImage}
+                  >
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={pickImage}
+                >
+                  <Ionicons name="camera" size={24} color="#0066cc" />
+                  <Text style={styles.uploadButtonText}>
+                    Chọn ảnh bằng chứng
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View> */}
+            {/* Thông tin debug - Chỉ hiển thị khi cần debug
+            <View style={styles.debugInfoContainer}>
+              <Text style={styles.debugInfoText}>
+                Loại báo cáo: {reportType || "Chưa xác định"}
+              </Text>
+              <Text style={styles.debugInfoText}>
+                ID đối tượng: {reportedItemId || "Chưa xác định"}
+              </Text>
+            </View> */}
+            {/* Button */}
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleReport}
+            >
+              <Text style={styles.submitButtonText}>Gửi báo cáo</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitText}>Gửi báo cáo</Text>
-            </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -157,150 +313,136 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, userName })
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
   modalContainer: {
-    backgroundColor: '#fff',
-    height: 600,
-    width: '90%',
-    borderRadius: 12,
-    overflow: 'hidden',
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: "80%",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#e1e1e1",
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "600",
   },
   closeButton: {
     padding: 4,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  placeholder: {
-    width: 32,
-  },
   content: {
-    flex: 1,
     padding: 16,
-    paddingBottom: 30,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 8,
+  debugInfoContainer: {
+    backgroundColor: "#f0f0f0",
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 10,
   },
-  userName: {
-    fontWeight: 'bold',
-    color: '#FF5D00',
-  },
-  description: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-    lineHeight: 20,
+  debugInfoText: {
+    color: "#666",
+    fontSize: 12,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-    marginTop: 8,
+    fontWeight: "600",
+    marginTop: 16,
+    marginBottom: 8,
   },
-  required: {
-    color: '#FF5D00',
-  },
-  reasonsList: {
-    marginBottom: 20,
+  reasonsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   reasonItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    margin: 4,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+  selectedReason: {
+    backgroundColor: "#0066cc",
   },
   reasonText: {
-    fontSize: 15,
-    color: '#333',
-    flex: 1,
+    color: "#333",
+    marginRight: 4,
   },
-  textInput: {
+  selectedReasonText: {
+    color: "#fff",
+  },
+  customReasonInput: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e1e1e1",
     borderRadius: 8,
     padding: 12,
-    fontSize: 15,
-    minHeight: 80,
-    marginBottom: 16,
+    height: 100,
+    textAlignVertical: "top",
   },
-  warningContainer: {
-    backgroundColor: '#FFF9E6',
+  section: {
+    marginTop: 16,
+  },
+  uploadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFB800',
-    marginBottom: 50,
-  },
-  warningLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8B5A00',
-    marginBottom: 4,
-  },
-  warningText: {
-    fontSize: 13,
-    color: '#8B5A00',
-    lineHeight: 18,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
-    alignItems: 'center',
+    borderStyle: "dashed",
+    borderColor: "#0066cc",
+    borderRadius: 8,
+    marginVertical: 10,
   },
-  cancelText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
+  uploadButtonText: {
+    marginLeft: 8,
+    color: "#0066cc",
+    fontWeight: "500",
+  },
+  imagePreviewContainer: {
+    position: "relative",
+    marginVertical: 10,
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
   submitButton: {
-    flex: 1,
-    paddingVertical: 12,
+    backgroundColor: "#0066cc",
     borderRadius: 8,
-    backgroundColor: '#FF5D00',
-    alignItems: 'center',
+    padding: 16,
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 24,
   },
-  submitText: {
+  submitButtonText: {
+    color: "#fff",
     fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  loadingText: {
+    color: "#ffffff",
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 

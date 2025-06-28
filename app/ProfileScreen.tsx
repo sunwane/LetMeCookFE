@@ -1,73 +1,80 @@
-import AccountBanner from '@/components/AccountBanner';
-import LogoutModal from '@/components/LogoutModal';
-import AccountNav from '@/components/ui/navigation/AccountNav';
-import '@/config/globalTextConfig';
-import { sampleAccounts } from '@/services/types/AccountItem';
-import { sampleComments } from '@/services/types/CommentItem';
-import { sampleFavorites } from '@/services/types/FavoritesRecipe';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import React, { useCallback, useState } from 'react';
-import { Alert, RefreshControl, StyleSheet, TouchableOpacity, View, SafeAreaView } from 'react-native';
-import { logoutAPI } from '../services/types/auth';
+import AccountBanner from "@/components/AccountBanner";
+import LogoutModal from "@/components/LogoutModal";
+import AccountNav from "@/components/ui/navigation/AccountNav";
+import "@/config/globalTextConfig";
+import { sampleAccounts } from "@/services/types/AccountItem";
+import { sampleComments } from "@/services/types/CommentItem";
+import { sampleFavorites } from "@/services/types/FavoritesRecipe";
+import { disconnectWebSocket } from "@/services/types/NotificationItem";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+  Alert,
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { logoutAPI } from "../services/types/auth";
 
 const ProfileScreen = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const handleLogout = () => {
-    setShowLogoutModal(true);
+  const handleLogout = async () => {
+    await disconnectWebSocket(); // Ngắt kết nối socket trước
+    await AsyncStorage.removeItem("authToken");
+    // ... các bước logout khác (chuyển màn, xóa user info, ...)
   };
 
   const confirmLogout = async () => {
     try {
       setIsLoggingOut(true);
-      
+
       // ✅ Get token from AsyncStorage
-      const authToken = await AsyncStorage.getItem('authToken');
-      
+      const authToken = await AsyncStorage.getItem("authToken");
+
       if (authToken) {
-        console.log('🚪 Logging out with token...');
-        
+        console.log("🚪 Logging out with token...");
+
         // ✅ Call logout API
         await logoutAPI({ token: authToken });
-        console.log('✅ Logout API success');
+        console.log("✅ Logout API success");
       } else {
-        console.log('⚠️ No token found, skipping API call');
+        console.log("⚠️ No token found, skipping API call");
       }
-      
+
       // ✅ Clear all stored data
       await AsyncStorage.multiRemove([
-        'authToken',
-        'userEmail', 
-        'userPassword',
-        'refreshToken'
+        "authToken",
+        "userEmail",
+        "userPassword",
+        "refreshToken",
       ]);
-      
-      console.log('✅ Cleared AsyncStorage');
-      
+
+      console.log("✅ Cleared AsyncStorage");
+
       // ✅ Navigate to login
-      router.replace('/');
-      
+      router.replace("/");
     } catch (error) {
-      console.error('❌ Logout failed:', error);
-      
+      console.error("❌ Logout failed:", error);
+
       // ✅ Even if API fails, still clear local data and redirect
       await AsyncStorage.multiRemove([
-        'authToken',
-        'userEmail',
-        'userPassword', 
-        'refreshToken'
+        "authToken",
+        "userEmail",
+        "userPassword",
+        "refreshToken",
       ]);
-      
+
       Alert.alert(
-        'Đăng xuất',
-        'Có lỗi xảy ra nhưng bạn đã được đăng xuất khỏi thiết bị này.',
-        [{ text: 'OK', onPress: () => router.replace('/') }]
+        "Đăng xuất",
+        "Có lỗi xảy ra nhưng bạn đã được đăng xuất khỏi thiết bị này.",
+        [{ text: "OK", onPress: () => router.replace("/") }]
       );
-      
     } finally {
       setIsLoggingOut(false);
       setShowLogoutModal(false);
@@ -82,10 +89,10 @@ const ProfileScreen = () => {
     setRefreshing(true);
     try {
       // ✅ This will trigger AccountBanner to refetch recipe count
-      console.log('🔄 Refreshing profile data...');
+      console.log("🔄 Refreshing profile data...");
       // You can add any additional refresh logic here
     } catch (error) {
-      console.error('❌ Refresh failed:', error);
+      console.error("❌ Refresh failed:", error);
     } finally {
       setRefreshing(false);
     }
@@ -93,27 +100,27 @@ const ProfileScreen = () => {
 
   // Handle navigation to notification screen
   const handleNotification = () => {
-    router.push('/NotificationScreen');
+    router.push("/NotificationScreen");
   };
 
   // Handle navigation to setting screen
   const handleSettings = () => {
-    router.push('/SettingScreen');
+    router.push("/SettingScreen");
   };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Container chứa hai nút ở góc trên */}
       <View style={styles.topButtonsContainer}>
-        <TouchableOpacity 
-          style={styles.notificationButton} 
+        <TouchableOpacity
+          style={styles.notificationButton}
           onPress={handleNotification}
           activeOpacity={0.8}
         >
           <Ionicons name="notifications-outline" size={20} color="#FF5D00" />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.settingsButton}
           onPress={handleSettings}
           activeOpacity={0.8}
@@ -121,12 +128,10 @@ const ProfileScreen = () => {
           <Ionicons name="settings-outline" size={20} color="#FF5D00" />
         </TouchableOpacity>
       </View>
-      
-      <AccountBanner 
-        comments={sampleComments}
-      />
+
+      <AccountBanner comments={sampleComments} />
       <View style={styles.navContainer}>
-        <AccountNav 
+        <AccountNav
           comments={sampleComments}
           favorites={sampleFavorites}
           account={sampleAccounts}
@@ -140,30 +145,30 @@ const ProfileScreen = () => {
         isLoading={isLoggingOut}
       />
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   navContainer: {
-    flex: 1, 
+    flex: 1,
   },
   topButtonsContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 20,
     right: 20,
-    flexDirection: 'row',
+    flexDirection: "row",
     zIndex: 1000,
     gap: 10,
   },
   notificationButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
     padding: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -172,13 +177,13 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     borderWidth: 1,
-    borderColor: 'rgba(255, 93, 0, 0.1)',
+    borderColor: "rgba(255, 93, 0, 0.1)",
   },
   settingsButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
     padding: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -187,7 +192,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     borderWidth: 1,
-    borderColor: 'rgba(255, 93, 0, 0.1)',
+    borderColor: "rgba(255, 93, 0, 0.1)",
   },
 });
 

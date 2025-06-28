@@ -2,24 +2,35 @@ import HotRecommended from "@/components/hotRecommended";
 import N2xRecipeGroup from "@/components/Nx2RecipeGroup";
 import RcmCategoryGroup from "@/components/rcmCategoryGroup";
 import SearchBar from "@/components/searchbar";
-import { getNewRecipesInMonth, getTop5Recipes, getTrendingRecipes, RecipeItem } from "@/services/types/RecipeItem";
-import { getTop6subcategories, SubCategoryItem } from "@/services/types/SubCategoryItem";
-import { Ionicons } from '@expo/vector-icons'; // ✅ Thêm import Ionicons
-import { router } from 'expo-router'; // ✅ Thêm import router
-import React, { useEffect, useState } from 'react';
+import {
+  getNewRecipesInMonth,
+  getTop5Recipes,
+  getTrendingRecipes,
+  RecipeItem,
+} from "@/services/types/RecipeItem";
+import { useRecipeStore } from "@/services/types/recipeStore";
+import {
+  getTop6subcategories,
+  SubCategoryItem,
+} from "@/services/types/SubCategoryItem";
+import { Ionicons } from "@expo/vector-icons"; // ✅ Thêm import Ionicons
+import { router } from "expo-router"; // ✅ Thêm import router
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Keyboard,
   Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  View
-} from 'react-native';
+  View,
+} from "react-native";
 
 export default function HomeScreens() {
+  const { addOrUpdateRecipes } = useRecipeStore.getState();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  
+  const [allRecipes, setAllRecipes] = useState<RecipeItem[]>([]);
+
   // State để quản lý top 5 recipes
   const [top5Recipes, setTop5Recipes] = useState<RecipeItem[]>([]);
   const [isLoadingTop5, setIsLoadingTop5] = useState(true);
@@ -35,10 +46,29 @@ export default function HomeScreens() {
   // State để quản lý New Recipes In Month
   const [newRecipes, setNewRecipes] = useState<RecipeItem[]>([]);
   const [isLoadingNewRecipes, setIsLoadingNewRecipes] = useState(true);
-  
+
+  const recipesInStore = useRecipeStore((state) => state.recipes);
+  const top5RecipesRealtime = useMemo(() => {
+    return top5Recipes.map(
+      (r) => recipesInStore.find((rr) => rr.id === r.id) ?? r
+    );
+  }, [top5Recipes, recipesInStore]);
+
+  const trendingRecipesRealtime = useMemo(() => {
+    return trendingRecipes.map(
+      (r) => recipesInStore.find((rr) => rr.id === r.id) ?? r
+    );
+  }, [trendingRecipes, recipesInStore]);
+
+  const newRecipesRealtime = useMemo(() => {
+    return newRecipes.map(
+      (r) => recipesInStore.find((rr) => rr.id === r.id) ?? r
+    );
+  }, [newRecipes, recipesInStore]);
+
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (e) => {
         setKeyboardHeight(e.endCoordinates.height);
         setIsKeyboardVisible(true);
@@ -46,7 +76,7 @@ export default function HomeScreens() {
     );
 
     const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
         setKeyboardHeight(0);
         setIsKeyboardVisible(false);
@@ -65,15 +95,15 @@ export default function HomeScreens() {
       setIsLoadingTop5(true);
       try {
         const response = await getTop5Recipes();
-        console.log('HomeScreens - Top5Recipes response:', response);
-        
+        console.log("HomeScreens - Top5Recipes response:", response);
+
         if (response?.result && Array.isArray(response.result)) {
           setTop5Recipes(response.result);
         } else {
           setTop5Recipes([]);
         }
       } catch (error) {
-        console.error('HomeScreens - Error fetching top 5 recipes:', error);
+        console.error("HomeScreens - Error fetching top 5 recipes:", error);
         setTop5Recipes([]);
       } finally {
         setIsLoadingTop5(false);
@@ -89,15 +119,18 @@ export default function HomeScreens() {
       setIsLoadingSubCategories(true);
       try {
         const response = await getTop6subcategories();
-        console.log('HomeScreens - Top6SubCategories response:', response);
-        
+        console.log("HomeScreens - Top6SubCategories response:", response);
+
         if (response?.result && Array.isArray(response.result)) {
           setSubCategories(response.result);
         } else {
           setSubCategories([]);
         }
       } catch (error) {
-        console.error('HomeScreens - Error fetching top 6 subcategories:', error);
+        console.error(
+          "HomeScreens - Error fetching top 6 subcategories:",
+          error
+        );
         setSubCategories([]);
       } finally {
         setIsLoadingSubCategories(false);
@@ -113,15 +146,17 @@ export default function HomeScreens() {
       setIsLoadingTrending(true);
       try {
         const response = await getTrendingRecipes();
-        console.log('HomeScreens - TrendingRecipes response:', response);
-        
+        console.log("HomeScreens - TrendingRecipes response:", response);
+
         if (response?.result && Array.isArray(response.result)) {
           setTrendingRecipes(response.result);
+          addOrUpdateRecipes(response.result);
+          // Cập nhật state recipes trong store
         } else {
           setTrendingRecipes([]);
         }
       } catch (error) {
-        console.error('HomeScreens - Error fetching trending recipes:', error);
+        console.error("HomeScreens - Error fetching trending recipes:", error);
         setTrendingRecipes([]);
       } finally {
         setIsLoadingTrending(false);
@@ -137,15 +172,16 @@ export default function HomeScreens() {
       setIsLoadingNewRecipes(true);
       try {
         const response = await getNewRecipesInMonth();
-        console.log('HomeScreens - NewRecipesInMonth response:', response);
-        
+        console.log("HomeScreens - NewRecipesInMonth response:", response);
+
         if (response?.result && Array.isArray(response.result)) {
           setNewRecipes(response.result);
+          addOrUpdateRecipes(response.result);
         } else {
           setNewRecipes([]);
         }
       } catch (error) {
-        console.error('HomeScreens - Error fetching new recipes:', error);
+        console.error("HomeScreens - Error fetching new recipes:", error);
         setNewRecipes([]);
       } finally {
         setIsLoadingNewRecipes(false);
@@ -157,67 +193,67 @@ export default function HomeScreens() {
 
   // ✅ Handle suggest recipe - Navigate to SuggestRecipeScreen
   const handleSuggestRecipe = () => {
-    console.log('🍳 Navigating to SuggestRecipeScreen...');
-    router.push('/SuggestRecipeScreen'); // ✅ Sử dụng router để điều hướng
+    console.log("🍳 Navigating to SuggestRecipeScreen...");
+    router.push("/SuggestRecipeScreen"); // ✅ Sử dụng router để điều hướng
   };
 
   return (
     <View style={styles.background}>
       {/* SearchBar wrapper */}
-      <View style={[
-        styles.searchBarWrapper,
-        isKeyboardVisible && {
-          paddingTop: Math.max(40, 60 - keyboardHeight * 0.05),
-        }
-      ]}>
-        <SearchBar 
+      <View
+        style={[
+          styles.searchBarWrapper,
+          isKeyboardVisible && {
+            paddingTop: Math.max(40, 60 - keyboardHeight * 0.05),
+          },
+        ]}
+      >
+        <SearchBar
           containerStyle={[
             styles.searchBarContainer,
-            isKeyboardVisible && styles.searchBarWithKeyboard
+            isKeyboardVisible && styles.searchBarWithKeyboard,
           ]}
         />
       </View>
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.maincontainer}
         contentContainerStyle={[
           styles.scrollContent,
           isKeyboardVisible && {
             paddingBottom: Math.max(25, 25 - keyboardHeight * 0.1),
-          }
+          },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <HotRecommended 
-          foods={top5Recipes} 
-        />
-        
-        <RcmCategoryGroup 
+        <HotRecommended foods={top5Recipes} />
+
+        <RcmCategoryGroup
           subCategories={subCategories}
           isLoading={isLoadingSubCategories}
         />
-        
+
         {/* Sử dụng Trending Recipes từ API */}
-        <N2xRecipeGroup 
+        <N2xRecipeGroup
           title="Món ăn nổi bật gần đây"
-          foods={trendingRecipes}
+          foods={trendingRecipesRealtime}
         />
-        
+
         {/* Sử dụng New Recipes In Month từ API */}
-        <N2xRecipeGroup 
+        <N2xRecipeGroup
           title="Công thức mới được đăng tải gần đây"
-          foods={newRecipes}
+          foods={newRecipesRealtime}
         />
       </ScrollView>
 
       {/* ✅ Floating Action Button - Đề xuất món */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
           styles.floatingButton,
           isKeyboardVisible && {
             bottom: 90 + keyboardHeight * 0.1, // Điều chỉnh vị trí khi keyboard hiện
-          }
+          },
         ]}
         onPress={handleSuggestRecipe} // ✅ Gọi function navigate
         activeOpacity={0.8}
@@ -225,16 +261,16 @@ export default function HomeScreens() {
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
   },
   searchBarWrapper: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     paddingHorizontal: 10,
     paddingTop: 40,
     paddingBottom: 20,
@@ -244,7 +280,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   searchBarWithKeyboard: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -264,17 +300,17 @@ const styles = StyleSheet.create({
   },
   // ✅ Floating Action Button Styles
   floatingButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 20, // Trên TabBar (70px height + 20px margin)
     right: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#FF5D00',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FF5D00",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 8, // Android shadow
-    shadowColor: '#FF5D00', // iOS shadow
+    shadowColor: "#FF5D00", // iOS shadow
     shadowOffset: {
       width: 0,
       height: 4,

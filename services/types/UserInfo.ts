@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../../constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../../constants/api';
 
 // ===== USERINFO API INTERFACES =====
 export interface UserInfoCreationRequest {
