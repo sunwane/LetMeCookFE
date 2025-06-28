@@ -21,7 +21,6 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { initializeWebSocket } from "@/services/types/NotificationItem";
 import LoginForm from "../components/auth/LoginForm";
 import LoginHeader from "../components/auth/LoginHeader";
-import SocialLogin from "../components/auth/SocialLogin";
 import BackgroundDecorations from "../components/ui/BackgroundDecorations";
 import { API_BASE_URL } from "../constants/api";
 import { loginAPI } from "../services/types/auth";
@@ -310,7 +309,7 @@ export default function Index() {
               error={error}
             />
 
-            <SocialLogin />
+            {/* <SocialLogin /> */}
           </ScrollView>
         </View>
       </TouchableWithoutFeedback>
