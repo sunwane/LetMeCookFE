@@ -447,6 +447,7 @@ const SuggestRecipeScreen = () => {
   const selectSubCategory = (subCategory: SubCategoryItem) => {
     setSelectedSubCategory(subCategory);
     setShowSubCategoryDropdown(false);
+    setScrollEnabled(true); // Mở lại scroll khi đã chọn xong
   };
 
   // Hàm toggle dropdown

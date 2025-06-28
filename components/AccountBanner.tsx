@@ -163,13 +163,10 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
       if (!currentUser) return;
       
       try {
-        setIsLoadingRecipes(true);
-        console.log("🔍 Fetching recipe count for current user...");
-        
+        setIsLoadingRecipes(true);  
         const count = await getRecipeCountByUserAPI();
         setRecipeCount(count);
         
-        console.log("✅ Recipe count fetched:", count);
       } catch (error) {
         console.error("❌ Failed to fetch recipe count:", error);
         setRecipeCount(0);
