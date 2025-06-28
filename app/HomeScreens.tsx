@@ -19,6 +19,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Keyboard,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -46,6 +47,8 @@ export default function HomeScreens() {
   // State để quản lý New Recipes In Month
   const [newRecipes, setNewRecipes] = useState<RecipeItem[]>([]);
   const [isLoadingNewRecipes, setIsLoadingNewRecipes] = useState(true);
+
+  const [refreshing, setRefreshing] = useState(false);
 
   const recipesInStore = useRecipeStore((state) => state.recipes);
   const top5RecipesRealtime = useMemo(() => {
@@ -89,105 +92,113 @@ export default function HomeScreens() {
     };
   }, []);
 
+  // Hàm reload tất cả dữ liệu
+  const handleReload = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchTop5Recipes(),
+        fetchTop6SubCategories(),
+        fetchTrendingRecipes(),
+        fetchNewRecipes(),
+      ]);
+    } catch (error) {
+      console.error("HomeScreens - Error on reload:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Fetch top 5 recipes khi component mount
-  useEffect(() => {
-    const fetchTop5Recipes = async () => {
-      setIsLoadingTop5(true);
-      try {
-        const response = await getTop5Recipes();
-        console.log("HomeScreens - Top5Recipes response:", response);
+  const fetchTop5Recipes = async () => {
+    setIsLoadingTop5(true);
+    try {
+      const response = await getTop5Recipes();
+      console.log("HomeScreens - Top5Recipes response:", response);
 
-        if (response?.result && Array.isArray(response.result)) {
-          setTop5Recipes(response.result);
-        } else {
-          setTop5Recipes([]);
-        }
-      } catch (error) {
-        console.error("HomeScreens - Error fetching top 5 recipes:", error);
+      if (response?.result && Array.isArray(response.result)) {
+        setTop5Recipes(response.result);
+      } else {
         setTop5Recipes([]);
-      } finally {
-        setIsLoadingTop5(false);
       }
-    };
-
-    fetchTop5Recipes();
-  }, []);
+    } catch (error) {
+      console.error("HomeScreens - Error fetching top 5 recipes:", error);
+      setTop5Recipes([]);
+    } finally {
+      setIsLoadingTop5(false);
+    }
+  };
 
   // Fetch Top 6 SubCategories
-  useEffect(() => {
-    const fetchTop6SubCategories = async () => {
-      setIsLoadingSubCategories(true);
-      try {
-        const response = await getTop6subcategories();
-        console.log("HomeScreens - Top6SubCategories response:", response);
+  const fetchTop6SubCategories = async () => {
+    setIsLoadingSubCategories(true);
+    try {
+      const response = await getTop6subcategories();
+      console.log("HomeScreens - Top6SubCategories response:", response);
 
-        if (response?.result && Array.isArray(response.result)) {
-          setSubCategories(response.result);
-        } else {
-          setSubCategories([]);
-        }
-      } catch (error) {
-        console.error(
-          "HomeScreens - Error fetching top 6 subcategories:",
-          error
-        );
+      if (response?.result && Array.isArray(response.result)) {
+        setSubCategories(response.result);
+      } else {
         setSubCategories([]);
-      } finally {
-        setIsLoadingSubCategories(false);
       }
-    };
-
-    fetchTop6SubCategories();
-  }, []);
+    } catch (error) {
+      console.error(
+        "HomeScreens - Error fetching top 6 subcategories:",
+        error
+      );
+      setSubCategories([]);
+    } finally {
+      setIsLoadingSubCategories(false);
+    }
+  };
 
   // Fetch Trending Recipes
-  useEffect(() => {
-    const fetchTrendingRecipes = async () => {
-      setIsLoadingTrending(true);
-      try {
-        const response = await getTrendingRecipes();
-        console.log("HomeScreens - TrendingRecipes response:", response);
+  const fetchTrendingRecipes = async () => {
+    setIsLoadingTrending(true);
+    try {
+      const response = await getTrendingRecipes();
+      console.log("HomeScreens - TrendingRecipes response:", response);
 
-        if (response?.result && Array.isArray(response.result)) {
-          setTrendingRecipes(response.result);
-          addOrUpdateRecipes(response.result);
-          // Cập nhật state recipes trong store
-        } else {
-          setTrendingRecipes([]);
-        }
-      } catch (error) {
-        console.error("HomeScreens - Error fetching trending recipes:", error);
+      if (response?.result && Array.isArray(response.result)) {
+        setTrendingRecipes(response.result);
+        addOrUpdateRecipes(response.result);
+        // Cập nhật state recipes trong store
+      } else {
         setTrendingRecipes([]);
-      } finally {
-        setIsLoadingTrending(false);
       }
-    };
-
-    fetchTrendingRecipes();
-  }, []);
+    } catch (error) {
+      console.error("HomeScreens - Error fetching trending recipes:", error);
+      setTrendingRecipes([]);
+    } finally {
+      setIsLoadingTrending(false);
+    }
+  };
 
   // Fetch New Recipes In Month
-  useEffect(() => {
-    const fetchNewRecipes = async () => {
-      setIsLoadingNewRecipes(true);
-      try {
-        const response = await getNewRecipesInMonth();
-        console.log("HomeScreens - NewRecipesInMonth response:", response);
+  const fetchNewRecipes = async () => {
+    setIsLoadingNewRecipes(true);
+    try {
+      const response = await getNewRecipesInMonth();
+      console.log("HomeScreens - NewRecipesInMonth response:", response);
 
-        if (response?.result && Array.isArray(response.result)) {
-          setNewRecipes(response.result);
-          addOrUpdateRecipes(response.result);
-        } else {
-          setNewRecipes([]);
-        }
-      } catch (error) {
-        console.error("HomeScreens - Error fetching new recipes:", error);
+      if (response?.result && Array.isArray(response.result)) {
+        setNewRecipes(response.result);
+        addOrUpdateRecipes(response.result);
+      } else {
         setNewRecipes([]);
-      } finally {
-        setIsLoadingNewRecipes(false);
       }
-    };
+    } catch (error) {
+      console.error("HomeScreens - Error fetching new recipes:", error);
+      setNewRecipes([]);
+    } finally {
+      setIsLoadingNewRecipes(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchTop5Recipes();
+    fetchTop6SubCategories();
+    fetchTrendingRecipes();
     fetchNewRecipes();
   }, []);
 
@@ -226,6 +237,9 @@ export default function HomeScreens() {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleReload} />
+        }
       >
         <HotRecommended foods={top5Recipes} />
 

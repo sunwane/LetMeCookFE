@@ -14,13 +14,13 @@ const ActivitiesTab = ({ currentUserId }: ActivitiesTabProps) => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // Thêm state này
 
   const fetchComments = useCallback(async (pageToLoad = 0) => {
     if (loading || (pageToLoad >= totalPages)) return;
     setLoading(true);
     try {
       const response = await getCommentByAccountId();
-
       const content = response?.result?.content ?? [];
       const total = response?.result?.totalPages ?? 1;
 
@@ -51,10 +51,22 @@ const ActivitiesTab = ({ currentUserId }: ActivitiesTabProps) => {
     }
   };
 
+  // Hàm reload
+  const handleReload = () => {
+    setRefreshing(true);
+    fetchComments(0).finally(() => setRefreshing(false));
+  };
+
   if (comments.length === 0 && !loading) {
     return (
       <View style={[styles.postContainer, styles.emptyContainer]}>
         <Text style={styles.emptyText}>Chưa có hoạt động nào</Text>
+        <Text
+          style={{ color: '#FF5D00', marginTop: 10, textDecorationLine: 'underline' }}
+          onPress={handleReload}
+        >
+          Làm mới
+        </Text>
       </View>
     );
   }
@@ -70,6 +82,8 @@ const ActivitiesTab = ({ currentUserId }: ActivitiesTabProps) => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.2}
         ListFooterComponent={loading ? <ActivityIndicator size="small" /> : null}
+        refreshing={refreshing} // Thêm dòng này
+        onRefresh={handleReload} // Thêm dòng này
       />
     </View>
   );

@@ -12,10 +12,12 @@ const CommunityScreen = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // Thêm state này
 
   const fetchComments = useCallback(async (pageToLoad = 0) => {
-    if (loading || (pageToLoad >= totalPages)) return;
-    setLoading(true);
+    if ((loading && !refreshing) || (pageToLoad >= totalPages)) return;
+    if (pageToLoad === 0) setRefreshing(true);
+    else setLoading(true);
     try {
       const response = await getAllComments(pageToLoad, PAGE_SIZE);
       const content = response?.result?.content ?? [];
@@ -33,9 +35,10 @@ const CommunityScreen = () => {
       if (pageToLoad === 0) setComments([]);
       console.error('Error fetching comments:', error);
     } finally {
-      setLoading(false);
+      if (pageToLoad === 0) setRefreshing(false);
+      else setLoading(false);
     }
-  }, [loading, totalPages]);
+  }, [loading, refreshing, totalPages]);
 
   useEffect(() => {
     fetchComments(0);
@@ -45,6 +48,11 @@ const CommunityScreen = () => {
     if (!loading && page + 1 < totalPages) {
       fetchComments(page + 1);
     }
+  };
+
+  // Hàm reload khi kéo xuống
+  const handleRefresh = () => {
+    fetchComments(0);
   };
 
   return (
@@ -60,6 +68,8 @@ const CommunityScreen = () => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.2}
         ListFooterComponent={loading ? <ActivityIndicator size="small" /> : null}
+        refreshing={refreshing} // Thêm dòng này
+        onRefresh={handleRefresh} // Thêm dòng này
       />
     </View>
   );

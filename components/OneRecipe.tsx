@@ -186,9 +186,9 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
 
     return displayText;
   };
-  console.log("💡 Render OneRecipe:", recipe.id, realtimeLikes);
+  console.log("💡 Render OneRecipe:", realtimeLikes);
   useEffect(() => {
-    console.log("🔄 OneRecipe totalLikes updated:", recipe.id, realtimeLikes);
+    console.log("🔄 OneRecipe totalLikes updated:", realtimeLikes);
   }, [realtimeLikes]);
 
   return (
