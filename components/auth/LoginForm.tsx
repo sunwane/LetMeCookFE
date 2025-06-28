@@ -36,7 +36,7 @@ export default function LoginForm({
     <View style={styles.form}>
       {/* Email Input */}
       <CustomInput
-        placeholder="Email hoặc tên đăng nhập"
+        placeholder="Email"
         value={email}
         onChangeText={setEmail}
         onFocus={() => setEmailFocused(true)}
