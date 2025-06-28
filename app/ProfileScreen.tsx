@@ -5,15 +5,19 @@ import "@/config/globalTextConfig";
 import { sampleAccounts } from "@/services/types/AccountItem";
 import { sampleComments } from "@/services/types/CommentItem";
 import { sampleFavorites } from "@/services/types/FavoritesRecipe";
-import { disconnectWebSocket } from "@/services/types/NotificationItem";
+import {
+  initializeWebSocket,
+  NotificationItem,
+} from "@/services/types/NotificationItem";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   SafeAreaView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -23,31 +27,36 @@ const ProfileScreen = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const handleLogout = async () => {
-    await disconnectWebSocket(); // Ngắt kết nối socket trước
-    await AsyncStorage.removeItem("authToken");
-    // ... các bước logout khác (chuyển màn, xóa user info, ...)
-  };
+  // Socket setup
+  useEffect(() => {
+    const unsubscribe = initializeWebSocket(
+      (newNotification: NotificationItem) => {
+        console.log(
+          "📡 [ProfileScreen] Received WS notification:",
+          newNotification
+        );
+        if (!newNotification.isRead) {
+          setUnreadCount((prev) => prev + 1);
+        }
+        setNotifications((prev) => [newNotification, ...prev]);
+      }
+    );
+
+    return () => {};
+  }, []);
 
   const confirmLogout = async () => {
     try {
       setIsLoggingOut(true);
-
-      // ✅ Get token from AsyncStorage
       const authToken = await AsyncStorage.getItem("authToken");
 
       if (authToken) {
-        console.log("🚪 Logging out with token...");
-
-        // ✅ Call logout API
         await logoutAPI({ token: authToken });
-        console.log("✅ Logout API success");
-      } else {
-        console.log("⚠️ No token found, skipping API call");
       }
 
-      // ✅ Clear all stored data
       await AsyncStorage.multiRemove([
         "authToken",
         "userEmail",
@@ -55,14 +64,9 @@ const ProfileScreen = () => {
         "refreshToken",
       ]);
 
-      console.log("✅ Cleared AsyncStorage");
-
-      // ✅ Navigate to login
       router.replace("/");
     } catch (error) {
       console.error("❌ Logout failed:", error);
-
-      // ✅ Even if API fails, still clear local data and redirect
       await AsyncStorage.multiRemove([
         "authToken",
         "userEmail",
@@ -88,9 +92,8 @@ const ProfileScreen = () => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // ✅ This will trigger AccountBanner to refetch recipe count
       console.log("🔄 Refreshing profile data...");
-      // You can add any additional refresh logic here
+      // Future refresh logic
     } catch (error) {
       console.error("❌ Refresh failed:", error);
     } finally {
@@ -98,19 +101,18 @@ const ProfileScreen = () => {
     }
   }, []);
 
-  // Handle navigation to notification screen
   const handleNotification = () => {
+    setUnreadCount(0); // ✅ Reset badge khi bấm
     router.push("/NotificationScreen");
   };
 
-  // Handle navigation to setting screen
   const handleSettings = () => {
     router.push("/SettingScreen");
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Container chứa hai nút ở góc trên */}
+      {/* Header buttons */}
       <View style={styles.topButtonsContainer}>
         <TouchableOpacity
           style={styles.notificationButton}
@@ -118,6 +120,11 @@ const ProfileScreen = () => {
           activeOpacity={0.8}
         >
           <Ionicons name="notifications-outline" size={20} color="#FF5D00" />
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>{unreadCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -131,7 +138,7 @@ const ProfileScreen = () => {
 
       <AccountBanner comments={sampleComments} />
       <View style={styles.navContainer}>
-        <AccountNav
+                <AccountNav
           comments={sampleComments}
           favorites={sampleFavorites}
           account={sampleAccounts}
@@ -147,6 +154,8 @@ const ProfileScreen = () => {
     </SafeAreaView>
   );
 };
+
+export default ProfileScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -169,31 +178,41 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 8,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
     borderWidth: 1,
     borderColor: "rgba(255, 93, 0, 0.1)",
+    position: "relative",
   },
   settingsButton: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
     padding: 8,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
     borderWidth: 1,
     borderColor: "rgba(255, 93, 0, 0.1)",
   },
+  badgeContainer: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#FF5D00",
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    minWidth: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
 });
-
-export default ProfileScreen;

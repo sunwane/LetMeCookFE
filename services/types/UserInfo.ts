@@ -362,7 +362,7 @@ export const getRecipeCountByUserAPI = async (): Promise<number> => {
     const token = await AsyncStorage.getItem('authToken');
     
     if (!token) {
-      console.log("❌ No auth token found");
+      console.log(" No auth token found");
       return 0; 
     }
 
@@ -388,11 +388,11 @@ export const getRecipeCountByUserAPI = async (): Promise<number> => {
     const result = await response.json();
     return result.result?.length || 0;
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('❌ Failed to get recipe count:', error.message);
-    } else {
-      console.error('❌ Failed to get recipe count:', String(error));
-    }
+    // if (error instanceof Error) {
+    //   console.error('❌ Failed to get recipe count:', error.message);
+    // } else {
+    //   console.error('❌ Failed to get recipe count:', String(error));
+    // }
     return 0;
   }
 };

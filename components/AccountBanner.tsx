@@ -112,11 +112,21 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         
         const userInfo = await getUserInfoAPI();
         const userEmail = await AsyncStorage.getItem('userEmail') || 'user@example.com';
-        
-        const accountItem: AccountItem = {
+              let userName = userEmail.split('@')[0]; // Fallback
+        try {
+          const token = await AsyncStorage.getItem('authToken');
+          if (token) {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            userName = payload.username || userName; // Dùng username từ token
+            console.log("✅ Username from token:", userName);
+          }
+        } catch (tokenError) {
+          console.warn("⚠️ Failed to get username from token:", tokenError);
+        }
+      const accountItem: AccountItem = {
           id: userInfo.id, 
           email: userEmail,
-          userName: userEmail.split('@')[0] || `User_${userInfo.id.substring(0, 8)}`,
+          userName: userName,
           avatar: userInfo.avatar, 
           status: 'ACTIVE',
           sex: userInfo.sex || 'Nam',
@@ -158,27 +168,27 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
   }, []);
 
   // ✅ Fetch recipe count when user is loaded
-  useEffect(() => {
-    const fetchRecipeCount = async () => {
-      if (!currentUser) return;
-      
-      try {
-        setIsLoadingRecipes(true);  
-        const count = await getRecipeCountByUserAPI();
-        setRecipeCount(count);
-        
-      } catch (error) {
-        console.error("❌ Failed to fetch recipe count:", error);
-        setRecipeCount(0);
-      } finally {
-        setIsLoadingRecipes(false);
-      }
-    };
+useEffect(() => {
+  if (!currentUser) {
+    setRecipeCount(0); // Nếu không có user, set luôn về 0
+    return;
+  }
 
-    if (currentUser) {
-      fetchRecipeCount();
+  const fetchRecipeCount = async () => {
+    try {
+      setIsLoadingRecipes(true);  
+      const count = await getRecipeCountByUserAPI();
+      setRecipeCount(count);
+    } catch (error) {
+      setRecipeCount(0);
+      // Không cần console.error ở đây để tránh log lỗi không cần thiết
+    } finally {
+      setIsLoadingRecipes(false);
     }
-  }, [currentUser]);
+  };
+
+  fetchRecipeCount();
+}, [currentUser]);
 
   // ✅ Fetch số hoạt động (bình luận) khi đã có currentUser
   useEffect(() => {
