@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   headerContain: {
     backgroundColor: '#fff',
-    paddingTop: 70,
+    paddingTop: 40,
     paddingBottom: 15,
     alignItems: 'center',
     borderBottomWidth: 1,
