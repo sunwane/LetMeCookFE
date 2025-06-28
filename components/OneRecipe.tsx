@@ -46,8 +46,10 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
   };
 
   const recipe = getRecipeData();
-  const recipesInStore = useRecipeStore((state) => state.recipes);
-  const realtimeRecipe = recipesInStore.find((r) => r.id === recipe.id);
+  // ✅ Reactive cách lấy recipe realtime bằng selector
+  const realtimeLikes = useRecipeStore(
+    (state) => state.recipes.find((r) => r.id === recipe.id)?.totalLikes
+  );
 
   // Kiểm tra bookmark status từ database
   useEffect(() => {
@@ -184,6 +186,10 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
 
     return displayText;
   };
+  console.log("💡 Render OneRecipe:", recipe.id, realtimeLikes);
+  useEffect(() => {
+    console.log("🔄 OneRecipe totalLikes updated:", recipe.id, realtimeLikes);
+  }, [realtimeLikes]);
 
   return (
     <TouchableOpacity
@@ -253,7 +259,7 @@ const OneRecipe = ({ item, isFavorite = false }: OneRecipeProps) => {
               style={styles.icon}
             />
             <Text style={styles.smallText}>
-              {realtimeRecipe?.totalLikes ?? recipe.totalLikes}
+              {realtimeLikes ?? recipe.totalLikes ?? 0}
             </Text>
           </View>
         </View>

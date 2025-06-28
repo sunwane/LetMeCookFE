@@ -15,7 +15,7 @@ import {
 } from "@/services/types/SubCategoryItem";
 import { Ionicons } from "@expo/vector-icons"; // ✅ Thêm import Ionicons
 import { router } from "expo-router"; // ✅ Thêm import router
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Keyboard,
   Platform,
@@ -26,9 +26,10 @@ import {
 } from "react-native";
 
 export default function HomeScreens() {
-  const { setRecipes } = useRecipeStore.getState();
+  const { addOrUpdateRecipes } = useRecipeStore.getState();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [allRecipes, setAllRecipes] = useState<RecipeItem[]>([]);
 
   // State để quản lý top 5 recipes
   const [top5Recipes, setTop5Recipes] = useState<RecipeItem[]>([]);
@@ -45,6 +46,25 @@ export default function HomeScreens() {
   // State để quản lý New Recipes In Month
   const [newRecipes, setNewRecipes] = useState<RecipeItem[]>([]);
   const [isLoadingNewRecipes, setIsLoadingNewRecipes] = useState(true);
+
+  const recipesInStore = useRecipeStore((state) => state.recipes);
+  const top5RecipesRealtime = useMemo(() => {
+    return top5Recipes.map(
+      (r) => recipesInStore.find((rr) => rr.id === r.id) ?? r
+    );
+  }, [top5Recipes, recipesInStore]);
+
+  const trendingRecipesRealtime = useMemo(() => {
+    return trendingRecipes.map(
+      (r) => recipesInStore.find((rr) => rr.id === r.id) ?? r
+    );
+  }, [trendingRecipes, recipesInStore]);
+
+  const newRecipesRealtime = useMemo(() => {
+    return newRecipes.map(
+      (r) => recipesInStore.find((rr) => rr.id === r.id) ?? r
+    );
+  }, [newRecipes, recipesInStore]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -130,7 +150,8 @@ export default function HomeScreens() {
 
         if (response?.result && Array.isArray(response.result)) {
           setTrendingRecipes(response.result);
-          setRecipes(response.result); // Cập nhật state recipes trong store
+          addOrUpdateRecipes(response.result);
+          // Cập nhật state recipes trong store
         } else {
           setTrendingRecipes([]);
         }
@@ -155,7 +176,7 @@ export default function HomeScreens() {
 
         if (response?.result && Array.isArray(response.result)) {
           setNewRecipes(response.result);
-          setRecipes(response.result);
+          addOrUpdateRecipes(response.result);
         } else {
           setNewRecipes([]);
         }
@@ -216,13 +237,13 @@ export default function HomeScreens() {
         {/* Sử dụng Trending Recipes từ API */}
         <N2xRecipeGroup
           title="Món ăn nổi bật gần đây"
-          foods={trendingRecipes}
+          foods={trendingRecipesRealtime}
         />
 
         {/* Sử dụng New Recipes In Month từ API */}
         <N2xRecipeGroup
           title="Công thức mới được đăng tải gần đây"
-          foods={newRecipes}
+          foods={newRecipesRealtime}
         />
       </ScrollView>
 

@@ -1,7 +1,7 @@
-import TabNavigator from '@/components/ui/navigation/TabNavigator';
-import '@/config/globalTextConfig';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as NavigationBar from 'expo-navigation-bar';
+import TabNavigator from "@/components/ui/navigation/TabNavigator";
+import "@/config/globalTextConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as NavigationBar from "expo-navigation-bar";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -15,14 +15,15 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 // Import components
+import { initializeWebSocket } from "@/services/types/NotificationItem";
 import LoginForm from "../components/auth/LoginForm";
 import LoginHeader from "../components/auth/LoginHeader";
 import SocialLogin from "../components/auth/SocialLogin";
 import BackgroundDecorations from "../components/ui/BackgroundDecorations";
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL } from "../constants/api";
 import { loginAPI } from "../services/types/auth";
 
 const { height } = Dimensions.get("window");
@@ -46,13 +47,13 @@ export default function Index() {
 
   useEffect(() => {
     // Kiểm tra nếu có parameter logged=true
-    if (params.logged === 'true') {
+    if (params.logged === "true") {
       setIsLoggedIn(true);
     }
 
     // Ẩn navigation bar khi mở app (chỉ cho Android)
-    if (Platform.OS === 'android') {
-      NavigationBar.setVisibilityAsync('hidden');
+    if (Platform.OS === "android") {
+      NavigationBar.setVisibilityAsync("hidden");
     }
 
     const keyboardDidShowListener = Keyboard.addListener(
@@ -75,68 +76,80 @@ export default function Index() {
     };
   }, [params]);
 
-   // ✅ SECOND useEffect - Token verification
-   useEffect(() => {
+  // ✅ SECOND useEffect - Token verification
+  // ✅ SECOND useEffect - Token verification
+  useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        // ✅ Check if user already logged in
-        if (params.logged === 'true') {
+        // ✅ Check if user already logged in via params
+        if (params.logged === "true") {
           setIsLoggedIn(true);
           return;
         }
-        
+
         // ✅ Check existing token
-        const existingToken = await AsyncStorage.getItem('authToken');
-        
+        const existingToken = await AsyncStorage.getItem("authToken");
+
         if (existingToken) {
           console.log("🔑 Found existing token, verifying...");
-          
-          // ✅ Test token validity with simple API call
+
           try {
             const response = await fetch(`${API_BASE_URL}/user-info`, {
-              method: 'GET',
+              method: "GET",
               headers: {
-                'Authorization': `Bearer ${existingToken}`,
-                'Content-Type': 'application/json',
+                Authorization: `Bearer ${existingToken}`,
+                "Content-Type": "application/json",
               },
             });
-            
+
             if (response.ok) {
               console.log("✅ Token valid, auto-login");
+
+              // ✅ Thêm đoạn này để khởi tạo WebSocket khi token hợp lệ
+              console.log("[checkAuthStatus] Initializing WebSocket...");
+              const wsSuccess = await initializeWebSocket((notification) => {
+                console.log("[checkAuthStatus] WS Notification:", notification);
+              });
+              console.log(
+                "[checkAuthStatus] WebSocket initialization:",
+                wsSuccess ? "successful" : "failed"
+              );
+
               setIsLoggedIn(true);
               return;
             } else {
               console.log("❌ Token invalid, clearing...");
-              await AsyncStorage.removeItem('authToken');
+              await AsyncStorage.removeItem("authToken");
             }
           } catch (tokenError) {
             console.log("❌ Token verification failed, clearing...");
-            await AsyncStorage.removeItem('authToken');
+            await AsyncStorage.removeItem("authToken");
           }
         }
-        
-    
-        
       } catch (error) {
         console.error("❌ Auth check error:", error);
       }
     };
-    
+
     checkAuthStatus();
   }, [params]);
 
-
   // ✅ Function to check email status
-  const checkEmailStatus = async (email: string): Promise<AccountStatusResponse | null> => {
+  const checkEmailStatus = async (
+    email: string
+  ): Promise<AccountStatusResponse | null> => {
     try {
       console.log(`🔍 Checking status for email: ${email}`);
-      
-      const response = await fetch(`${API_BASE_URL}/accounts/check-status?email=${email.trim()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/accounts/check-status?email=${email.trim()}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       console.log(`📥 Status check response: ${response.status}`);
 
@@ -147,10 +160,10 @@ export default function Index() {
 
       const result = await response.json();
       console.log(`✅ Account status result:`, result.result);
-      
+
       return result.result;
     } catch (error) {
-      console.error('❌ Failed to check email status:', error);
+      console.error("❌ Failed to check email status:", error);
       return null;
     }
   };
@@ -167,58 +180,71 @@ export default function Index() {
 
     setIsLoading(true);
     setError("");
-    
+
     try {
-      console.log('🔑 Attempting login...');
-      
+      console.log("🔑 Attempting login...");
+
       // ✅ DIRECT LOGIN - Backend sẽ tự check ban status
       const result = await loginAPI({ email: email.trim(), password });
-      
+
       console.log("✅ Login successful:", result);
-      
-      await AsyncStorage.setItem('authToken', result.token);
-      await AsyncStorage.setItem('userEmail', email.trim());
-      
+
+      await AsyncStorage.setItem("authToken", result.token);
+      await AsyncStorage.setItem("userEmail", email.trim());
+
       console.log("💾 Token saved successfully");
-      
+      console.log("[handleLogin] Initializing WebSocket...");
+      const wsSuccess = await initializeWebSocket((notification) => {
+        console.log(
+          "[handleLogin] Received WebSocket notification:",
+          notification
+        );
+      });
+      console.log(
+        "[handleLogin] WebSocket initialization:",
+        wsSuccess ? "successful" : "failed"
+      );
       setIsLoggedIn(true);
-      
     } catch (error: any) {
       console.error("❌ Login error:", error);
-      
+
       // ✅ Check for ban-related error codes từ backend
-      if (error.message?.includes("1013")) { // Assuming backend returns 1013 for banned accounts
-        Alert.alert('Tài khoản bị khóa', 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin.');
+      if (error.message?.includes("1013")) {
+        // Assuming backend returns 1013 for banned accounts
+        Alert.alert(
+          "Tài khoản bị khóa",
+          "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin."
+        );
       } else if (error.message?.includes("1054")) {
         Alert.alert(
-          'Thiết lập tài khoản',
-          'Tài khoản của bạn cần hoàn tất thông tin. Tiếp tục thiết lập?',
+          "Thiết lập tài khoản",
+          "Tài khoản của bạn cần hoàn tất thông tin. Tiếp tục thiết lập?",
           [
-            { text: 'Hủy', style: 'cancel' },
-            { 
-              text: 'Tiếp tục', 
+            { text: "Hủy", style: "cancel" },
+            {
+              text: "Tiếp tục",
               onPress: async () => {
-                await AsyncStorage.setItem('userEmail', email.trim());
-                await AsyncStorage.setItem('userPassword', password);
+                await AsyncStorage.setItem("userEmail", email.trim());
+                await AsyncStorage.setItem("userPassword", password);
                 router.push("/GenderSelection");
-              }
-            }
+              },
+            },
           ]
         );
       } else if (error.message?.includes("1012")) {
         Alert.alert(
-          'Hoàn tất đăng ký',
-          'Tài khoản của bạn chưa được thiết lập hoàn tất. Tiếp tục thiết lập?',
+          "Hoàn tất đăng ký",
+          "Tài khoản của bạn chưa được thiết lập hoàn tất. Tiếp tục thiết lập?",
           [
-            { text: 'Hủy', style: 'cancel' },
-            { 
-              text: 'Tiếp tục', 
+            { text: "Hủy", style: "cancel" },
+            {
+              text: "Tiếp tục",
               onPress: async () => {
-                await AsyncStorage.setItem('userEmail', email.trim());
-                await AsyncStorage.setItem('userPassword', password);
+                await AsyncStorage.setItem("userEmail", email.trim());
+                await AsyncStorage.setItem("userPassword", password);
                 router.push("/GenderSelection");
-              }
-            }
+              },
+            },
           ]
         );
       } else {
@@ -228,7 +254,6 @@ export default function Index() {
       setIsLoading(false);
     }
   };
-
 
   const navigateToRegister = () => {
     router.push("/RegisterScreen");
@@ -281,8 +306,8 @@ export default function Index() {
               handleLogin={handleLogin}
               navigateToRegister={navigateToRegister}
               navigateToForgotPassword={navigateToForgotPassword}
-              isLoading={isLoading}  
-              error={error}          
+              isLoading={isLoading}
+              error={error}
             />
 
             <SocialLogin />

@@ -20,7 +20,6 @@ import {
   createLikeRecipe,
   deleteLikeRecipe,
   getAllRecipeAccoountLike,
-  RecipeItem,
 } from "@/services/types/RecipeItem";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
@@ -66,9 +65,10 @@ const RecipeScreen = () => {
   const [recipeComments, setRecipeComments] = useState<CommentItem[]>([]);
 
   // Parse recipe data và tạo state để cập nhật realtime
-  const [recipe, setRecipe] = useState<RecipeItem>(() => {
-    return recipeData ? JSON.parse(recipeData as string) : null;
-  });
+  const recipe =
+    useRecipeStore((state) =>
+      state.recipes.find((r) => r.id === JSON.parse(recipeData as string)?.id)
+    ) ?? JSON.parse(recipeData as string);
 
   // Kiểm tra bookmark status từ database
   useEffect(() => {
@@ -92,7 +92,7 @@ const RecipeScreen = () => {
     }
   }, [recipe?.id]);
 
-  const toggleBookmark = async (recipeId: string) => {
+  const toggleBookmark = async () => {
     if (isBookmarkLoading || !recipe?.id) return; // Prevent multiple calls
 
     setIsBookmarkLoading(true);
@@ -138,36 +138,22 @@ const RecipeScreen = () => {
     }
   }, [recipe?.id]);
 
-  const toggleLike = async (recipeId: string) => {
-    if (isLikeLoading || !recipe?.id) return; // Prevent multiple calls
-
+  const toggleLike = async () => {
+    if (isLikeLoading || !recipe?.id) return;
     setIsLikeLoading(true);
 
     try {
       if (isLiked) {
-        // Xử lý khi bỏ like
         await deleteLikeRecipe(recipe.id);
         setIsLiked(false);
-        // Giảm totalLikes đi 1
-        setRecipe((prevRecipe) => ({
-          ...prevRecipe,
-          totalLikes: Math.max(0, prevRecipe.totalLikes - 1),
-        }));
+        console.log(`❌ Unliked recipeId: ${recipe.id}`);
       } else {
-        // Xử lý khi thêm like
         await createLikeRecipe(recipe.id);
         setIsLiked(true);
-        // Tăng totalLikes lên 1
-        setRecipe((prevRecipe) => ({
-          ...prevRecipe,
-          totalLikes: prevRecipe.totalLikes + 1,
-        }));
+        console.log(`✅ Liked recipeId: ${recipe.id}`);
       }
     } catch (error) {
-      console.error("Lỗi khi xử lý like:", error);
-
-      // Revert lại trạng thái nếu có lỗi
-      // setIsLiked(!isLiked); // Có thể bỏ comment nếu muốn revert
+      console.error("🔥 Error while toggling like:", error);
     } finally {
       setIsLikeLoading(false);
     }
@@ -372,7 +358,9 @@ const RecipeScreen = () => {
       },
     });
   };
-
+  useEffect(() => {
+    console.log("🔄 Recipe totalLikes updated:", recipe.id, recipe.totalLikes);
+  }, [recipe.totalLikes]);
   // Cập nhật header cố định
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -390,7 +378,7 @@ const RecipeScreen = () => {
                 styles.iconButton,
                 isLikeLoading && { opacity: 0.5 }, // Giảm opacity khi loading
               ]}
-              onPress={() => toggleLike(recipe.id)}
+              onPress={toggleLike}
               disabled={isLikeLoading} // Disable khi loading
             >
               <Image
@@ -404,7 +392,7 @@ const RecipeScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.iconButton, isBookmarkLoading && { opacity: 0.5 }]}
-              onPress={() => toggleBookmark(recipe.id)}
+              onPress={toggleBookmark}
               disabled={isBookmarkLoading}
             >
               <Image
@@ -484,7 +472,7 @@ const RecipeScreen = () => {
                 styles.rightStats,
                 isLikeLoading && { opacity: 0.7 }, // Visual feedback khi loading
               ]}
-              onPress={() => toggleLike(recipe.id)}
+              onPress={toggleLike}
               disabled={isLikeLoading}
             >
               <View style={styles.statItem}>
@@ -499,7 +487,7 @@ const RecipeScreen = () => {
                 <Text
                   style={[styles.statText, isLiked && styles.statTextActive]}
                 >
-                  {recipe.totalLikes} lượt thích{" "}
+                  {recipe.totalLikes ?? 0} lượt thích
                   {/* Hiển thị giá trị real-time từ API */}
                 </Text>
               </View>
@@ -530,9 +518,10 @@ const RecipeScreen = () => {
                 <InfoItem
                   key={index}
                   label={ri.ingredient.ingredientName}
-                  value={`${Math.round((ri.quantity * servingSize) / 1)} ${
+                  value={`${Math.round(ri.quantity * servingSize)} ${
                     ri.ingredient.measurementUnit
-                  }`} // Thay đổi từ /4 thành /1
+                  }`}
+                  // Thay đổi từ /4 thành /1
                 />
               ))
             ) : (

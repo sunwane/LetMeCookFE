@@ -342,11 +342,15 @@ export const initializeWebSocket = async (
     };
 
     stompClient.onStompError = (frame) => {
-      console.error("STOMP error:", frame.headers, frame.body);
+      console.error(
+        "[initializeWebSocket] STOMP error:",
+        frame.headers,
+        frame.body
+      );
     };
 
     stompClient.onWebSocketError = (error) => {
-      console.error("WebSocket error:", error);
+      console.error("[initializeWebSocket] WebSocket error:", error);
     };
 
     stompClient.activate();
