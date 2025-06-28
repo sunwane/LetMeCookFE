@@ -82,7 +82,7 @@ const getAccountId = async (): Promise<string> => {
     
     // Decode account ID from JWT token
     const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-    return tokenPayload.sub;
+    return tokenPayload.id || tokenPayload.accountId || tokenPayload.sub;
     
   } catch (error) {
     console.error('Failed to get account ID:', error);
