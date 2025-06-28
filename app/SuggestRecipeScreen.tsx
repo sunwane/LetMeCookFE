@@ -62,6 +62,9 @@ const SuggestRecipeScreen = () => {
   const [allIngredients, setAllIngredients] = useState<Ingredients[]>([]);
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(true);
 
+  // Thêm state
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+
   // ✅ Chọn ảnh từ thư viện cho main dish - UPDATED: Không cắt ảnh
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -446,6 +449,15 @@ const SuggestRecipeScreen = () => {
     setShowSubCategoryDropdown(false);
   };
 
+  // Hàm toggle dropdown
+  const handleToggleSubCategoryDropdown = () => {
+    setShowSubCategoryDropdown((prev) => {
+      const next = !prev;
+      setScrollEnabled(!next);
+      return next;
+    });
+  };
+
   useEffect(() => {
     // Auto close dropdowns khi scroll
     const handleScroll = () => {
@@ -522,6 +534,7 @@ const SuggestRecipeScreen = () => {
           keyboardShouldPersistTaps="handled"
           onScrollBeginDrag={closeAllDropdowns}
           onMomentumScrollBegin={closeAllDropdowns}
+          scrollEnabled={scrollEnabled} // Thêm dòng này
         >
           {/* ✅ Ảnh món ăn - Removed camera icon */}
           <View style={styles.section}>
@@ -580,7 +593,7 @@ const SuggestRecipeScreen = () => {
             <Text style={styles.sectionTitle}>Danh mục món ăn *</Text>
             <TouchableOpacity 
               style={styles.dropdownButton}
-              onPress={() => setShowSubCategoryDropdown(!showSubCategoryDropdown)}
+              onPress={handleToggleSubCategoryDropdown}
             >
               <Text style={[
                 styles.dropdownButtonText,
@@ -595,15 +608,17 @@ const SuggestRecipeScreen = () => {
             
             {showSubCategoryDropdown && (
               <View style={styles.dropdown}>
-                {subCategories.map((subCategory) => (
-                  <TouchableOpacity
-                    key={subCategory.id}
-                    style={styles.dropdownItem}
-                    onPress={() => selectSubCategory(subCategory)}
-                  >
-                    <Text style={styles.dropdownItemName}>{subCategory.subCategoryName}</Text>
-                  </TouchableOpacity>
-                ))}
+                <ScrollView style={{ maxHeight: 250 }}>
+                  {subCategories.map((subCategory) => (
+                    <TouchableOpacity
+                      key={subCategory.id}
+                      style={styles.dropdownItem}
+                      onPress={() => selectSubCategory(subCategory)}
+                    >
+                      <Text style={styles.dropdownItemName}>{subCategory.subCategoryName}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             )}
           </View>

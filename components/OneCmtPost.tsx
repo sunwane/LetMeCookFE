@@ -2,6 +2,7 @@ import '@/config/globalTextConfig';
 import { CommentItem, getAllAccountLikeComment, likeComment, unlikeComment } from '@/services/types/CommentItem';
 import { createFavoriteRecipe, deleteFavoriteRecipe, getAllFavouriteRecipe } from '@/services/types/FavoritesRecipe';
 import { getAllRecipeAccoountLike, getRecipeById } from '@/services/types/RecipeItem';
+import { ReportType } from '@/services/types/Report';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -267,6 +268,8 @@ const OneCmtPost: React.FC<CommentPost> = ({ item, currentUserId = 1 }) => {
                 visible={reportModalVisible}
                 onClose={() => setReportModalVisible(false)}
                 userName={item.username}
+                reportType={ReportType.REPORT_COMMENT} // Thêm loại báo cáo
+                reportedItemId={item.id} // Thêm ID của bình luận
             />
         </>
     )
