@@ -1,7 +1,7 @@
 import OneCmtPost from '@/components/OneCmtPost';
 import { CommentItem, getCommentByAccountId } from '@/services/types/CommentItem';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const PAGE_SIZE = 10;
 
@@ -59,15 +59,18 @@ const ActivitiesTab = ({ currentUserId }: ActivitiesTabProps) => {
 
   if (comments.length === 0 && !loading) {
     return (
-      <View style={[styles.postContainer, styles.emptyContainer]}>
+      <ScrollView
+        contentContainerStyle={[styles.postContainer, styles.emptyContainer]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleReload}
+            colors={['#FF5D00']}
+          />
+        }
+      >
         <Text style={styles.emptyText}>Chưa có hoạt động nào</Text>
-        <Text
-          style={{ color: '#FF5D00', marginTop: 10, textDecorationLine: 'underline' }}
-          onPress={handleReload}
-        >
-          Làm mới
-        </Text>
-      </View>
+      </ScrollView>
     );
   }
 

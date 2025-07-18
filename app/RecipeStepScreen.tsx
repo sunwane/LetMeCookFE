@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface RecipeStep {
   id: string;
@@ -101,7 +101,18 @@ const RecipeStepScreen = () => {
               </View>
             )}
           </View>
-          
+
+          {/* Ảnh minh họa cho bước */}
+          {currentStepData.stepImg && (
+            <View style={styles.stepImageContainer}>
+              <Image
+                source={{ uri: currentStepData.stepImg }}
+                style={styles.stepImage}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+
           <Text style={styles.stepDescription}>{currentStepData.description}</Text>
         </View>
       </ScrollView>
@@ -263,6 +274,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FF5D00',
     fontWeight: '600',
+  },
+  stepImageContainer: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  stepImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#eee',
   },
   stepDescription: {
     fontSize: 16,
