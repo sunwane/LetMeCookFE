@@ -116,9 +116,10 @@ const AccountBanner = ({ comments }: AccountBannerProps) => {
         try {
           const token = await AsyncStorage.getItem('authToken');
           if (token) {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            userName = payload.username || userName; // Dùng username từ token
-            console.log("✅ Username from token:", userName);
+            const base64Payload = token.split('.')[1];
+            const payloadString = b64DecodeUnicode(base64Payload);
+            const payload = JSON.parse(payloadString);
+            userName = payload.username || userName;
           }
         } catch (tokenError) {
           console.warn("⚠️ Failed to get username from token:", tokenError);
@@ -325,6 +326,16 @@ useEffect(() => {
       </View>
     </View>
   )
+}
+
+function b64DecodeUnicode(str: string) {
+  return decodeURIComponent(
+    Array.prototype.map
+      .call(atob(str), (c: string) => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join('')
+  );
 }
 
 const styles = StyleSheet.create({

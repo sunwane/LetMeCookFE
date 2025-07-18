@@ -14,6 +14,28 @@ const CategoryScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>(""); 
   const [loading, setLoading] = useState(true);
   const [subCategoriesLoading, setSubCategoriesLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const categoriesResponse = await getAllCategories();
+      const categoriesData = categoriesResponse.result;
+      if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+        setCategories(categoriesData);
+        setSelectedCategory(categoriesData[0].id);
+      }
+      const subCategoriesResponse = await getAllSubCategories();
+      const subCategoriesData = subCategoriesResponse.result;
+      if (Array.isArray(subCategoriesData) && subCategoriesData.length > 0) {
+        setSubCategories(subCategoriesData);
+      }
+    } catch (error) {
+      // handle error if needed
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Fetch categories từ API
   useEffect(() => {
@@ -109,15 +131,15 @@ const CategoryScreen = () => {
             columnWrapperStyle={styles.columnWrapper}
             contentContainerStyle={styles.contentContainer}
             renderItem={({ item }) => (
-              <View style={[
-                styles.itemContainer,
-              ]}>
+              <View style={[styles.itemContainer]}>
                 <OneSubCategory 
                   item={item} 
                   onPress={handleSubCategoryPress}
                 />
               </View>
             )}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
           />
         </View>
       </View>

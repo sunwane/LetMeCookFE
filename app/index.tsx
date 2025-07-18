@@ -193,7 +193,7 @@ export default function Index() {
       );
       setIsLoggedIn(true);
     } catch (error: any) {
-      console.error("❌ Login error:", error);
+      // console.error("❌ Login error:", error);
 
       // ✅ Check for ban-related error codes từ backend
       if (error.message?.includes("1013")) {
